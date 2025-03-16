@@ -121,7 +121,7 @@ class AssetOwner():
         if not self.access_character:
             return
         ac_token = self.access_character.ac_token
-        max_page = find_max_page(asset_esi, ac_token, owner_id, begin_page=0, interval=5)
+        max_page = find_max_page(asset_esi, ac_token, owner_id, begin_page=1, interval=5)
 
         logger.info("请求bp资产。")
         results = get_multipages_result(asset_esi, max_page, ac_token, owner_id)
