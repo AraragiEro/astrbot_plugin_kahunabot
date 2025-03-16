@@ -47,7 +47,7 @@ def get_multipages_result(esi_func, max_page, *args, **kwargs):
                    page in range(1, max_page + 1)]
         results = []
         count = 1
-        for future in tqdm(futures, desc="请求数据", unit="page"):
+        for future in tqdm(futures, desc="请求数据", unit="page", ascii='=-'):
             result = future.result()
             if result:
                 results.append(result)

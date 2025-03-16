@@ -107,7 +107,7 @@ class AssetOwner():
 
         with db.atomic():
             M_Asset.delete().where((M_Asset.asset_type == self.owner_type) & (M_Asset.owner_id == self.owner_id)).execute()
-            with tqdm(total=len(results), desc="写入数据库", unit="page") as pbar:
+            with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
                 for result in results:
                     # result = [order for order in result if order["location_id"] == JITA_TRADE_HUB_STRUCTURE_ID]
                     for asset in result:
@@ -129,7 +129,7 @@ class AssetOwner():
         with db.atomic():
             M_BlueprintAsset.delete().where((M_BlueprintAsset.owner_type == self.owner_type) &
                                             (M_BlueprintAsset.owner_id == self.owner_id)).execute()
-            with tqdm(total=len(results), desc="写入数据库", unit="page") as pbar:
+            with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
                 for result in results:
                     # result = [order for order in result if order["location_id"] == JITA_TRADE_HUB_STRUCTURE_ID]
                     for asset in result:

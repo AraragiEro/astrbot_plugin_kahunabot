@@ -33,7 +33,7 @@ class RunningJobOwner:
 
         with db.atomic():
             M_IndustryJobs.delete().where(M_IndustryJobs.owner_id == corp_id).execute()
-            with tqdm(total=len(results), desc="写入数据库", unit="page") as pbar:
+            with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
                 for result in results:
                     for jobs in result:
                         jobs.update({'owner_id': corp_id})

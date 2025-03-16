@@ -1133,7 +1133,7 @@ class IndustryAnalyser():
             cost_dict = dict()
         # for plan in plan_list:
             # analyser.analyse_progress_work_type([plan])
-            with tqdm(total=len(futures), desc="成本计算", unit="个") as pbar:
+            with tqdm(total=len(futures), desc="成本计算", unit="个", ascii='=-') as pbar:
                 for future in futures:
                     result = future.result()
                     cost_dict[result[0]] = result[1:]
