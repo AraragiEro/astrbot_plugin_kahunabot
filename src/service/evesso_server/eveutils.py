@@ -29,7 +29,7 @@ def find_max_page_binary_search(esi_func, start, end, *args, **kwargs):
 
 
 def find_max_page(esi_func, *args, begin_page: int = 500, interval: int = 500, **kwargs):
-    initial_page = 1
+    initial_page = 0
     page = initial_page
 
     # Check pages in the specified interval
@@ -39,7 +39,7 @@ def find_max_page(esi_func, *args, begin_page: int = 500, interval: int = 500, *
 
     # Once we find a page that doesn't exist, we know that the max page must be between `page - interval` and `page`.
     # So we use binary search within this range to find the exact max page.
-    return find_max_page_binary_search(esi_func, page - interval, page, *args, **kwargs)
+    return find_max_page_binary_search(esi_func, max(0, page - interval), max(page - interval + 1, page), *args, **kwargs)
 
 def get_multipages_result(esi_func, max_page, *args, **kwargs):
     with ThreadPoolExecutor(max_workers=100) as executor:

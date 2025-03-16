@@ -401,3 +401,12 @@ class KahunaBot(Star):
         '''
         tool_result = await IndsEvent.rp_t2mk(event, plan_name)
         yield await kahuna_llmt.return_tool_result_with_llm(self, event, tool_result)
+
+    # @llm_tool(name="test_kahuna_func")
+    # async def test_kahuna_func(self, event: AstrMessageEvent):
+    #     '''一个测试工具，仅在指明调用时调用
+    #
+    #     Args:
+    #         None
+    #     '''
+    #     yield event.plain_result("test_kahuna_func.")

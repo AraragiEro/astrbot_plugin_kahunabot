@@ -3,7 +3,6 @@ from cachetools import TTLCache, cached
 import traceback
 
 # kahuna logger
-from ..log_server import logger
 
 permission_set = set()
 
@@ -13,7 +12,7 @@ def get_request(url, headers=dict(), params=dict()):
         data = response.json()
         return data  # 注意：实际的键可能不同，请参考 ESI 文档
     else:
-        logger.warning(response.text)
+        print(response.text)
         return None
 
 def verify_token(access_token):

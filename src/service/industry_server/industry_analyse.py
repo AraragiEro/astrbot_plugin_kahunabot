@@ -1024,7 +1024,7 @@ class IndustryAnalyser():
             self.asset_dict.get(type_id, 0), # 库存
             max_buy, # jita收单
             min_sell, # jita 出单
-            max_buy * missing, # 扫单价格
+            max_buy * missing, # 收单价格
             min_sell * missing - max_buy * missing, # 扫单差
             0, # 已挂单
             0, # 已收到
