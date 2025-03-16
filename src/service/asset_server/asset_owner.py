@@ -95,6 +95,12 @@ class AssetOwner():
             begin_page = 20
             interval = 40
         max_page = find_max_page(asset_esi, ac_token, owner_id, begin_page=begin_page, interval=interval)
+        if max_page == 0:
+            logger.warning(
+                f"find max page = 0 when use {asset_esi.__name__} "
+                f"with {self.access_character.character_name} as type {self.owner_type}"
+            )
+            return
 
         logger.info("请求资产。")
         results = get_multipages_result(asset_esi, max_page, ac_token, owner_id)

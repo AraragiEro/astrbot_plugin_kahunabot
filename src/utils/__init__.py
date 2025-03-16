@@ -1,7 +1,7 @@
 import math
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-import transformers
+# import transformers
 
 class KahunaException(Exception):
     def __init__(self, message):
