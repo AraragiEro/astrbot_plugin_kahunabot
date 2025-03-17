@@ -27,7 +27,7 @@ class RunningJobOwner:
     @classmethod
     def refresh_corp_running_job(cls, corp_id, character: Character):
         max_page = find_max_page(corporations_corporation_id_industry_jobs, character.ac_token, corp_id,
-                                 begin_page=0, interval=2)
+                                 begin_page=1, interval=2)
         logger.info("请求刷新进行中job。")
         results = get_multipages_result(corporations_corporation_id_industry_jobs, max_page, character.ac_token, corp_id)
 
