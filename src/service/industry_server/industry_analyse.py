@@ -248,10 +248,10 @@ class IndustryAnalyser():
 
     def update_layer_depth(self, node):
         if node != 'root' and self.bp_graph.nodes[node]['depth'] != 1:
-            max_depth = 0
+            depth= 100
             for pre in self.bp_graph.predecessors(node):
-                max_depth = max(max_depth, self.bp_graph.nodes[pre]['depth'])
-            self.bp_graph.nodes[node]['depth'] = max_depth - 1
+                depth = min(depth, self.bp_graph.nodes[pre]['depth'])
+            self.bp_graph.nodes[node]['depth'] = depth - 1
 
         for suss in self.bp_graph.successors(node):
             self.update_layer_depth(suss)
