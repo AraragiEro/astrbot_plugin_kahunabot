@@ -1165,6 +1165,7 @@ class IndustryAnalyser():
             eiv_cost += analyser.global_graph.nodes[node]['eiv_cost']
         total_cost += eiv_cost
         res['eiv'] = [eiv_cost, eiv_cost / total_cost]
+        res['total_cost'] = total_cost
 
         for node, data in material_dict.items():
             data.append(data[0] / total_cost)
