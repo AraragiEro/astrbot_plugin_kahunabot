@@ -1,6 +1,10 @@
+[APP]
+DBTYPE = sqlite
+
 [FEISHU]
 APP_ID = MyApp
 SECRET_ID = 1.0
+FOLDER_ROOT =
 
 [POSTGREDB]
 Host = localhost
@@ -10,6 +14,8 @@ Password = secret
 
 [SQLITEDB]
 DATADB =
+CONFIG_DB =
+CACHE_DB =
 SDEDB =
 
 [EVE]

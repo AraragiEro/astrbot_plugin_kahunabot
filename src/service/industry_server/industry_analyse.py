@@ -546,7 +546,7 @@ class IndustryAnalyser():
                         father_production_sum -= father_need
                         bp_used_ratio = father_production_sum / father_work_list[work_i].runs / father_product_quantity
                         # 如果需求为1，不吃材料加成
-                        child_less = math.ceil(bp_used_ratio * father_work_list[work_i].runs * bp_need_quantity * \
+                        child_less = math.floor(bp_used_ratio * father_work_list[work_i].runs * bp_need_quantity * \
                                      (1 if bp_need_quantity == 1 else father_work_list[work_i].mater_eff))
                         actually_index_need[index] += (child_used_sum - child_less)
                         single_actually_index_need[index] = (child_used_sum - child_less)
@@ -590,8 +590,8 @@ class IndustryAnalyser():
                         bp_used_ratio = father_production_sum / father_total_work_list[work_i].runs / father_product_quantity
 
                         # 如果需求为1，不吃材料加成
-                        child_less = math.ceil(bp_used_ratio * father_total_work_list[work_i].runs * bp_need_quantity * \
-                                     (1 if bp_need_quantity == 1 else father_total_work_list[work_i].mater_eff))
+                        child_less = bp_used_ratio * father_total_work_list[work_i].runs * bp_need_quantity * \
+                                     (1 if bp_need_quantity == 1 else father_total_work_list[work_i].mater_eff)
                         total_index_need[index] += (child_used_sum - child_less)
                         single_total_index_need[index] = (child_used_sum - child_less)
                         child_used_sum = child_less
@@ -602,10 +602,6 @@ class IndustryAnalyser():
                         father_production_sum = 0
                     else:
                         raise KahunaException("安排的工作无法覆盖需求")
-            # if child_used_sum > 0:
-            #     last_index = father_total_need_list[-1][0]
-            #     total_index_need[last_index] += child_used_sum
-            #     single_total_index_need[last_index] += child_used_sum
 
             for index, quantity in single_actually_index_need.items():
                 # 计算资产是否满足父节点需求
@@ -630,7 +626,7 @@ class IndustryAnalyser():
         is_material = False
         child_actually_total_quantity = math.ceil(sum([quantity for quantity in actually_index_need.values()]))
         child_actually_total_quantity = math.ceil(child_actually_total_quantity - running_quantity - exist_count)
-        child_total_quantity = math.ceil(sum([quantity for quantity in total_index_need.values()]))
+        child_total_quantity = sum([quantity for quantity in total_index_need.values()])
         if BPManager.get_bp_id_by_prod_typeid(child_id) and not self.in_pd_block(child_id):
             child_product_quantity = BPManager.get_bp_product_quantity_typeid(child_id)
             child_actually_total_runs = math.ceil(child_actually_total_quantity / child_product_quantity)
