@@ -578,8 +578,8 @@ class IndustryAnalyser():
                     while father_production_sum < father_need and work_i < work_list_len:
                         father_production_sum += father_total_work_list[work_i].runs * father_product_quantity
                         # 如果需求为1，不吃材料加成
-                        child_used_sum += math.ceil(father_total_work_list[work_i].runs * bp_need_quantity * \
-                                          (1 if bp_need_quantity == 1 else father_total_work_list[work_i].mater_eff))
+                        child_used_sum += father_total_work_list[work_i].runs * bp_need_quantity * \
+                                          (1 if bp_need_quantity == 1 else father_total_work_list[work_i].mater_eff)
                         if work_i < work_list_len - 1:
                             work_i += 1
                     # 如果有超出部分，计算部分蓝图的消耗
