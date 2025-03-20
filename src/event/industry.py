@@ -582,7 +582,15 @@ class IndsEvent:
         cost_sheet = FeiShuKahuna.get_detail_cost_sheet(spreadsheet)
         FeiShuKahuna.output_cost_detail_sheet(cost_sheet, detail_dict)
 
-        return event.plain_result(f"执行完成, {product}成本解析:{cost_sheet.url}")
+        res_str = (f"ID：{type_id}\n"
+                   f"name： {SdeUtils.get_name_by_id(type_id)}\n"
+                   f"zh_name：{SdeUtils.get_cn_name_by_id(type_id)}\n"
+                   f"{product} 成本：{detail_dict['total_cost']}\n"
+                   f"吉他价格：\n"
+                   f"   sell：{detail_dict['jita_price'][1]}\n"
+                   f"   buy：{detail_dict['jita_price'][0]}\n"
+                   f"执行完成, {product}成本解析:{cost_sheet.url}")
+        return event.plain_result(res_str)
 
     @staticmethod
     def refjobs(event: AstrMessageEvent):
