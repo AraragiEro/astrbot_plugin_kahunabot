@@ -585,11 +585,11 @@ class IndsEvent:
         res_str = (f"ID：{type_id}\n"
                    f"name： {SdeUtils.get_name_by_id(type_id)}\n"
                    f"zh_name：{SdeUtils.get_cn_name_by_id(type_id)}\n"
-                   f"{product} 成本：{detail_dict['total_cost']}\n"
+                   f"{product} 成本：{detail_dict['total_cost']:,}\n"
                    f"吉他价格：\n"
-                   f"   sell：{detail_dict['jita_price'][1]}\n"
-                   f"   buy：{detail_dict['jita_price'][0]}\n"
-                   f"执行完成, {product}成本解析:{cost_sheet.url}")
+                   f"   sell：{detail_dict['jita_price'][1]:,}\n"
+                   f"   buy：{detail_dict['jita_price'][0]:,}\n"
+                   f"详情:{cost_sheet.url}")
         return event.plain_result(res_str)
 
     @staticmethod

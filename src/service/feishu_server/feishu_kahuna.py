@@ -196,7 +196,7 @@ class FeiShuKahuna:
                           for tid, data in material_dict.items()]
         type_cost_list += [['', 'eiv_cost', '系数', eiv_data[0], eiv_data[1]]]
         type_cost_list.sort(key=lambda x: x[3], reverse=True)
-        type_cost_list = [type_cost_head] + type_cost_list
+        type_cost_list = [type_cost_detail, type_cost_head] + type_cost_list
 
         sheet.set_value([1, 1], type_cost_list)
         sheet.set_format([4, 1], [1, len(type_cost_list)], {'formatter': '#,##0.00'})
