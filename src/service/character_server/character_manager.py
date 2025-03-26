@@ -12,9 +12,9 @@ from ..evesso_server.eveesi import corporations_corporation_id_roles
 from ..log_server import logger
 
 #import Exception
-from ...utils import KahunaException, PluginMeta
+from ...utils import KahunaException
 import traceback
-class CharacterManager(metaclass=PluginMeta):
+class CharacterManager():
     init_status = False
     character_dict: dict = dict()
 

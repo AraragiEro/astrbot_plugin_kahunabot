@@ -109,7 +109,7 @@ def format_material_tree(datadict: dict):
         '库存',
         'jita收单',
         'jita出单',
-        '扫单价格',
+        '收单价格',
         '扫单差',
         '已挂单',
         '已收到',

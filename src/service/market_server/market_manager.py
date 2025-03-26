@@ -5,7 +5,7 @@ import threading
 from datetime import datetime
 
 from ..database_server.model import MarketOrderCache
-from ..database_server.connect import db
+from ..database_server.connect import DatabaseConectManager
 from .marker import Market
 from ..character_server.character_manager import CharacterManager
 from ..config_server.config import config
@@ -13,9 +13,7 @@ from ..config_server.config import config
 # kahuna logger
 from ..log_server import logger
 
-from ...utils import PluginMeta
-
-class MarketManager(metaclass=PluginMeta):
+class MarketManager():
     init_status = False
     market_dict = dict()
     monitor_process = None
@@ -43,6 +41,7 @@ class MarketManager(metaclass=PluginMeta):
 
     @classmethod
     def copy_to_cache(cls):
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             MarketOrderCache.delete().execute()
             db.execute_sql("INSERT INTO market_order_cache SELECT * FROM market_order")

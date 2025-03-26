@@ -248,10 +248,10 @@ class IndustryAnalyser():
 
     def update_layer_depth(self, node):
         if node != 'root' and self.bp_graph.nodes[node]['depth'] != 1:
-            max_depth = 0
+            depth= 100
             for pre in self.bp_graph.predecessors(node):
-                max_depth = max(max_depth, self.bp_graph.nodes[pre]['depth'])
-            self.bp_graph.nodes[node]['depth'] = max_depth - 1
+                depth = min(depth, self.bp_graph.nodes[pre]['depth'])
+            self.bp_graph.nodes[node]['depth'] = depth - 1
 
         for suss in self.bp_graph.successors(node):
             self.update_layer_depth(suss)
@@ -546,7 +546,7 @@ class IndustryAnalyser():
                         father_production_sum -= father_need
                         bp_used_ratio = father_production_sum / father_work_list[work_i].runs / father_product_quantity
                         # 如果需求为1，不吃材料加成
-                        child_less = math.ceil(bp_used_ratio * father_work_list[work_i].runs * bp_need_quantity * \
+                        child_less = math.floor(bp_used_ratio * father_work_list[work_i].runs * bp_need_quantity * \
                                      (1 if bp_need_quantity == 1 else father_work_list[work_i].mater_eff))
                         actually_index_need[index] += (child_used_sum - child_less)
                         single_actually_index_need[index] = (child_used_sum - child_less)
@@ -578,8 +578,8 @@ class IndustryAnalyser():
                     while father_production_sum < father_need and work_i < work_list_len:
                         father_production_sum += father_total_work_list[work_i].runs * father_product_quantity
                         # 如果需求为1，不吃材料加成
-                        child_used_sum += math.ceil(father_total_work_list[work_i].runs * bp_need_quantity * \
-                                          (1 if bp_need_quantity == 1 else father_total_work_list[work_i].mater_eff))
+                        child_used_sum += father_total_work_list[work_i].runs * bp_need_quantity * \
+                                          (1 if bp_need_quantity == 1 else father_total_work_list[work_i].mater_eff)
                         if work_i < work_list_len - 1:
                             work_i += 1
                     # 如果有超出部分，计算部分蓝图的消耗
@@ -590,8 +590,8 @@ class IndustryAnalyser():
                         bp_used_ratio = father_production_sum / father_total_work_list[work_i].runs / father_product_quantity
 
                         # 如果需求为1，不吃材料加成
-                        child_less = math.ceil(bp_used_ratio * father_total_work_list[work_i].runs * bp_need_quantity * \
-                                     (1 if bp_need_quantity == 1 else father_total_work_list[work_i].mater_eff))
+                        child_less = bp_used_ratio * father_total_work_list[work_i].runs * bp_need_quantity * \
+                                     (1 if bp_need_quantity == 1 else father_total_work_list[work_i].mater_eff)
                         total_index_need[index] += (child_used_sum - child_less)
                         single_total_index_need[index] = (child_used_sum - child_less)
                         child_used_sum = child_less
@@ -602,10 +602,6 @@ class IndustryAnalyser():
                         father_production_sum = 0
                     else:
                         raise KahunaException("安排的工作无法覆盖需求")
-            # if child_used_sum > 0:
-            #     last_index = father_total_need_list[-1][0]
-            #     total_index_need[last_index] += child_used_sum
-            #     single_total_index_need[last_index] += child_used_sum
 
             for index, quantity in single_actually_index_need.items():
                 # 计算资产是否满足父节点需求
@@ -630,7 +626,7 @@ class IndustryAnalyser():
         is_material = False
         child_actually_total_quantity = math.ceil(sum([quantity for quantity in actually_index_need.values()]))
         child_actually_total_quantity = math.ceil(child_actually_total_quantity - running_quantity - exist_count)
-        child_total_quantity = math.ceil(sum([quantity for quantity in total_index_need.values()]))
+        child_total_quantity = sum([quantity for quantity in total_index_need.values()])
         if BPManager.get_bp_id_by_prod_typeid(child_id) and not self.in_pd_block(child_id):
             child_product_quantity = BPManager.get_bp_product_quantity_typeid(child_id)
             child_actually_total_runs = math.ceil(child_actually_total_quantity / child_product_quantity)
@@ -959,6 +955,10 @@ class IndustryAnalyser():
                 continue
             structure_id = SdeUtils.get_structure_id_from_location_id(asset.location_id)[0]
             structure = StructureManager.get_structure(structure_id, ac_token)
+            if not structure:
+                logger.error(f'type {SdeUtils.get_name_by_id(asset.type_id)} '
+                             f'location structure[{structure_id}] access error.')
+                continue
             if structure not in structure_provide_dict:
                 structure_provide_dict[structure] = dict()
             if asset.type_id not in structure_provide_dict[structure]:
@@ -1024,7 +1024,7 @@ class IndustryAnalyser():
             self.asset_dict.get(type_id, 0), # 库存
             max_buy, # jita收单
             min_sell, # jita 出单
-            max_buy * missing, # 扫单价格
+            max_buy * missing, # 收单价格
             min_sell * missing - max_buy * missing, # 扫单差
             0, # 已挂单
             0, # 已收到
@@ -1133,7 +1133,7 @@ class IndustryAnalyser():
             cost_dict = dict()
         # for plan in plan_list:
             # analyser.analyse_progress_work_type([plan])
-            with tqdm(total=len(futures), desc="成本计算", unit="个") as pbar:
+            with tqdm(total=len(futures), desc="成本计算", unit="个", ascii='=-') as pbar:
                 for future in futures:
                     result = future.result()
                     cost_dict[result[0]] = result[1:]
@@ -1165,7 +1165,9 @@ class IndustryAnalyser():
             eiv_cost += analyser.global_graph.nodes[node]['eiv_cost']
         total_cost += eiv_cost
         res['eiv'] = [eiv_cost, eiv_cost / total_cost]
-
+        res['type_id'] = SdeUtils.get_id_by_name(product)
+        res['total_cost'] = total_cost
+        res['jita_price'] = analyser.market.get_type_order_rouge(res['type_id'])
         for node, data in material_dict.items():
             data.append(data[0] / total_cost)
 

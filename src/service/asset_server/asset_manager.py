@@ -4,19 +4,19 @@ import asyncio
 from .asset_container import AssetContainer, ContainerTag
 from ..database_server.model import (AssetCache as M_AssetCache, Asset as M_Asset,
                                      BlueprintAsset as M_BlueprintAsset, BlueprintAssetCache as M_BlueprintAssetCache)
-from ..database_server.connect import db
+from ..database_server.connect import DatabaseConectManager
 from .asset_owner import AssetOwner
 from ..character_server.character_manager import CharacterManager
 from ..sde_service.utils import SdeUtils
 from ..evesso_server.eveesi import universe_structures_structure
 
 # kahuna KahunaException
-from ...utils import KahunaException, PluginMeta
+from ...utils import KahunaException
 
 # kahuna logger
 from ..log_server import logger
 
-class AssetManager(metaclass=PluginMeta):
+class AssetManager():
     init_asset_status = False
     init_container_status = False
     asset_dict: dict[(str, int): AssetOwner] = dict() # {(owner_type, owner_id): Asset}
@@ -77,6 +77,7 @@ class AssetManager(metaclass=PluginMeta):
 
     @classmethod
     def copy_to_cache(cls):
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_AssetCache.delete().execute()
             db.execute_sql(f"INSERT INTO {M_AssetCache._meta.table_name} SELECT * FROM {M_Asset._meta.table_name}")

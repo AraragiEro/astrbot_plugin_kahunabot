@@ -1,6 +1,7 @@
 import math
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+# import transformers
 
 class KahunaException(Exception):
     def __init__(self, message):
@@ -36,3 +37,12 @@ async def refresh_per_min(start_delay, interval, func):
             while not future.done():
                 await asyncio.sleep(5)
             await asyncio.sleep(interval * 60)
+
+# from .deepseek_tokenizer import tokenizer
+# def get_chat_token_count(input: str):
+#     result = tokenizer.encode(input)
+#     return result
+#
+# def check_context_token_count(input: str, context_token_limit: int):
+#     result = get_chat_token_count(input)
+#     return result <= context_token_limit

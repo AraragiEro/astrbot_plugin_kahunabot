@@ -7,7 +7,6 @@ from ..log_server import logger
 from ...service.sde_service.database import MapSolarSystems
 from ..evesso_server.eveesi import universe_stations_station, universe_structures_structure
 
-from ...utils import PluginMeta
 
 STRUCTURE_MEMBER = {"structure_id", "name", "owner_id", "solar_system_id", "type_id", "system"}
 
@@ -56,7 +55,7 @@ class Structure:
         yield 'time_rig_level', self.time_rig_level
 
 
-class StructureManager(metaclass=PluginMeta):
+class StructureManager():
     structure_dict = dict()
     init_status = False
 

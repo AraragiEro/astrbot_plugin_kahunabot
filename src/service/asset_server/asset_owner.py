@@ -6,7 +6,7 @@ from ..database_server.model import (Asset as M_Asset,
                                      AssetOwner as M_AssetOwner,
                                      BlueprintAsset as M_BlueprintAsset,
                                      BlueprintAssetCache as M_BlueprintAssetCache)
-from ..database_server.connect import db
+from ..database_server.connect import DatabaseConectManager
 from ..evesso_server.eveesi import (characters_character_assets,
                                     corporations_corporation_assets,
                                     characters_character_id_blueprints,
@@ -95,13 +95,19 @@ class AssetOwner():
             begin_page = 20
             interval = 40
         max_page = find_max_page(asset_esi, ac_token, owner_id, begin_page=begin_page, interval=interval)
+        if max_page == 0:
+            logger.warning(
+                f"find max page = 0 when use {asset_esi.__name__} "
+                f"with {self.access_character.character_name} as type {self.owner_type}"
+            )
+            return
 
         logger.info("请求资产。")
         results = get_multipages_result(asset_esi, max_page, ac_token, owner_id)
-
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_Asset.delete().where((M_Asset.asset_type == self.owner_type) & (M_Asset.owner_id == self.owner_id)).execute()
-            with tqdm(total=len(results), desc="写入数据库", unit="page") as pbar:
+            with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
                 for result in results:
                     # result = [order for order in result if order["location_id"] == JITA_TRADE_HUB_STRUCTURE_ID]
                     for asset in result:
@@ -115,15 +121,15 @@ class AssetOwner():
         if not self.access_character:
             return
         ac_token = self.access_character.ac_token
-        max_page = find_max_page(asset_esi, ac_token, owner_id, begin_page=0, interval=5)
+        max_page = find_max_page(asset_esi, ac_token, owner_id, begin_page=1, interval=5)
 
         logger.info("请求bp资产。")
         results = get_multipages_result(asset_esi, max_page, ac_token, owner_id)
-
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_BlueprintAsset.delete().where((M_BlueprintAsset.owner_type == self.owner_type) &
                                             (M_BlueprintAsset.owner_id == self.owner_id)).execute()
-            with tqdm(total=len(results), desc="写入数据库", unit="page") as pbar:
+            with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
                 for result in results:
                     # result = [order for order in result if order["location_id"] == JITA_TRADE_HUB_STRUCTURE_ID]
                     for asset in result:

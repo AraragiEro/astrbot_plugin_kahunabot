@@ -134,6 +134,7 @@ class FeiShuKahuna:
 
     @classmethod
     def output_logistic_plan(cls, sheet, logistic_dict: dict):
+        '''将物流清单输出到飞书表格'''
         sheet.clear_sheet()
 
         transport_data = logistic_dict['transport']
@@ -183,17 +184,19 @@ class FeiShuKahuna:
 
     @classmethod
     def output_cost_detail_sheet(cls, sheet: Sheet, detail_dict: dict):
+        '''输出单品材料解析到飞书表格'''
         sheet.clear_sheet()
 
         # 输出原料type细分
         material_dict = detail_dict['material']
         eiv_data = detail_dict['eiv']
+        type_cost_detail = ['总成本', detail_dict['total_cost']]
         type_cost_head = ['id', detail_dict['name'], detail_dict['cn_name'], '成本', '占比']
         type_cost_list = [[tid, SdeUtils.get_name_by_id(tid), SdeUtils.get_cn_name_by_id(tid)] + data
                           for tid, data in material_dict.items()]
         type_cost_list += [['', 'eiv_cost', '系数', eiv_data[0], eiv_data[1]]]
         type_cost_list.sort(key=lambda x: x[3], reverse=True)
-        type_cost_list = [type_cost_head] + type_cost_list
+        type_cost_list = [type_cost_detail, type_cost_head] + type_cost_list
 
         sheet.set_value([1, 1], type_cost_list)
         sheet.set_format([4, 1], [1, len(type_cost_list)], {'formatter': '#,##0.00'})

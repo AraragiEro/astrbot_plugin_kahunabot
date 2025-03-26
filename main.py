@@ -10,6 +10,16 @@ from astrbot.core.star.filter.custom_filter import CustomFilter
 from astrbot.core.star.filter.permission import PermissionType
 from astrbot.api import logger, llm_tool
 
+from .src.service import init_server
+from .src.service.database_server.connect import DatabaseConectManager
+from .src.service.character_server.character_manager import CharacterManager
+from .src.service.user_server.user_manager import UserManager
+from .src.service.asset_server.asset_manager import AssetManager
+from .src.service.market_server.market_manager import MarketManager
+from .src.service.industry_server.structure import StructureManager
+from .src.service.industry_server.industry_manager import IndustryManager
+from .src.service.industry_server.industry_config import IndustryConfigManager
+
 from .src.event.utils import kahuna_debug_info
 from .src.event.character import CharacterEvent
 from .src.event.price import TypesPriceEvent
@@ -18,13 +28,7 @@ from .src.event.industry import AssetEvent, MarketEvent, IndsEvent, SdeEvent
 from .src.event import llm_tool as kahuna_llmt
 from .filter import AdminFilter, VipMemberFilter, MemberFilter
 
-from .src.service.character_server.character_manager import CharacterManager
-from .src.service.user_server.user_manager import UserManager
-from .src.service.asset_server.asset_manager import AssetManager
-from .src.service.market_server.market_manager import MarketManager
-from .src.service.industry_server.structure import StructureManager
-from .src.service.industry_server.industry_manager import IndustryManager
-from .src.service.industry_server.industry_config import IndustryConfigManager
+
 
 from .src.utils import refresh_per_min, run_func_delay_min
 
@@ -51,6 +55,7 @@ class KahunaBot(Star):
         super().__init__(context)
         # 初始化
         # asyncio.create_task(self.init_plugin())
+        init_server()
 
         # 延时初始化
         asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
@@ -62,7 +67,6 @@ class KahunaBot(Star):
         asyncio.create_task(refresh_per_min(0, 60, IndustryManager.refresh_system_cost))
         asyncio.create_task(refresh_per_min(0, 120, IndustryManager.refresh_market_price))
 
-    # 注册指令的装饰器。指令名为 helloworld。注册成功后，发送 `/helloworld` 就会触发这个指令，并回复 `你好, {user_name}!`
     # @filter.custom_filter(SelfFilter1)
     @filter.command("helloworld")
     async def helloworld(self, event: AstrMessageEvent):
@@ -401,3 +405,12 @@ class KahunaBot(Star):
         '''
         tool_result = await IndsEvent.rp_t2mk(event, plan_name)
         yield await kahuna_llmt.return_tool_result_with_llm(self, event, tool_result)
+
+    # @llm_tool(name="test_kahuna_func")
+    # async def test_kahuna_func(self, event: AstrMessageEvent):
+    #     '''一个测试工具，仅在指明调用时调用
+    #
+    #     Args:
+    #         None
+    #     '''
+    #     yield event.plain_result("test_kahuna_func.")
