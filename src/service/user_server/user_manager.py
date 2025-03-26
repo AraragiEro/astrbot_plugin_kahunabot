@@ -12,12 +12,12 @@ from ..character_server.character_manager import CharacterManager
 from ..log_server import logger
 
 # import Exception
-from ...utils import KahunaException, PluginMeta
+from ...utils import KahunaException
 
 ESI_CACHE = TTLCache(maxsize=100, ttl=300)
 
 
-class UserManager(metaclass=PluginMeta):
+class UserManager():
     init_status = False
     lock = Lock()
     user_dict = dict() # {qq_id: User()}

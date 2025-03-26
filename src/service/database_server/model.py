@@ -1,35 +1,29 @@
-from peewee import SqliteDatabase
+from peewee import SqliteDatabase, DatabaseProxy
 from peewee import Model
 from peewee import FloatField, DecimalField, CharField, TextField, DateTimeField, BooleanField, IntegerField, DoubleField
 from peewee import BigIntegerField
 from peewee import SQL
-from .connect import db
+from .connect import DatabaseConectManager, ConfigModel, CacheModel
 
 __all__ = []
 
 MODEL_LIST = []
 
-class BaseModel(Model):
-    class Meta:
-        database = db
-
-class User(BaseModel):
+class User(ConfigModel):
     user_qq = IntegerField(unique=True)
     create_date = DateTimeField()
     expire_date = DateTimeField()
     main_character_id = IntegerField()
-__all__.append('User')
-MODEL_LIST.append(User)
+DatabaseConectManager.add_model(User)
 
-class UserData(BaseModel):
+class UserData(ConfigModel):
     user_qq = IntegerField(unique=True)
     user_data = TextField()
     class Meta:
         table_name = 'user_data'
-__all__.append('UserData')
-MODEL_LIST.append(UserData)
+DatabaseConectManager.add_model(UserData)
 
-class Character(BaseModel):
+class Character(ConfigModel):
     character_id = IntegerField(unique=True)
     character_name = TextField()
     QQ = IntegerField()
@@ -42,10 +36,9 @@ class Character(BaseModel):
 
     class Meta:
         table_name = 'character'
-__all__.append('Character')
-MODEL_LIST.append(Character)
+DatabaseConectManager.add_model(Character)
 
-class Structure(BaseModel):
+class Structure(ConfigModel):
     structure_id = IntegerField(unique=True)
     name = CharField()
     owner_id = IntegerField()
@@ -56,10 +49,9 @@ class Structure(BaseModel):
     time_rig_level = IntegerField(null=True)
     class Meta:
         table_name = 'structure'
-__all__.append('Structure')
-MODEL_LIST.append(Structure)
+DatabaseConectManager.add_model(Structure)
 
-class AssetContainer(BaseModel):
+class AssetContainer(ConfigModel):
     asset_location_id = IntegerField()
     asset_location_type = CharField()
     structure_id = IntegerField()
@@ -73,11 +65,10 @@ class AssetContainer(BaseModel):
     class Meta:
         table_name = 'asset_container'
         constraints = [SQL('UNIQUE(asset_location_id, asset_owner_qq)')]
-__all__.append(AssetContainer.__name__)
-MODEL_LIST.append(AssetContainer)
+DatabaseConectManager.add_model(AssetContainer)
 
 # esi_cache
-class Asset(BaseModel):
+class Asset(CacheModel):
     asset_type = IntegerField()
     owner_id = IntegerField()
     is_blueprint_copy = BooleanField()
@@ -90,10 +81,9 @@ class Asset(BaseModel):
     type_id = IntegerField()
     class Meta:
         table_name = 'asset'
-__all__.append(Asset.__name__)
-MODEL_LIST.append(Asset)
+DatabaseConectManager.add_model(Asset)
 
-class AssetCache(BaseModel):
+class AssetCache(CacheModel):
     asset_type = IntegerField()
     owner_id = IntegerField()
     is_blueprint_copy = BooleanField()
@@ -106,20 +96,18 @@ class AssetCache(BaseModel):
     type_id = IntegerField()
     class Meta:
         table_name = 'asset_cache'
-__all__.append(AssetCache.__name__)
-MODEL_LIST.append(AssetCache)
+DatabaseConectManager.add_model(AssetCache)
 
-class AssetOwner(BaseModel):
+class AssetOwner(ConfigModel):
     asset_owner_qq = IntegerField()
     asset_owner_id = IntegerField()
     asset_type = CharField()
     asset_access_character_id = IntegerField()
     class Meta:
         table_name = 'asset_owner'
-__all__.append(AssetOwner.__name__)
-MODEL_LIST.append(AssetOwner)
+DatabaseConectManager.add_model(AssetOwner)
 
-class MarketOrder(BaseModel):
+class MarketOrder(CacheModel):
     duration = IntegerField()
     is_buy_order = BooleanField()
     issued = DateTimeField()
@@ -135,10 +123,9 @@ class MarketOrder(BaseModel):
 
     class Meta:
         table_name = 'market_order'
-__all__.append(MarketOrder.__name__)
-MODEL_LIST.append(MarketOrder)
+DatabaseConectManager.add_model(MarketOrder)
 
-class MarketOrderCache(BaseModel):
+class MarketOrderCache(CacheModel):
     duration = IntegerField()
     is_buy_order = BooleanField()
     issued = DateTimeField()
@@ -154,11 +141,9 @@ class MarketOrderCache(BaseModel):
 
     class Meta:
         table_name = 'market_order_cache'
-__all__.append(MarketOrderCache.__name__)
-MODEL_LIST.append(MarketOrderCache)
+DatabaseConectManager.add_model(MarketOrderCache)
 
-
-class IndustryJobs(BaseModel):
+class IndustryJobs(CacheModel):
     activity_id = IntegerField()
     blueprint_id = BigIntegerField()
     blueprint_location_id = BigIntegerField()
@@ -186,10 +171,9 @@ class IndustryJobs(BaseModel):
 
     class Meta:
         table_name = 'industry_jobs'
-__all__.append(IndustryJobs.__name__)
-MODEL_LIST.append(IndustryJobs)
+DatabaseConectManager.add_model(IndustryJobs)
 
-class IndustryJobsCache(BaseModel):
+class IndustryJobsCache(CacheModel):
     activity_id = IntegerField()
     blueprint_id = BigIntegerField()
     blueprint_location_id = BigIntegerField()
@@ -216,10 +200,9 @@ class IndustryJobsCache(BaseModel):
     owner_id = IntegerField()
     class Meta:
         table_name = 'industry_jobs_cache'
-__all__.append(IndustryJobsCache.__name__)
-MODEL_LIST.append(IndustryJobsCache)
+DatabaseConectManager.add_model(IndustryJobsCache)
 
-class SystemCost(BaseModel):
+class SystemCost(CacheModel):
     solar_system_id = IntegerField(primary_key=True)
     manufacturing = FloatField(null=True)
     researching_time_efficiency = FloatField(null=True)
@@ -230,10 +213,9 @@ class SystemCost(BaseModel):
 
     class Meta:
         table_name = "system_cost"
-__all__.append(SystemCost.__name__)
-MODEL_LIST.append(SystemCost)
+DatabaseConectManager.add_model(SystemCost)
 
-class SystemCostCache(BaseModel):
+class SystemCostCache(CacheModel):
     solar_system_id = IntegerField(primary_key=True)
     manufacturing = FloatField(null=True)
     researching_time_efficiency = FloatField(null=True)
@@ -244,10 +226,9 @@ class SystemCostCache(BaseModel):
 
     class Meta:
         table_name = "system_cost_cache"
-__all__.append(SystemCostCache.__name__)
-MODEL_LIST.append(SystemCostCache)
+DatabaseConectManager.add_model(SystemCostCache)
 
-class BlueprintAsset(BaseModel):
+class BlueprintAsset(CacheModel):
     item_id = BigIntegerField(primary_key=True)
     location_flag = CharField()
     location_id = BigIntegerField()
@@ -261,11 +242,9 @@ class BlueprintAsset(BaseModel):
     owner_type = CharField()
     class Meta:
         table_name = "blueprint_asset"
-__all__.append(BlueprintAsset.__name__)
-MODEL_LIST.append(BlueprintAsset)
+DatabaseConectManager.add_model(BlueprintAsset)
 
-
-class BlueprintAssetCache(BaseModel):
+class BlueprintAssetCache(CacheModel):
     item_id = BigIntegerField(primary_key=True)
     location_flag = CharField()
     location_id = BigIntegerField()
@@ -279,46 +258,41 @@ class BlueprintAssetCache(BaseModel):
     owner_type = CharField()
     class Meta:
         table_name = "blueprint_asset_cache"
-__all__.append(BlueprintAssetCache.__name__)
-MODEL_LIST.append(BlueprintAssetCache)
+DatabaseConectManager.add_model(BlueprintAssetCache)
 
-class InvTypeMap(BaseModel):
+class InvTypeMap(ConfigModel):
     maped_type = CharField(unique=True)
     target_type = CharField()
     class Meta:
         table_name = "inv_type_map"
-__all__.append(InvTypeMap.__name__)
-MODEL_LIST.append(InvTypeMap)
+DatabaseConectManager.add_model(InvTypeMap)
 
-class Matcher(BaseModel):
+class Matcher(ConfigModel):
     matcher_name = CharField(unique=True)
     user_qq = IntegerField()
     matcher_type = CharField()
     matcher_data = TextField()
     class Meta:
         table_name = "matcher"
-__all__.append(Matcher.__name__)
-MODEL_LIST.append(Matcher)
+DatabaseConectManager.add_model(Matcher)
 
-class MarketPrice(BaseModel):
+class MarketPrice(CacheModel):
     adjusted_price = IntegerField(null=True)
     average_price = IntegerField(null=True)
     type_id = IntegerField(primary_key=True)
     class Meta:
         table_name = "market_price"
-__all__.append(MarketPrice.__name__)
-MODEL_LIST.append(MarketPrice)
+DatabaseConectManager.add_model(MarketPrice)
 
-class MarketPriceCache(BaseModel):
+class MarketPriceCache(CacheModel):
     adjusted_price = IntegerField(null=True)
     average_price = IntegerField(null=True)
     type_id = IntegerField(primary_key=True)
     class Meta:
         table_name = "market_price_cache"
-__all__.append(MarketPriceCache.__name__)
-MODEL_LIST.append(MarketPriceCache)
+DatabaseConectManager.add_model(MarketPriceCache)
 
-class MarketHistory(BaseModel):
+class MarketHistory(ConfigModel):
     region_id = IntegerField()
     type_id = IntegerField()
     date = DateTimeField()
@@ -332,5 +306,4 @@ class MarketHistory(BaseModel):
         indexes = (
             (('region_id', 'type_id', 'date'), True),
         )
-__all__.append(MarketHistory.__name__)
-MODEL_LIST.append(MarketHistory)
+DatabaseConectManager.add_model(MarketHistory)

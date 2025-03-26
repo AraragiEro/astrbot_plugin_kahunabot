@@ -4,8 +4,6 @@ from .running_job import RunningJobOwner
 from .system_cost import SystemCost
 from .market_price import MarketPrice
 from ..character_server.character_manager import CharacterManager
-from ..database_server.model import (SystemCost as M_SystemCost, SystemCostCache as M_SystemCostCache)
-from ..database_server.connect import db
 from ...utils import KahunaException
 from .industry_analyse import IndustryAnalyser
 from .industry_config import IndustryConfigManager

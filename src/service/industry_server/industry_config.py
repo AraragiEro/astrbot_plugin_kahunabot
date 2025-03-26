@@ -11,7 +11,6 @@ from .structure import Structure
 from ...utils import KahunaException
 from .matcher import Matcher
 
-from ...utils import PluginMeta
 
 NULL_MANU_SEC_BONUS = 2.1
 NULL_REAC_SEC_BONUS = 1.1
@@ -59,7 +58,7 @@ class EffStructUreType(Enum):
     T2_LETA_LU = 2
     T1_SOTIYO = 3
 
-class IndustryConfigManager(metaclass=PluginMeta):
+class IndustryConfigManager():
     init_matcher_status = False
     config_owner_qq = "default"
     matcher_type_set = {"bp", "structure", "prod_block"}

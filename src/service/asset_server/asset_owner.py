@@ -6,7 +6,7 @@ from ..database_server.model import (Asset as M_Asset,
                                      AssetOwner as M_AssetOwner,
                                      BlueprintAsset as M_BlueprintAsset,
                                      BlueprintAssetCache as M_BlueprintAssetCache)
-from ..database_server.connect import db
+from ..database_server.connect import DatabaseConectManager
 from ..evesso_server.eveesi import (characters_character_assets,
                                     corporations_corporation_assets,
                                     characters_character_id_blueprints,
@@ -104,7 +104,7 @@ class AssetOwner():
 
         logger.info("请求资产。")
         results = get_multipages_result(asset_esi, max_page, ac_token, owner_id)
-
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_Asset.delete().where((M_Asset.asset_type == self.owner_type) & (M_Asset.owner_id == self.owner_id)).execute()
             with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
@@ -125,7 +125,7 @@ class AssetOwner():
 
         logger.info("请求bp资产。")
         results = get_multipages_result(asset_esi, max_page, ac_token, owner_id)
-
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_BlueprintAsset.delete().where((M_BlueprintAsset.owner_type == self.owner_type) &
                                             (M_BlueprintAsset.owner_id == self.owner_id)).execute()

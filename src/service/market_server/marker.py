@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from ..database_server.model import MarketOrder as M_MarketOrder, MarketOrderCache as M_MarketOrderCache
 from ..database_server import model
-from ..database_server.connect import db
+from ..database_server.connect import DatabaseConectManager
 from ..evesso_server.eveesi import markets_region_orders
 from ..evesso_server.eveesi import markets_structures
 from ..evesso_server import eveesi
@@ -56,6 +56,7 @@ class Market:
         # with db.atomic() as txn:
         results = get_multipages_result(markets_structures, max_page, self.access_character.ac_token, FRT_4H_STRUCTURE_ID)
 
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_MarketOrder.delete().where(M_MarketOrder.location_id == FRT_4H_STRUCTURE_ID).execute()
             with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
@@ -79,6 +80,7 @@ class Market:
         #         results.append(result)
         #         count += 1
 
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_MarketOrder.delete().where(M_MarketOrder.location_id == JITA_TRADE_HUB_STRUCTURE_ID).execute()
             with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:

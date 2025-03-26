@@ -1,7 +1,7 @@
 
 from ..database_server.model import MarketPrice as M_MarketPrice, MarketPriceCache as M_MarketPriceCache
 from ..evesso_server.eveesi import markets_prices
-from ..database_server.connect import db
+from ..database_server.connect import DatabaseConectManager
 from ...utils import chunks
 
 # kahuna logger
@@ -11,7 +11,7 @@ class MarketPrice:
     @classmethod
     def refresh_market_price(cls):
         results = markets_prices()
-
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_MarketPrice.delete().execute()
             for chunk in chunks(results, 1000):
@@ -21,6 +21,7 @@ class MarketPrice:
 
     @classmethod
     def copy_to_cache(cls):
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_MarketPriceCache.delete().execute()
             db.execute_sql("INSERT INTO market_price_cache SELECT * FROM market_price")

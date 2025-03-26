@@ -1,7 +1,7 @@
 
 from ..database_server.model import SystemCost as M_SystemCost, SystemCostCache as M_SystemCostCache
 from ..evesso_server.eveesi import industry_systems
-from ..database_server.connect import db
+from ..database_server.connect import DatabaseConectManager
 from ...utils import chunks
 
 # kahuna logger
@@ -20,6 +20,7 @@ class SystemCost:
                 data[cost["activity"]] = cost["cost_index"]
             insert_data.append(data)
 
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_SystemCost.delete().execute()
             for chunk in chunks(insert_data, 1000):
@@ -29,6 +30,7 @@ class SystemCost:
 
     @classmethod
     def copy_to_cache(cls):
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_SystemCostCache.delete().execute()
             db.execute_sql("INSERT INTO system_cost_cache SELECT * FROM system_cost")

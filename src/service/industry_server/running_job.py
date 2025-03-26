@@ -4,7 +4,7 @@ from ..database_server.model import IndustryJobs as M_IndustryJobs, IndustryJobs
 from ..character_server.character import Character
 from ..evesso_server.eveesi import characters_character_id_industry_jobs, corporations_corporation_id_industry_jobs
 from ..evesso_server.eveutils import find_max_page, get_multipages_result
-from ..database_server.connect import db
+from ..database_server.connect import DatabaseConectManager
 
 # kahuna logger
 from ..log_server import logger
@@ -20,6 +20,7 @@ class RunningJobOwner:
             data['location_id'] = data['station_id']
             data.pop('station_id')
             data.update({'owner_id': character.character_id})
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_IndustryJobs.delete().where(M_IndustryJobs.owner_id == character.character_id).execute()
             M_IndustryJobs.insert_many(character_running_job).execute()
@@ -30,7 +31,7 @@ class RunningJobOwner:
                                  begin_page=1, interval=2)
         logger.info("请求刷新进行中job。")
         results = get_multipages_result(corporations_corporation_id_industry_jobs, max_page, character.ac_token, corp_id)
-
+        db = DatabaseConectManager.cache_db()
         with db.atomic():
             M_IndustryJobs.delete().where(M_IndustryJobs.owner_id == corp_id).execute()
             with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
@@ -42,6 +43,7 @@ class RunningJobOwner:
     @classmethod
     def copy_to_cache(cls):
         M_IndustryJobsCache.delete().execute()
+        db = DatabaseConectManager.cache_db()
         db.execute_sql(
             f"INSERT INTO {M_IndustryJobsCache._meta.table_name} SELECT * FROM {M_IndustryJobs._meta.table_name}")
         logger.info("copy data to cache complete")
