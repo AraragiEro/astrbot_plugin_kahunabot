@@ -5,12 +5,14 @@
 Playwright依赖：
 1. 安装Playwright
 ```bash
+# 下载速度慢可以考虑使用加速源 pip install playwright -i https://pypi.tuna.tsinghua.edu.cn/simple
 pip install playwright
+
 ```
 
 2. 安装浏览器依赖
 ```bash
-python -m playwright install
+python -m playwright install chromium
 ```
 
 3. 如果在Linux环境下，可能需要安装额外的系统依赖

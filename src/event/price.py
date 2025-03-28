@@ -31,17 +31,17 @@ ROUGE_PRICE_HELP = ("ojita/ofrt:\n" \
 
 class TypesPriceEvent():
     @staticmethod
-    def ojita_func(event: AstrMessageEvent, require_str: str):
+    async def ojita_func(event: AstrMessageEvent, require_str: str):
         item_name = " ".join(event.get_message_str().split(" ")[1:])
-        return TypesPriceEvent.oprice(event, item_name, "jita")
+        await TypesPriceEvent.oprice(event, item_name, "jita")
 
     @staticmethod
-    def ofrt_func(event: AstrMessageEvent, require_str: str):
+    async def ofrt_func(event: AstrMessageEvent, require_str: str):
         item_name = " ".join(event.get_message_str().split(" ")[1:])
-        return TypesPriceEvent.oprice(event, item_name, "frt")
+        await TypesPriceEvent.oprice(event, item_name, "frt")
 
     @staticmethod
-    def oprice(event: AstrMessageEvent, require_str: str, market: str):
+    async def oprice(event: AstrMessageEvent, require_str: str, market: str):
         message_str = event.get_message_str()
         if message_str.split(" ")[-1].isdigit():
             quantity = int(message_str.split(" ")[-1])
@@ -51,48 +51,6 @@ class TypesPriceEvent():
             quantity = 1
 
         max_buy, mid_price, min_sell, fuzz_list = PriceService.get_price_rouge(item_name, market)
-        if fuzz_list:
-            fuzz_rely = (f"物品 {item_name} 不存在于数据库\n"
-                         f"你是否在寻找：\n")
-            fuzz_rely += '\n'.join(fuzz_list)
-            return event.plain_result(fuzz_rely)
-
-        print_str = (f"{item_name} price in {market}:\n"
-                     f"    min_sell: {min_sell:,}\n"
-                     f"    mid_price: {mid_price:,}\n"
-                     f"    max_buy: {max_buy:,}\n")
-        if quantity > 1:
-            print_str += ("\n"
-                          f"{quantity} x {item_name}:\n"
-                          f"    min_sell: {(min_sell * quantity):,}\n"
-                          f"    mid_price: {(mid_price * quantity):,}\n"
-                          f"    max_buy: {(max_buy * quantity):,}\n")
-
-        return event.plain_result(print_str)
-
-    @staticmethod
-    async def test_func(event: AstrMessageEvent, require_str: str):
-        item_name = " ".join(event.get_message_str().split(" ")[1:])
-        user_qq = kahuna_debug_info(event)
-        market = 'jita'
-
-        max_buy, mid_price, min_sell, fuzz_list = PriceService.get_price_rouge(item_name, market)
-        # if fuzz_list:
-        #     fuzz_rely = (f"物品 {item_name} 不存在于数据库\n"
-        #                  f"你是否在寻找：\n")
-        #     fuzz_rely += '\n'.join(fuzz_list)
-        #     return event.plain_result(fuzz_rely)
-        #
-        # print_str = (f"{item_name} price in {market}:\n"
-        #              f"    min_sell: {min_sell:,}\n"
-        #              f"    mid_price: {mid_price:,}\n"
-        #              f"    max_buy: {max_buy:,}\n")
-        # if quantity > 1:
-        #     print_str += ("\n"
-        #                   f"{quantity} x {item_name}:\n"
-        #                   f"    min_sell: {(min_sell * quantity):,}\n"
-        #                   f"    mid_price: {(mid_price * quantity):,}\n"
-        #                   f"    max_buy: {(max_buy * quantity):,}\n")
         if fuzz_list:
             fuzz_rely = (f"物品 {item_name} 不存在于数据库\n"
                          f"你是否在寻找：\n")
