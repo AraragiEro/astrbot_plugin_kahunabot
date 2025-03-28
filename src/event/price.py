@@ -33,12 +33,12 @@ class TypesPriceEvent():
     @staticmethod
     async def ojita_func(event: AstrMessageEvent, require_str: str):
         item_name = " ".join(event.get_message_str().split(" ")[1:])
-        await TypesPriceEvent.oprice(event, item_name, "jita")
+        return await TypesPriceEvent.oprice(event, item_name, "jita")
 
     @staticmethod
     async def ofrt_func(event: AstrMessageEvent, require_str: str):
         item_name = " ".join(event.get_message_str().split(" ")[1:])
-        await TypesPriceEvent.oprice(event, item_name, "frt")
+        return await TypesPriceEvent.oprice(event, item_name, "frt")
 
     @staticmethod
     async def oprice(event: AstrMessageEvent, require_str: str, market: str):
