@@ -58,14 +58,12 @@ class KahunaBot(Star):
         init_server()
 
         # 延时初始化
-        asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
-
-        # 定时刷新任务
-        asyncio.create_task(refresh_per_min(0, 360, MarketManager.refresh_market))
-        asyncio.create_task(refresh_per_min(0, 10, AssetManager.refresh_all_asset))
-        asyncio.create_task(refresh_per_min(0, 10, IndustryManager.refresh_running_status))
-        asyncio.create_task(refresh_per_min(0, 60, IndustryManager.refresh_system_cost))
-        asyncio.create_task(refresh_per_min(0, 120, IndustryManager.refresh_market_price))
+        # asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
+        # asyncio.create_task(refresh_per_min(0, 360, MarketManager.refresh_market))
+        # asyncio.create_task(refresh_per_min(0, 10, AssetManager.refresh_all_asset))
+        # asyncio.create_task(refresh_per_min(0, 10, IndustryManager.refresh_running_status))
+        # asyncio.create_task(refresh_per_min(0, 60, IndustryManager.refresh_system_cost))
+        # asyncio.create_task(refresh_per_min(0, 120, IndustryManager.refresh_market_price))
 
     # @filter.custom_filter(SelfFilter1)
     @filter.command("helloworld")
@@ -360,9 +358,9 @@ class KahunaBot(Star):
     async def sde_id(self, event: AstrMessageEvent, tid: int):
         yield SdeEvent.type_id(event, tid)
 
-    # @filter.command("test")
-    # async def test(self, event: AstrMessageEvent, require_str: str):
-    #     yield TypesPriceEvent.test_func(event, require_str)
+    @filter.command("test")
+    async def test(self, event: AstrMessageEvent, require_str: str):
+        yield await TypesPriceEvent.test_func(event, require_str)
 
     """ 自然语言指令集 """
     @llm_tool(name='eve_knowlage_bot')

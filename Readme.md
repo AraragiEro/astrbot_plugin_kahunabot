@@ -1,8 +1,23 @@
+
 # 项目处于开发起步阶段，暂不接受pr
 
 # 依赖
-html2image能力：  
-https://wkhtmltopdf.org/
+Playwright依赖：
+1. 安装Playwright
+```bash
+pip install playwright
+```
+
+2. 安装浏览器依赖
+```bash
+python -m playwright install
+```
+
+3. 如果在Linux环境下，可能需要安装额外的系统依赖
+```bash
+python -m playwright install-deps
+```
+
 
 # 常用匹配器与黑名单分类
 ## 建筑

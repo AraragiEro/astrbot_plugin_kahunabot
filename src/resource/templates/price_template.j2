@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>价格信息</title>
+    <style>
+        {{ css_content }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card price-card">
+            <div class="card-content">
+                <div class="card-header">
+                    <div class="title-section">
+                        <h2>{{ item_name }}</h2>
+                        {% if item_image_base64 %}
+                        <img src="data:image/png;base64,{{ item_image_base64 }}" alt="{{ item_name }}图标">
+                        {% else %}
+                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" alt="默认图标">
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="price-info">
+                    <div class="price-row">
+                        <span class="price-label">卖单</span>
+                        <span class="price-value">{{ min_sell }}</span>
+                    </div>
+                    <div class="price-row">
+                        <span class="price-label">买单</span>
+                        <span class="price-value">{{ max_buy }}</span>
+                    </div>
+                    <div class="price-row">
+                        <span class="price-label">中位</span>
+                        <span class="price-value">{{ mid_price }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card chart-card">
+            <div class="chart-container">
+                <span>价格历史开发中...</span>
+{#                {% if price_chart_baser64 %}#}
+{#                <img src="data:image/png;base64,{{ price_chart_baser64 }}" alt="{{ item_name }}价格走势">#}
+{#                {% else %}#}
+{#                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" alt="默认图标">#}
+{#                {% endif %}#}
+            </div>
+            <div class="chart-footer">
+                <p>紫竹梅实验型工业核心mk.1 - kahunaBot</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
