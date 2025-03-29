@@ -9,7 +9,13 @@
 
 _笨笨的kahuna不停的计算自己离买牛角包还有多远_
 
+_一座新的*山拔地而起！_
+
 </dev>
+
+本插件处于早期开发阶段，还有好多好多的bug~
+
+欢迎提issue~
 
 ---
 # ⭐功能展示
@@ -17,7 +23,20 @@ _笨笨的kahuna不停的计算自己离买牛角包还有多远_
 #### 吉他和联盟市场价格查询
 ![吉他和联盟市场价格查询](https://github.com/user-attachments/assets/3ba07ddf-a136-407c-95bd-5850b0b55657)
 
+#### 成本查询
+![成本查询](https://github.com/user-attachments/assets/63ecbd0c-2f91-491a-9ead-693646a81e5a)
 
+#### 工业规划与报表输出
+![工业规划](https://github.com/user-attachments/assets/f23b7873-dbb3-48df-9ee9-4d07ed4dba21)
+
+![报表输出1](https://github.com/user-attachments/assets/9d2f4b57-04a4-4f31-909e-fbb72e86e4fb)
+
+![报表输出2](https://github.com/user-attachments/assets/235c724e-f465-4966-98b8-0dc4cf7acc50)
+
+#### 利润分析
+![利润分析](https://github.com/user-attachments/assets/8b835d57-e093-42c0-896d-bb93579c9935)
+
+👉报表内容丰富，包括任务分解，材料采购，物流清单，工作任务等，一站式解放工业制造的脑力消耗，🫡公司级别提供智能计算服务。
 
 
 # 😇如何部署？
@@ -160,30 +179,11 @@ esi-mail.organize_mail.v1 = true
 ......
 ```
 
-然后启动astrbot即可
+## 关于工业规划如何使用的一份粗略的说明，先凑合用
+[小卡bot初级使用指南](https://conscious-cord-0d1.notion.site/bot-1920b0a9ac1b80998d71c4349b241145)
 
-## 常用匹配器与黑名单分类
-## 建筑
-### markget_group
+# 🌟支持一下
+觉得好用的话，给孩子打点isk呗~ 
 
-- Reaction Materials - 所有反应
-  - Advanced Moon Materials_ - 高反 T2 旗舰
-  - Processed Moon Materials - 低反 T2 旗舰
-  - Molecular-Forged Materials - 分子熔铸 旗舰
-  - Polymer Materials - 聚合物 T3， 旗舰
-  - Booster Materials - 增效剂
-- Components 组件
-  - Advanced Components 高级组件 T2 旗舰 势力
-  - Standard Capital Ship Components 标准旗舰组件旗舰
-  - Advanced Capital Components 高级旗舰组件 T2旗舰
-- R.A.M.
+`ID: Alero AraragiEro`
 
-### meta
-
-- Tech II
-- Tech I
-- Faction
-
-### group
-
-- Fuel Blocks 燃料块
