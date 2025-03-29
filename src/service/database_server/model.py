@@ -292,7 +292,7 @@ class MarketPriceCache(CacheModel):
         table_name = "market_price_cache"
 DatabaseConectManager.add_model(MarketPriceCache)
 
-class MarketHistory(ConfigModel):
+class MarketHistory(CacheModel):
     region_id = IntegerField()
     type_id = IntegerField()
     date = DateTimeField()
