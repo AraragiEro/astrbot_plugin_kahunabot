@@ -1,5 +1,4 @@
 from requests_oauthlib import OAuth2Session
-
 from ..config_server.config import config
 
 # import logger

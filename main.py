@@ -1,26 +1,15 @@
-import json
 import os
 import asyncio
-from urllib.parse import uses_query
-
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
-from astrbot.core.star.filter import HandlerFilter
-from astrbot.core.star.filter.custom_filter import CustomFilter
-from astrbot.core.star.filter.permission import PermissionType
-from astrbot.api import logger, llm_tool
+from astrbot.api import llm_tool
 
 from .src.service import init_server
-from .src.service.database_server.connect import DatabaseConectManager
 from .src.service.character_server.character_manager import CharacterManager
-from .src.service.user_server.user_manager import UserManager
 from .src.service.asset_server.asset_manager import AssetManager
 from .src.service.market_server.market_manager import MarketManager
-from .src.service.industry_server.structure import StructureManager
 from .src.service.industry_server.industry_manager import IndustryManager
-from .src.service.industry_server.industry_config import IndustryConfigManager
 
-from .src.event.utils import kahuna_debug_info
 from .src.event.character import CharacterEvent
 from .src.event.price import TypesPriceEvent
 from .src.event.user import UserEvent
@@ -199,8 +188,17 @@ class KahunaBot(Star):
     @filter.custom_filter(AdminFilter)
     @market.command("reforder")
     async def market_reforder(self, event: AstrMessageEvent):
-        kahuna_debug_info(event)
         yield await MarketEvent.market_reforder(event)
+
+    @filter.custom_filter(AdminFilter)
+    @market.command("set_ac")
+    async def market_set_ac(self, event: AstrMessageEvent):
+        yield await MarketEvent.market_set_ac(event)
+
+    @filter.custom_filter(AdminFilter)
+    @market.command("reinit")
+    async def market_reinit(self, event: AstrMessageEvent):
+        yield await MarketEvent.market_reinit(event)
 
     @filter.custom_filter(VipMemberFilter)
     @filter.command_group("工业", alias={'Inds'})
