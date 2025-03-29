@@ -120,15 +120,15 @@ class DatabaseConectManager():
         except Exception as e:
             logger.error(f"清理 cache 数据库表时出错: {str(e)}")
 
-        try:
-            for db_name, db in cls._connect_dict.items():
-                if not db.is_closed():
-                    # 切换日志模式
-                    db.execute_sql('PRAGMA journal_mode=DELETE;')
-                    # 执行VACUUM
-                    db.execute_sql('VACUUM;')
-                    # 恢复WAL模式
-                    db.execute_sql('PRAGMA journal_mode=WAL;')
-                    logger.info(f"已对 {db_name} 数据库执行VACUUM操作")
-        except Exception as e:
-            logger.error(f"执行VACUUM时出错: {str(e)}")
+        # try:
+        #     for db_name, db in cls._connect_dict.items():
+        #         if not db.is_closed():
+        #             # 切换日志模式
+        #             db.execute_sql('PRAGMA journal_mode=DELETE;')
+        #             # 执行VACUUM
+        #             db.execute_sql('VACUUM;')
+        #             # 恢复WAL模式
+        #             db.execute_sql('PRAGMA journal_mode=WAL;')
+        #             logger.info(f"已对 {db_name} 数据库执行VACUUM操作")
+        # except Exception as e:
+        #     logger.error(f"执行VACUUM时出错: {str(e)}")
