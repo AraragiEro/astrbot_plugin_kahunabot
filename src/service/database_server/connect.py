@@ -27,7 +27,7 @@ class DatabaseConectManager():
         cls.init_config_database()
         cls.init_cache_database()
         cls.create_default_table()
-        cls.clean_table_not_in_list()
+        # cls.clean_table_not_in_list()
 
     @classmethod
     def init_config_database(cls):
