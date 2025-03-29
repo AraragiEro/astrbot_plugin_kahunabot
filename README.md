@@ -1,9 +1,9 @@
 
-<p align="center">
+<div align="center">
 
 ![9213766CB158786A6C4C0291F715FE5F](https://github.com/user-attachments/assets/40c09a45-f898-4167-9315-20df6a1dc59a)
 
-</p>
+</div>
 
 <dev align="center">
 
