@@ -1,7 +1,7 @@
 
 <p align="center">
 
-![9213766CB158786A6C4C0291F715FE5F](https://github.com/user-attachments/assets/98d13492-7e5d-43bd-b3c3-b583699b23f0)
+![9213766CB158786A6C4C0291F715FE5F](https://github.com/user-attachments/assets/40c09a45-f898-4167-9315-20df6a1dc59a)
 
 </p>
 
@@ -9,7 +9,11 @@
 
 _笨笨的kahuna不停的计算自己离买牛角包还有多远_
 
-_一座新的*山拔地而起！_
+_一座新的**X**山拔地而起！_
+
+🥰_爱来自 凛冬联盟群 紫竹梅重工_
+
+![sty](https://github.com/user-attachments/assets/f37a6a06-b925-4836-8561-282720f06506)
 
 </dev>
 
