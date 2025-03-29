@@ -13,7 +13,7 @@ from ..log_server import logger
 
 #import Exception
 from ...utils import KahunaException
-import traceback
+
 class CharacterManager():
     init_status = False
     character_dict: dict = dict()

@@ -1,6 +1,4 @@
-from .data import SCOPE
 from requests_oauthlib import OAuth2Session
-
 from ..config_server.config import config
 
 # import logger
@@ -13,14 +11,12 @@ PROXY = {
     "https": "http://127.0.0.1:7890"
 }
 
-# Define your SSO information
-
 callback_url = LOCAL_HTTP_ADD + '/auth/eve/callback'
 
 oauth = OAuth2Session(
     client_id=config['EVE']['CLIENT_ID'],
     redirect_uri=callback_url,
-    scope=SCOPE
+    scope=[k for k, v in dict(config['ESI']).items() if v == 'true']
 )
 
 def get_auth_url():

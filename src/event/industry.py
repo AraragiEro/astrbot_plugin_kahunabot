@@ -1,12 +1,9 @@
 # import logger
-from peewee import DoesNotExist
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
-from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
-from astrbot.api.star import Context, Star, register
+from astrbot.api.event import AstrMessageEvent
 
 # kahuna model
-from .utils import kahuna_debug_info
 from ..service.asset_server import AssetManager
 from ..service.character_server import CharacterManager
 from ..service.industry_server.industry_analyse import IndustryAnalyser
@@ -609,6 +606,18 @@ class MarketEvent:
 
             res_log = future.result()
             return event.plain_result(res_log)
+
+    @staticmethod
+    async def market_set_ac(event: AstrMessageEvent):
+        character_name = ' '.join(event.get_message_str().split(" ")[2:])
+        character = CharacterManager.get_character_by_name_qq(character_name, int(event.get_sender_id()))
+        MarketManager.set_ac_character(character.character_id)
+        return event.plain_result(f"设置市场访问角色为 {character_name}")
+
+    @staticmethod
+    async def market_reinit(event: AstrMessageEvent):
+        MarketManager.init_market()
+        return event.plain_result("初始化市场完成。")
 
 class SdeEvent():
     @staticmethod

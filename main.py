@@ -1,26 +1,15 @@
-import json
 import os
 import asyncio
-from urllib.parse import uses_query
-
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
-from astrbot.core.star.filter import HandlerFilter
-from astrbot.core.star.filter.custom_filter import CustomFilter
-from astrbot.core.star.filter.permission import PermissionType
-from astrbot.api import logger, llm_tool
+from astrbot.api import llm_tool
 
 from .src.service import init_server
-from .src.service.database_server.connect import DatabaseConectManager
 from .src.service.character_server.character_manager import CharacterManager
-from .src.service.user_server.user_manager import UserManager
 from .src.service.asset_server.asset_manager import AssetManager
 from .src.service.market_server.market_manager import MarketManager
-from .src.service.industry_server.structure import StructureManager
 from .src.service.industry_server.industry_manager import IndustryManager
-from .src.service.industry_server.industry_config import IndustryConfigManager
 
-from .src.event.utils import kahuna_debug_info
 from .src.event.character import CharacterEvent
 from .src.event.price import TypesPriceEvent
 from .src.event.user import UserEvent
@@ -59,8 +48,6 @@ class KahunaBot(Star):
 
         # 延时初始化
         asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
-
-        # 定时刷新任务
         asyncio.create_task(refresh_per_min(0, 360, MarketManager.refresh_market))
         asyncio.create_task(refresh_per_min(0, 10, AssetManager.refresh_all_asset))
         asyncio.create_task(refresh_per_min(0, 10, IndustryManager.refresh_running_status))
@@ -97,12 +84,12 @@ class KahunaBot(Star):
     @filter.command("ojita")
     async def ojita(self, event: AstrMessageEvent, require_str: str):
         ''' 这是一个查询jita市场价格的插件 '''
-        yield TypesPriceEvent.ojita_func(event, require_str)
+        yield await TypesPriceEvent.ojita_func(event, require_str)
 
     @filter.command("ofrt")
     async def ofrt(self, event: AstrMessageEvent, require_str: str):
         ''' 这是一个查询jita市场价格的插件 '''
-        yield TypesPriceEvent.ofrt_func(event, require_str)
+        yield await TypesPriceEvent.ofrt_func(event, require_str)
 
     @filter.custom_filter(AdminFilter)
     @filter.command_group("user")
@@ -201,8 +188,17 @@ class KahunaBot(Star):
     @filter.custom_filter(AdminFilter)
     @market.command("reforder")
     async def market_reforder(self, event: AstrMessageEvent):
-        kahuna_debug_info(event)
         yield await MarketEvent.market_reforder(event)
+
+    @filter.custom_filter(AdminFilter)
+    @market.command("set_ac")
+    async def market_set_ac(self, event: AstrMessageEvent):
+        yield await MarketEvent.market_set_ac(event)
+
+    @filter.custom_filter(AdminFilter)
+    @market.command("reinit")
+    async def market_reinit(self, event: AstrMessageEvent):
+        yield await MarketEvent.market_reinit(event)
 
     @filter.custom_filter(VipMemberFilter)
     @filter.command_group("工业", alias={'Inds'})
@@ -360,9 +356,9 @@ class KahunaBot(Star):
     async def sde_id(self, event: AstrMessageEvent, tid: int):
         yield SdeEvent.type_id(event, tid)
 
-    # @filter.command("test")
-    # async def test(self, event: AstrMessageEvent, require_str: str):
-    #     yield TypesPriceEvent.test_func(event, require_str)
+    @filter.command("test")
+    async def test(self, event: AstrMessageEvent, require_str: str):
+        yield await TypesPriceEvent.test_func(event, require_str)
 
     """ 自然语言指令集 """
     @llm_tool(name='eve_knowlage_bot')

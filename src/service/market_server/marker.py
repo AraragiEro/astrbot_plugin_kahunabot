@@ -48,6 +48,12 @@ class Market:
         if self.market_type == "frt":
             self.get_frt_order()
 
+    def check_structure_access(self):
+        res = eveesi.markets_structures(1, self.access_character.ac_token, FRT_4H_STRUCTURE_ID)
+        if not res:
+            return False
+        return True
+
     def get_frt_order(self):
         if not self.access_character:
             return

@@ -8,7 +8,9 @@ from ..database_server.model import MarketOrderCache
 from ..database_server.connect import DatabaseConectManager
 from .marker import Market
 from ..character_server.character_manager import CharacterManager
-from ..config_server.config import config
+from ..config_server.config import config, update_config
+#import Exception
+from ...utils import KahunaException
 
 # kahuna logger
 from ..log_server import logger
@@ -31,13 +33,25 @@ class MarketManager():
             jita_market = Market("jita")
 
             # TODO 市场权限角色替换
-            ac_character_id = int(config['EVE']['MARKET_AC_CHARACTER_ID'])
-            frt_market.access_character = CharacterManager.get_character_by_id(ac_character_id)
+            try:
+                ac_character_id = int(config['EVE']['MARKET_AC_CHARACTER_ID'])
+                frt_market.access_character = CharacterManager.get_character_by_id(ac_character_id)
+            except:
+                logger.error(f"market access character init error")
+                return
 
             cls.market_dict["jita"] = jita_market
             cls.market_dict["frt"] = frt_market
         cls.init_status = True
         logger.info(f"init market complete. {id(cls)}")
+
+    @classmethod
+    def set_ac_character(cls, ac_character_id: int):
+        frt_market = Market("frt")
+        frt_market.access_character = CharacterManager.get_character_by_id(ac_character_id)
+        if not frt_market.check_structure_access():
+            raise KahunaException("获取市场数据失败，检查角色名或权限。")
+        update_config("EVE", "MARKET_AC_CHARACTER_ID", ac_character_id)
 
     @classmethod
     def copy_to_cache(cls):
