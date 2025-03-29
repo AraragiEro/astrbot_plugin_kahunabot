@@ -5,7 +5,7 @@
 
 </div>
 
-<dev align="center">
+<div align="center">
 
 _笨笨的kahuna不停的计算自己离买牛角包还有多远_
 
@@ -15,7 +15,7 @@ _一座新的**X**山拔地而起！_
 
 ![sty](https://github.com/user-attachments/assets/f37a6a06-b925-4836-8561-282720f06506)
 
-</dev>
+</div>
 
 本插件处于早期开发阶段，还有好多好多的bug~
 
