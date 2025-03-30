@@ -246,7 +246,7 @@ class PriceResRender():
                 page = await browser.new_page(viewport={'width': width, 'height': height})
 
                 # 设置HTML内容
-                await page.set_content(html_content)
+                await page.set_content(html_content, timeout=60000)
 
                 # 等待内容渲染完成
                 await page.wait_for_timeout(wait_time)
