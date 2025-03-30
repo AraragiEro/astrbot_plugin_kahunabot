@@ -305,19 +305,52 @@ class PriceResRender():
         if os.path.exists(local_path):
             return local_path
 
+        # 尝试从主URL下载
         try:
-            # 下载图片
-            response = requests.get(url)
+            # 下载图片，禁用SSL验证
+            response = requests.get(url, verify=False, timeout=10)
             response.raise_for_status()  # 检查请求是否成功
 
             # 保存图片
             with open(local_path, 'wb') as f:
                 f.write(response.content)
 
+            logger.info(f"成功下载物品图片: {type_id}")
             return local_path
         except Exception as e:
-            logger.error(f"下载EVE物品图片失败: {e}")
-            return None
+            logger.error(f"从主URL下载EVE物品图片失败: {e}")
+            
+            # 尝试备用URL
+            try:
+                # 备用URL
+                backup_url = f"https://imageserver.eveonline.com/Type/{type_id}_{size}.png"
+                logger.info(f"尝试从备用URL下载: {backup_url}")
+                
+                response = requests.get(backup_url, verify=False, timeout=10)
+                response.raise_for_status()
+                
+                with open(local_path, 'wb') as f:
+                    f.write(response.content)
+                
+                logger.info(f"从备用URL成功下载物品图片: {type_id}")
+                return local_path
+            except Exception as backup_e:
+                logger.error(f"从备用URL下载EVE物品图片也失败: {backup_e}")
+                
+                # 如果两个URL都失败，返回默认图片路径
+                default_image = os.path.join(resource_path, "img", "default_item.png")
+                
+                # 如果默认图片不存在，创建一个简单的默认图片
+                if not os.path.exists(default_image):
+                    try:
+                        # 创建一个简单的1x1像素透明PNG
+                        with open(default_image, 'wb') as f:
+                            f.write(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="))
+                    except Exception:
+                        logger.error("无法创建默认图片")
+                        return None
+                
+                return default_image
 
     @classmethod
     def get_image_base64(cls, image_path: str) -> str:
