@@ -2,6 +2,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
 from astrbot.api.event import AstrMessageEvent
+from astrbot.api.message_components import Image, BaseMessageComponent, Plain
 
 # kahuna model
 from ..service.asset_server import AssetManager
@@ -9,7 +10,7 @@ from ..service.character_server import CharacterManager
 from ..service.industry_server.industry_analyse import IndustryAnalyser
 from ..service.user_server.user_manager import UserManager
 from ..service.evesso_server.eveesi import characters_character
-from ..service.market_server import MarketManager
+from ..service.market_server import MarketManager, PriceService
 from ..service.market_server.marker import MarketHistory
 from ..service.asset_server.asset_container import AssetContainer
 from ..service.industry_server.industry_config import IndustryConfigManager, BPManager
@@ -19,6 +20,7 @@ from ..service.industry_server.industry_advice import IndustryAdvice
 from ..service.sde_service.utils import SdeUtils
 from ..service.feishu_server.feishu_kahuna import FeiShuKahuna
 from ..service.log_server import logger
+from ..service.picture_render_server.picture_render import PriceResRender
 
 # import Exception
 from ..utils import KahunaException
@@ -577,17 +579,18 @@ class IndsEvent:
         detail_dict.update({'name': SdeUtils.get_name_by_id(type_id), 'cn_name': SdeUtils.get_cn_name_by_id(type_id)})
         spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
         cost_sheet = FeiShuKahuna.get_detail_cost_sheet(spreadsheet)
-        FeiShuKahuna.output_cost_detail_sheet(cost_sheet, detail_dict)
+        # FeiShuKahuna.output_cost_detail_sheet(cost_sheet, detail_dict)
 
-        res_str = (f"ID：{type_id}\n"
-                   f"name： {SdeUtils.get_name_by_id(type_id)}\n"
-                   f"zh_name：{SdeUtils.get_cn_name_by_id(type_id)}\n"
-                   f"{product} 成本：{detail_dict['total_cost']:,}\n"
-                   f"吉他价格：\n"
-                   f"   sell：{detail_dict['jita_price'][1]:,}\n"
-                   f"   buy：{detail_dict['jita_price'][0]:,}\n"
-                   f"详情:{cost_sheet.url}")
-        return event.plain_result(res_str)
+        detail_dict["type_id"] = type_id
+        detail_dict["market_detail"] = PriceService.get_price_rouge(product, 'jita')
+
+        pic_path = await PriceResRender.render_single_cost_pic(detail_dict)
+
+        chain = [
+            Image.fromFileSystem(pic_path),
+            Plain(f"详情报表:{cost_sheet.url}")
+        ]
+        return event.chain_result(chain)
 
     @staticmethod
     def refjobs(event: AstrMessageEvent):

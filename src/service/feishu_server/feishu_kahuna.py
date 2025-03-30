@@ -190,7 +190,7 @@ class FeiShuKahuna:
         # 输出原料type细分
         material_dict = detail_dict['material']
         eiv_data = detail_dict['eiv']
-        type_cost_detail = ['总成本', detail_dict['total_cost']]
+        type_cost_detail = ['总成本', detail_dict['total_cost'], '', '', '']
         type_cost_head = ['id', detail_dict['name'], detail_dict['cn_name'], '成本', '占比']
         type_cost_list = [[tid, SdeUtils.get_name_by_id(tid), SdeUtils.get_cn_name_by_id(tid)] + data
                           for tid, data in material_dict.items()]
