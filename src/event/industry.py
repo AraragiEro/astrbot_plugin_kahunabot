@@ -627,13 +627,14 @@ class SdeEvent():
 
         type_id = SdeUtils.get_id_by_name(type_name)
         if type_id:
+            market_tree_str = '\n  ↓\n'.join(SdeUtils.get_market_group_list(type_id))
             print_str = (f"enname: {SdeUtils.get_name_by_id(type_id)}\n"
                          f"zhname: {SdeUtils.get_cn_name_by_id(type_id)}\n"
                          f"type_id: {type_id}\n"
                          f"group: {SdeUtils.get_groupname_by_id(type_id)}\n"
                          f"category: {SdeUtils.get_category_by_id(type_id)}\n"
                          f"meta: {SdeUtils.get_metaname_by_typeid(type_id)}\n"
-                         f"market_tree: \n{'\n  ↓\n'.join(SdeUtils.get_market_group_list(type_id))}\n")
+                         f"market_tree: \n{market_tree_str}\n")
             return event.plain_result(print_str)
         else:
             fuzz_list = SdeUtils.fuzz_type(type_name)
