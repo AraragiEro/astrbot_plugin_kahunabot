@@ -241,13 +241,25 @@ class PriceResRender():
             async with async_playwright() as p:
                 # 启动浏览器，添加参数以确保JavaScript正常执行
                 browser = await p.chromium.launch(
-                    args=['--disable-web-security', '--allow-file-access-from-files']
+                    args=['--disable-web-security', '--allow-file-access-from-files', '--no-sandbox']
                 )
-                page = await browser.new_page(viewport={'width': width, 'height': height})
-
-                # 设置HTML内容
-                await page.set_content(html_content, timeout=60000)
-
+                
+                # 创建上下文并设置更宽松的超时策略
+                context = await browser.new_context(
+                    viewport={'width': width, 'height': height},
+                    bypass_csp=True  # 绕过内容安全策略
+                )
+                
+                # 创建页面
+                page = await context.new_page()
+                
+                # 直接注入HTML内容，而不是使用set_content
+                await page.evaluate(f"""
+                    document.open();
+                    document.write(`{html_content.replace('`', '\\`')}`);
+                    document.close();
+                """)
+                
                 # 等待内容渲染完成
                 await page.wait_for_timeout(wait_time)
                 
@@ -260,7 +272,6 @@ class PriceResRender():
                     await page.wait_for_timeout(2000)
                 except Exception as e:
                     logger.warning(f"等待图表元素超时: {e}")
-
 
                 # 使用全页面截图而不是裁剪
                 await page.screenshot(
@@ -275,7 +286,53 @@ class PriceResRender():
             logger.error(f"生成图片失败: {e}")
             import traceback
             logger.error(traceback.format_exc())  # 打印完整堆栈跟踪
-            return None
+            
+            # 尝试使用备用方法生成图片
+            try:
+                logger.info("尝试使用备用方法生成图片...")
+                # 将HTML内容保存到临时文件
+                html_file_path = os.path.join(tmp_path, "temp_render.html")
+                with open(html_file_path, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+                
+                # 使用简化的HTML内容重试
+                simplified_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="UTF-8">
+                  <title>简化版本</title>
+                  <style>
+                    body {{ font-family: Arial, sans-serif; padding: 20px; }}
+                    .container {{ max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
+                    .header {{ font-size: 24px; font-weight: bold; margin-bottom: 10px; }}
+                    .info {{ margin-bottom: 20px; }}
+                    .price {{ font-size: 18px; margin-bottom: 5px; }}
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <div class="header">物品信息</div>
+                    <div class="info">
+                      <p>无法生成完整图片，请查看HTML文件: {html_file_path}</p>
+                    </div>
+                  </div>
+                </body>
+                </html>
+                """
+                
+                async with async_playwright() as p:
+                    browser = await p.chromium.launch()
+                    page = await browser.new_page(viewport={'width': 550, 'height': 300})
+                    await page.set_content(simplified_html)
+                    await page.screenshot(path=output_path)
+                    await browser.close()
+                    
+                logger.info(f"已生成简化版图片: {output_path}")
+                return output_path
+            except Exception as backup_e:
+                logger.error(f"备用方法也失败: {backup_e}")
+                return None
 
     @classmethod
     def get_eve_item_icon_base64(cls, type_id: int):
