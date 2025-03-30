@@ -9,6 +9,7 @@ import math
 from cachetools import TTLCache
 from tqdm import tqdm
 from queue import Queue
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from .running_job import RunningJobOwner
 from .structure import StructureManager
@@ -1104,6 +1105,9 @@ class IndustryAnalyser():
 
     @classmethod
     def signal_async_progress_work_type(cls, user, plan_name, plan_list):
+        from .. import init_server, init_flag
+        if not init_flag:
+            init_server(log=False)
         analyser = cls.create_analyser_by_plan(user, plan_name)
         analyser.bp_block_level = 1
         material_dict = analyser.analyse_progress_work_type(plan_list)
@@ -1123,21 +1127,33 @@ class IndustryAnalyser():
         # return analyser, plan_list
 
     @classmethod
-    def get_cost_data(cls, user, plan_name: str, plan_list):
+    def get_cost_data(cls, user, plan_name: str, plan_list, batch_size=None):
         """ 计算planlist中的材料成本，用于批量计算 """
-        # analyser = cls.create_analyser_by_plan(user, plan_name)
-        from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count() * 4) as executor:
-            futures = [executor.submit(cls.signal_async_progress_work_type, user, plan_name, [plan])
-                       for plan in plan_list]
-            cost_dict = dict()
-        # for plan in plan_list:
-            # analyser.analyse_progress_work_type([plan])
-            with tqdm(total=len(futures), desc="成本计算", unit="个", ascii='=-') as pbar:
-                for future in futures:
-                    result = future.result()
-                    cost_dict[result[0]] = result[1:]
-                    pbar.update()
+        def chunks(lst, n):
+            """按指定大小将列表分块"""
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
+
+        cpu_count = multiprocessing.cpu_count()
+        # 如果没有指定batch_size，根据CPU数量和列表长度计算合适的批次大小
+        if batch_size is None:
+            batch_size = max(2, cpu_count - 1)
+        logger.info(f'get_cost_data: batch_size = {batch_size}')
+        cost_dict = dict()
+        total_plans = len(plan_list)
+
+        with tqdm(total=total_plans, desc="成本计算", unit="个", ascii='=-') as pbar:
+            for batch in chunks(plan_list, batch_size):
+                with ProcessPoolExecutor(max_workers=cpu_count) as executor:
+                    futures = [
+                        executor.submit(cls.signal_async_progress_work_type, user, plan_name, [plan])
+                        for plan in batch
+                    ]
+
+                    for future in futures:
+                        result = future.result()
+                        cost_dict[result[0]] = result[1:]
+                        pbar.update()
 
         return cost_dict
 

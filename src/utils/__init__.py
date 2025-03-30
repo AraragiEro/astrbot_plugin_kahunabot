@@ -38,6 +38,20 @@ async def refresh_per_min(start_delay, interval, func):
                 await asyncio.sleep(5)
             await asyncio.sleep(interval * 60)
 
+class classproperty(property):
+    def __get__(self, instance, cls):
+        return self.fget(cls)
+
+
+class ClassPropertyMetaclass(type):
+    def __setattr__(self, key, value):
+        if key in self.__dict__:
+            obj = self.__dict__.get(key)
+            if type(obj) is classproperty:
+                return obj.__set__(self, value)
+        return super().__setattr__(key, value)
+
+
 # from .deepseek_tokenizer import tokenizer
 # def get_chat_token_count(input: str):
 #     result = tokenizer.encode(input)
