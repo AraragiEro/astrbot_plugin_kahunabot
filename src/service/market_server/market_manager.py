@@ -32,7 +32,6 @@ class MarketManager():
             frt_market = Market("frt")
             jita_market = Market("jita")
 
-            # TODO 市场权限角色替换
             try:
                 ac_character_id = int(config['EVE']['MARKET_AC_CHARACTER_ID'])
                 frt_market.access_character = CharacterManager.get_character_by_id(ac_character_id)
