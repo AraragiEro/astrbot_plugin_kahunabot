@@ -254,9 +254,10 @@ class PriceResRender():
                 page = await context.new_page()
                 
                 # 直接注入HTML内容，而不是使用set_content
+                html_content.replace('`', '\\`')
                 await page.evaluate(f"""
                     document.open();
-                    document.write(`{html_content.replace('`', '\\`')}`);
+                    document.write(`{html_content}`);
                     document.close();
                 """)
                 
