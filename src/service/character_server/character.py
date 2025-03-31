@@ -84,7 +84,7 @@ class Character(BaseModel):
             current = current + timedelta(hours=8)
 
         # 添加15分钟缓冲并移除时区信息
-        now = (current + timedelta(minutes=15)).replace(tzinfo=None)
+        now = (current + timedelta(minutes=5)).replace(tzinfo=None)
 
         logger.debug(f"check if {expire_time} > {now} = {expire_time > now}")
         return expire_time > now
