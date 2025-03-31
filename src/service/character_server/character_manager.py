@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import re
 from peewee import DoesNotExist
 from concurrent.futures import ThreadPoolExecutor
 from playhouse.shortcuts import model_to_dict
@@ -96,6 +97,15 @@ class CharacterManager():
         return False
 
     @classmethod
+    def parse_iso_datetime(cls, dt_string):
+        try:
+            # 移除所有时区相关信息
+            dt_string = re.sub(r'[+-]\d{2}:?\d{2}$|Z$', '', dt_string)
+            return datetime.fromisoformat(dt_string)
+        except ValueError as e:
+            raise ValueError(f"无法解析时间字符串 '{dt_string}': {str(e)}")
+
+    @classmethod
     def create_new_character(cls, token_data, user_qq):
         character_verify_data = verify_token(token_data[0])
         if not character_verify_data:
@@ -105,7 +115,7 @@ class CharacterManager():
         character_data = characters_character(character_id)
         corp_id = character_data['corporation_id']
         character_name = character_verify_data['CharacterName']
-        expires_time = datetime.fromisoformat(character_verify_data["ExpiresOn"].rstrip('Z'))
+        expires_time = cls.parse_iso_datetime(character_verify_data["ExpiresOn"])
         expires_time = expires_time.astimezone(timezone(timedelta(hours=+8), 'Shanghai'))
         # try:
         #     character = M_Character.get(M_Character.character_id == character_id)
