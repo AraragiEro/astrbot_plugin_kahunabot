@@ -74,7 +74,10 @@ class Character(BaseModel):
 
     @property
     def token_avaliable(self):
-        return self.expires_date.replace(tzinfo=None) > (datetime.now().replace(tzinfo=None) + timedelta(minutes=10))
+        expire_time = self.expires_date.replace(tzinfo=None)
+        now = (datetime.now().replace(tzinfo=None) + timedelta(minutes=15))
+        logger.debug(f"check if {expire_time} > {now} = {expire_time > now}")
+        return expire_time > now
 
     @property
     def info(self):
