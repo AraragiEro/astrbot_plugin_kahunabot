@@ -23,8 +23,8 @@ config.read(config_path)
 # db_config = dict(config['Database'])
 # print(db_config)  # 输出：{'host': 'localhost', 'port': '5432', 'user': 'admin', 'password': 'secret'}
 
-logger.info("Config server loaded.")
-logger.info(f"database type: {config['APP']['DBTYPE']}")
+# logger.debug("Config server loaded.")
+# logger.debug(f"database type: {config['APP']['DBTYPE']}")
 
 def update_config(section, key, value):
     filename = config_path

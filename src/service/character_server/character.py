@@ -74,7 +74,20 @@ class Character(BaseModel):
 
     @property
     def token_avaliable(self):
-        return self.expires_date.replace(tzinfo=None) > (datetime.now().replace(tzinfo=None) + timedelta(minutes=10))
+        expire_time = self.expires_date.replace(tzinfo=None)
+        # 获取当前时间
+        current = datetime.now()
+
+        # 检查是否为UTC时间（通过检查系统时区）
+        if current.astimezone().utcoffset().total_seconds() == 0:  # 如果是UTC时区
+            # 转换为北京时间 (UTC+8)
+            current = current + timedelta(hours=8)
+
+        # 添加15分钟缓冲并移除时区信息
+        now = (current + timedelta(minutes=5)).replace(tzinfo=None)
+
+        logger.debug(f"check if {expire_time} > {now} = {expire_time > now}")
+        return expire_time > now
 
     @property
     def info(self):

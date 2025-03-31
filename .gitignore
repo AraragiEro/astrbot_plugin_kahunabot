@@ -4,3 +4,7 @@
 tmp
 *.zip
 *.sqlite
+*.png
+*.db-wal
+config.ini
+*.sql

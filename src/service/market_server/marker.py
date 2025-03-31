@@ -161,18 +161,7 @@ class Market:
 class MarketHistory:
     @classmethod
     async def refresh_market_history(cls, type_id_list: list):
-        # type_id_list = SdeUtils.get_all_type_id_in_market()
-
-        # with ThreadPoolExecutor(max_workers=100) as executor:
-        #     with tqdm(total=len(type_id_list), desc="刷新forge市场历史", unit="page") as pbar:
-        #         futures = []
-        #         for type_id in type_id_list:
-        #             futures.append(executor.submit(cls.refresh_type_history_in_region, type_id, REGION_FORGE_ID))
-        #             await asyncio.sleep(0.05)
-        #             pbar.update()
-        #         for future in futures:
-        #             future.result()
-
+        logger.info(f'刷新t2常规历史订单信息')
         with ThreadPoolExecutor(max_workers=100) as executor:
             with tqdm(total=len(type_id_list), desc="刷新vale市场历史", unit="page", ascii='=-') as pbar:
                 futures = []

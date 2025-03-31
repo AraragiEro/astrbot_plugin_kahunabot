@@ -78,14 +78,21 @@ kahunabot/
 │   │   ├── css/           # 样式文件
 │   │   ├── img/           # 图片资源
 │   │   └── templates/     # 模板文件
-│   ├── rule_checker/      # 规则检查模块
+│   ├── rule_checker/      # 规则检查模块[废弃]
 │   ├── service/           # 服务模块
 │   │   ├── asset_server/  # 资产服务
-│   │   ├── chat_server/   # 聊天服务
+│   │   ├── character_server/  # 角色管理服务
+│   │   ├── config_server/  # 配置管理服务
+│   │   ├── database_server/  # 数据库服务
+│   │   ├── eveeso_server/  # eve api管理服务
+│   │   ├── feishu_server/  # 飞书api管理服务
+│   │   ├── industry_server/  # 工业计算服务
+│   │   ├── log_server/  # 日志服务
 │   │   ├── market_server/ # 市场服务
-│   │   └── sde_service/   # SDE数据服务
+│   │   ├── sde_service/   # SDE数据服务
+│   │   └── user_server/   # 用户管理模块
 │   └── utils/             # 工具模块
-├── data/                   # 数据目录
+├── data/                   # 数据库存放目录，可选用
 ├── config.ini.example     # 配置文件
 ├── main.py                # 插件入口
 ├── filter.py              # 权限过滤器
