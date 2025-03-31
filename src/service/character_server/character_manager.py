@@ -105,7 +105,7 @@ class CharacterManager():
         character_data = characters_character(character_id)
         corp_id = character_data['corporation_id']
         character_name = character_verify_data['CharacterName']
-        expires_time = datetime.fromisoformat(character_verify_data["ExpiresOn"] + "Z")
+        expires_time = datetime.fromisoformat(character_verify_data["ExpiresOn"].rstrip('Z'))
         expires_time = expires_time.astimezone(timezone(timedelta(hours=+8), 'Shanghai'))
         # try:
         #     character = M_Character.get(M_Character.character_id == character_id)
