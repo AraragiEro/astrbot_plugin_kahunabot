@@ -252,14 +252,8 @@ class PriceResRender():
                 
                 # 创建页面
                 page = await context.new_page()
-                
-                # 直接注入HTML内容，而不是使用set_content
-                html_content.replace('`', '\\`')
-                await page.evaluate(f"""
-                    document.open();
-                    document.write(`{html_content}`);
-                    document.close();
-                """)
+
+                await page.set_content(html_content)
                 
                 # 等待内容渲染完成
                 await page.wait_for_timeout(wait_time)
