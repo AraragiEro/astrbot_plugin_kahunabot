@@ -1,5 +1,7 @@
 [APP]
 DBTYPE = sqlite
+COST_PLAN_USER =
+COST_PLAN_NAME =
 
 [FEISHU]
 APP_ID = MyApp

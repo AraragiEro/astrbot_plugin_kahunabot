@@ -21,9 +21,21 @@ from ..service.sde_service.utils import SdeUtils
 from ..service.feishu_server.feishu_kahuna import FeiShuKahuna
 from ..service.log_server import logger
 from ..service.picture_render_server.picture_render import PriceResRender
+from ..service.config_server.config import config
 
 # import Exception
 from ..utils import KahunaException
+
+calculate_lock = asyncio.Lock()
+async def try_acquire_lock(lock, timeout=0.01):
+    """尝试非阻塞地获取锁"""
+    try:
+        await asyncio.wait_for(lock.acquire(), timeout=timeout)
+        return True
+    except asyncio.TimeoutError:
+        return False
+
+
 
 def print_name_fuzz_list(event: AstrMessageEvent, type_name: str):
     fuzz_list = SdeUtils.fuzz_type(type_name, list_len=10)
@@ -566,31 +578,44 @@ class IndsEvent:
         return event.plain_result(f"执行完成, 当前计划条件旗舰成本:{cost_sheet.url}")
 
     @staticmethod
-    async def rp_costdetail(event: AstrMessageEvent, plan_name: str, product: str):
-        user_qq = int(event.get_sender_id())
-        user = UserManager.get_user(user_qq)
-        if plan_name not in user.user_data.plan:
-            raise KahunaException(f"plan {plan_name} not exist")
-        product = ' '.join(event.get_message_str().split(" ")[4:])
-        if (type_id := SdeUtils.get_id_by_name(product)) is None:
-            return print_name_fuzz_list(event, product)
+    async def rp_costdetail(event: AstrMessageEvent, plan_name: str, product: str, public= False):
+        if await try_acquire_lock(calculate_lock, 1):
+            try:
+                if public:
+                    user_qq = int(config['APP']['COST_PLAN_USER'])
+                    plan_name = config['APP']['COST_PLAN_NAME']
+                    product = ' '.join(event.get_message_str().split(" ")[1:])
+                else:
+                    user_qq = int(event.get_sender_id())
+                    product = ' '.join(event.get_message_str().split(" ")[4:])
 
-        detail_dict = IndustryAnalyser.get_cost_detail(user, plan_name, product)
-        detail_dict.update({'name': SdeUtils.get_name_by_id(type_id), 'cn_name': SdeUtils.get_cn_name_by_id(type_id)})
-        spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
-        cost_sheet = FeiShuKahuna.get_detail_cost_sheet(spreadsheet)
-        # FeiShuKahuna.output_cost_detail_sheet(cost_sheet, detail_dict)
+                user = UserManager.get_user(user_qq)
+                if plan_name not in user.user_data.plan:
+                    raise KahunaException(f"plan {plan_name} not exist")
 
-        detail_dict["type_id"] = type_id
-        detail_dict["market_detail"] = PriceService.get_price_rouge(product, 'jita')
+                if (type_id := SdeUtils.get_id_by_name(product)) is None:
+                    return print_name_fuzz_list(event, product)
 
-        pic_path = await PriceResRender.render_single_cost_pic(detail_dict)
+                detail_dict = IndustryAnalyser.get_cost_detail(user, plan_name, product)
+                detail_dict.update({'name': SdeUtils.get_name_by_id(type_id), 'cn_name': SdeUtils.get_cn_name_by_id(type_id)})
+                spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
+                cost_sheet = FeiShuKahuna.get_detail_cost_sheet(spreadsheet)
+                # FeiShuKahuna.output_cost_detail_sheet(cost_sheet, detail_dict)
 
-        chain = [
-            Image.fromFileSystem(pic_path),
-            Plain(f"详情报表:{cost_sheet.url}")
-        ]
-        return event.chain_result(chain)
+                detail_dict["type_id"] = type_id
+                detail_dict["market_detail"] = PriceService.get_price_rouge(product, 'jita')
+
+                pic_path = await PriceResRender.render_single_cost_pic(detail_dict)
+
+                chain = [
+                    Image.fromFileSystem(pic_path),
+                    Plain(f"详情报表:{cost_sheet.url}")
+                ]
+                return event.chain_result(chain)
+            finally:
+                calculate_lock.release()
+        else:
+            return event.plain_result("已有成本计算进行中，请稍候再试。")
 
     @staticmethod
     def refjobs(event: AstrMessageEvent):
