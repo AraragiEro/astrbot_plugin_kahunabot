@@ -262,9 +262,6 @@ class PriceResRender():
                 try:
                     await page.wait_for_selector('#costChart', state='attached', timeout=3000)
                     logger.info("图表元素已找到")
-                    
-                    # 额外等待图表渲染完成
-                    await page.wait_for_timeout(2000)
                 except Exception as e:
                     logger.warning(f"等待图表元素超时: {e}")
 
