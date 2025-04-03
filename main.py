@@ -1,8 +1,6 @@
 import os
 import asyncio
 
-from setuptools.command.alias import alias
-
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import llm_tool
