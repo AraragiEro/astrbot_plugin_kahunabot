@@ -27,7 +27,8 @@ class PriceResRender():
             os.makedirs(tmp_path)
 
     @classmethod
-    async def render_price_res_pic(cls, item_name: str, price_data: list):
+    async def render_price_res_pic(cls, item_name: str, price_data: list, history_data: list):
+        # 准备实时价格数据
         max_buy, mid_price, min_sell, fuzz_list = price_data
 
         cls.check_tmp_dir()
@@ -38,40 +39,21 @@ class PriceResRender():
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
 
-        # 读取CSS内容
-        try:
-            with open(os.path.join(css_path, "price_style.css"), 'r', encoding='utf-8') as f:
-                price_css_content = f.read()
-
-            with open(os.path.join(css_path, "fuzz_style.css"), 'r', encoding='utf-8') as f:
-                fuzz_css_content = f.read()
-        except FileNotFoundError as e:
-            logger.error(f"CSS文件不存在: {e}")
-            logger.error(f"请确保CSS文件已放置在 {css_path} 目录下")
-            return None
-
         # 根据是否有模糊匹配结果选择模板
         try:
-            if fuzz_list:
-                template = env.get_template('fuzz_template.j2')
-                html_content = template.render(
-                    fuzz_list=fuzz_list,
-                    css_content=fuzz_css_content
-                )
-            else:
-                # 下载并转换物品图片
-                item_image_path = cls.download_eve_item_image(SdeUtils.get_id_by_name(item_name))  # 这里的ID需要根据实际物品ID修改
-                item_image_base64 = cls.get_image_base64(item_image_path) if item_image_path else None
+            # 下载并转换物品图片
+            item_image_path = cls.download_eve_item_image(SdeUtils.get_id_by_name(item_name))  # 这里的ID需要根据实际物品ID修改
+            item_image_base64 = cls.get_image_base64(item_image_path) if item_image_path else None
 
-                template = env.get_template('price_template.j2')
-                html_content = template.render(
-                    item_name=item_name,
-                    max_buy=f"{max_buy:,.2f}",
-                    mid_price=f"{mid_price:,.2f}",
-                    min_sell=f"{min_sell:,.2f}",
-                    css_content=price_css_content,
-                    item_image_base64=item_image_base64
-                )
+            template = env.get_template('price_template.j2')
+            html_content = template.render(
+                item_name=item_name,
+                max_buy=f"{max_buy:,.2f}",
+                mid_price=f"{mid_price:,.2f}",
+                min_sell=f"{min_sell:,.2f}",
+                item_image_base64=item_image_base64,
+                price_history=history_data  # 添加这一行，格式为 [[date, price], ...]
+            )
         except jinja2.exceptions.TemplateNotFound as e:
             logger.error(f"模板文件不存在: {e}")
             logger.error(f"请确保模板文件已放置在 {template_path} 目录下")
@@ -80,38 +62,12 @@ class PriceResRender():
         # 生成输出路径
         output_path = os.path.abspath(os.path.join((tmp_path), "price_res.jpg"))
 
-        # 使用异步API生成图片
-        try:
-            async with async_playwright() as p:
-                # 启动浏览器
-                browser = await p.chromium.launch()
-                page = await browser.new_page(viewport={'width': 200, 'height': 600})
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=5000)
 
-                # 设置HTML内容
-                await page.set_content(html_content)
-
-                # 等待内容渲染完成
-                await page.wait_for_timeout(1000)
-
-                # 获取实际内容高度
-                body_height = await page.evaluate('document.body.scrollHeight')
-                body_width = await page.evaluate('document.body.scrollWidth')
-
-                # 调整视口大小以适应内容
-                await page.set_viewport_size({'width': body_width, 'height': body_height})
-
-                # 截图
-                await page.screenshot(path=output_path, full_page=True)
-
-                # 关闭浏览器
-                await browser.close()
-
-                return output_path
-        except Exception as e:
-            logger.error(f"生成图片失败: {e}")
-            return None
-
-        return None
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
 
     @classmethod
     async def render_single_cost_pic(cls, single_cost_data: dict):
@@ -236,6 +192,11 @@ class PriceResRender():
 
     @classmethod
     async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 1000):
+        # 将HTML内容保存到临时文件
+        html_file_path = os.path.join(tmp_path, "temp_render.html")
+        with open(html_file_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+
         # 使用异步API生成图片
         try:
             async with async_playwright() as p:
@@ -282,10 +243,6 @@ class PriceResRender():
             # 尝试使用备用方法生成图片
             try:
                 logger.info("尝试使用备用方法生成图片...")
-                # 将HTML内容保存到临时文件
-                html_file_path = os.path.join(tmp_path, "temp_render.html")
-                with open(html_file_path, 'w', encoding='utf-8') as f:
-                    f.write(html_content)
                 
                 # 使用简化的HTML内容重试
                 simplified_html = f"""

@@ -493,7 +493,7 @@ class IndsEvent:
         with ThreadPoolExecutor(max_workers=1) as executor:
             t2_ship_list = SdeUtils.get_t2_ship()
             t2_ship_id_list = [SdeUtils.get_id_by_name(name) for name in t2_ship_list]
-            await MarketHistory.refresh_market_history(t2_ship_id_list)
+            await MarketHistory.refresh_vale_market_history(t2_ship_id_list)
 
             # t2mk_data = IndustryAdvice.t2_ship_advice_report(user, plan_name)
             future = executor.submit(IndustryAdvice.advice_report, user, plan_name, t2_ship_list)
@@ -525,7 +525,7 @@ class IndsEvent:
         with ThreadPoolExecutor(max_workers=1) as executor:
             battleship_list = SdeUtils.get_battleship()
             battalship_ship_id_list = [SdeUtils.get_id_by_name(name) for name in battleship_list]
-            await MarketHistory.refresh_market_history(battalship_ship_id_list)
+            await MarketHistory.refresh_vale_market_history(battalship_ship_id_list)
             future = executor.submit(IndustryAdvice.advice_report, user, plan_name, battleship_list)
             while not future.done():
                 await asyncio.sleep(1)

@@ -2,56 +2,175 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>价格信息</title>
-    <style>
-        {{ css_content }}
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="card price-card">
-            <div class="card-content">
-                <div class="card-header">
-                    <div class="title-section">
-                        <h2>{{ item_name }}</h2>
-                        {% if item_image_base64 %}
-                        <img src="data:image/png;base64,{{ item_image_base64 }}" alt="{{ item_name }}图标">
-                        {% else %}
-                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" alt="默认图标">
-                        {% endif %}
-                    </div>
+<body class="bg-gray-100 p-4">
+    <!-- 修改容器最大宽度为 lg -->
+    <div class="container mx-auto max-w-lg">
+        <!-- 价格信息卡片 -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="flex items-center justify-between mb-6">
+                <!-- 增加标题区域宽度 -->
+                <div class="flex-1 mr-4">
+                    <h2 class="text-2xl font-bold text-gray-800">{{ item_name }}</h2>
                 </div>
+                <!-- 增大图标尺寸 -->
+                <div class="w-20 h-20 border-2 border-gray-200 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+                    {% if item_image_base64 %}
+                    <img src="data:image/png;base64,{{ item_image_base64 }}" alt="{{ item_name }}图标" class="w-full h-full object-cover">
+                    {% else %}
+                    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" alt="默认图标" class="w-full h-full object-cover">
+                    {% endif %}
+                </div>
+            </div>
 
-                <div class="price-info">
-                    <div class="price-row">
-                        <span class="price-label">卖单</span>
-                        <span class="price-value">{{ min_sell }}</span>
-                    </div>
-                    <div class="price-row">
-                        <span class="price-label">买单</span>
-                        <span class="price-value">{{ max_buy }}</span>
-                    </div>
-                    <div class="price-row">
-                        <span class="price-label">中位</span>
-                        <span class="price-value">{{ mid_price }}</span>
-                    </div>
+            <!-- 增加价格信息的间距和字体大小 -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                    <span class="text-lg text-gray-600">卖单</span>
+                    <span class="text-lg font-mono font-semibold text-red-600">{{ min_sell|replace(',', ',') }}</span>
+                </div>
+                <div class="flex justify-between items-center py-3 border-b border-gray-200">
+                    <span class="text-lg text-gray-600">买单</span>
+                    <span class="text-lg font-mono font-semibold text-green-600">{{ max_buy|replace(',', ',') }}</span>
+                </div>
+                <div class="flex justify-between items-center py-3">
+                    <span class="text-lg text-gray-600">中位</span>
+                    <span class="text-lg font-mono font-semibold text-blue-600">{{ mid_price|replace(',', ',') }}</span>
                 </div>
             </div>
         </div>
 
-        <div class="card chart-card">
-            <div class="chart-container">
-                <span>价格历史开发中...</span>
-{#                {% if price_chart_baser64 %}#}
-{#                <img src="data:image/png;base64,{{ price_chart_baser64 }}" alt="{{ item_name }}价格走势">#}
-{#                {% else %}#}
-{#                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" alt="默认图标">#}
-{#                {% endif %}#}
-            </div>
-            <div class="chart-footer">
-                <p>紫竹梅实验型工业核心mk.1 - kahunaBot</p>
+        <!-- 图表卡片 -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="h-64">
+                <canvas id="priceChart"></canvas>
             </div>
         </div>
     </div>
+
+    <!-- 移动到最外层的页脚 -->
+    <div class="text-center text-gray-500 text-sm mt-4">
+        <p>{{ footer_text|default('紫竹梅实验型工业核心mk.1 - kahunaBot') }}</p>
+    </div>
+
+    <script>
+        // 格式化数字函数
+        function formatNumber(num) {
+            return new Intl.NumberFormat('zh-CN').format(num);
+        }
+        
+        // 应用格式化到价格显示
+        document.querySelectorAll('.font-mono').forEach(el => {
+            const value = el.textContent.trim();
+            if (!isNaN(parseFloat(value.replace(/,/g, '')))) {
+                el.textContent = formatNumber(parseFloat(value.replace(/,/g, '')));
+            }
+        });
+        
+        // 获取价格历史数据
+        const priceHistory = {{ price_history|tojson }};
+        
+        // 准备数据
+        const dates = priceHistory.map(item => new Date(item[0]));
+        const prices = priceHistory.map(item => item[1]);
+
+        // 创建图表
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: '平均价格',
+                    data: prices,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1,
+                    fill: false,
+                    pointRadius: 0 // 隐藏数据点
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            displayFormats: {
+                                day: 'MM-dd'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '日期'
+                        },
+                        ticks: {
+                            maxTicksLimit: 10 // 限制 X 轴标签数量
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'ISK'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                if (value >= 1000000000) {
+                                    return (value / 1000000000).toFixed(1) + 'B';
+                                }
+                                if (value >= 1000000) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                                if (value >= 1000) {
+                                    return (value / 1000).toFixed(1) + 'K';
+                                }
+                                return value;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                const date = new Date(context[0].label);
+                                return date.toLocaleDateString('zh-CN');
+                            },
+                            label: function(context) {
+                                let value = context.parsed.y;
+                                if (value >= 1000000000) {
+                                    return (value / 1000000000).toFixed(2) + ' B ISK';
+                                }
+                                if (value >= 1000000) {
+                                    return (value / 1000000).toFixed(2) + ' M ISK';
+                                }
+                                if (value >= 1000) {
+                                    return (value / 1000).toFixed(2) + ' K ISK';
+                                }
+                                return value + ' ISK';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>

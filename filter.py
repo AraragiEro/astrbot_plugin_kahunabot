@@ -13,6 +13,7 @@ class MemberFilter(CustomFilter):
         if UserManager.user_exists(user_qq):
             return True
         else:
+            logger.error(f"member filter error: user {user_qq} not exists")
             return False
 
 class VipMemberFilter(CustomFilter):
@@ -23,10 +24,10 @@ class VipMemberFilter(CustomFilter):
             return False
         user = UserManager().get_user(user_qq)
         if user.expire_date > datetime.now():
-            logger.info(f"vip member filter success: user {user_qq} is vip member")
+            logger.debug(f"vip member filter success: user {user_qq} is vip member")
             return True
         else:
-            logger.info(f"vip member filter error: user {user_qq} is not vip member")
+            logger.debug(f"vip member filter error: user {user_qq} is not vip member")
             return False
 
 class AdminFilter(CustomFilter):
