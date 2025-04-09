@@ -197,29 +197,28 @@ class PriceResRender():
         html_file_path = os.path.join(tmp_path, "temp_render.html")
         with open(html_file_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
-
-        # 启动浏览器，添加参数以确保JavaScript正常执行
+    
+        # 启动浏览器，添加必要的参数以确保在Linux环境下正常运行
         browser = await launch(
-            headless=True
+            headless=True,
+            args=[
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--single-process'
+            ]
         )
+        
         page = await browser.newPage()
-        # Set viewport size
         await page.setViewport({'width': width, 'height': height})
-
-
-        await page.setContent(html_content)
-        # Wait for network to be idle
+        
         try:
-            await page.waitForNavigation({'waitUntil': 'networkidle0', 'timeout': 1000})
-        except:
-            # If timeout occurs, continue anyway
-            pass
-
-        # Alternative way to wait
-        await asyncio.sleep(1)
-        await page.screenshot({'path': output_path, 'fullPage': True})
-        await browser.close()
-
+            await page.setContent(html_content)
+            await asyncio.sleep(1)  # Give time for content to render
+            await page.screenshot({'path': output_path, 'fullPage': True})
+        finally:
+            await browser.close()
+    
         return output_path
 
 
