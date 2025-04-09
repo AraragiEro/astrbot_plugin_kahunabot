@@ -202,8 +202,7 @@ class PriceResRender():
         try:
             # 启动浏览器，添加参数以确保JavaScript正常执行
             browser = await launch(
-                headless=True,
-                executablePath=r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+                headless=True
             )
             page = await browser.newPage()
             # Set viewport size
