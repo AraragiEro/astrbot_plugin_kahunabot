@@ -214,7 +214,7 @@ class PriceResRender():
         
         try:
             await page.setContent(html_content)
-            await asyncio.sleep(1)  # Give time for content to render
+            await asyncio.sleep(5)  # Give time for content to render
             await page.screenshot({'path': output_path, 'fullPage': True})
         finally:
             await browser.close()
