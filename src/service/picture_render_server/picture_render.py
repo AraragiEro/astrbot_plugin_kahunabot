@@ -214,7 +214,7 @@ class PriceResRender():
                 # 创建页面
                 page = await context.new_page()
 
-                await page.set_content(html_content)
+                await page.set_content(html_content, timeout=300000)
                 
                 # 等待内容渲染完成
                 await page.wait_for_timeout(wait_time)
