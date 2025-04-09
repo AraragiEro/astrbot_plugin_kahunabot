@@ -5,7 +5,8 @@ import os
 import jinja2  # 添加Jinja2导入
 import requests
 import base64
-from playwright.async_api import async_playwright
+import asyncio
+from pyppeteer import launch
 import math
 
 from ..sde_service import SdeUtils
@@ -199,89 +200,36 @@ class PriceResRender():
 
         # 使用异步API生成图片
         try:
-            async with async_playwright() as p:
-                # 启动浏览器，添加参数以确保JavaScript正常执行
-                browser = await p.chromium.launch(
-                    args=['--disable-web-security', '--allow-file-access-from-files', '--no-sandbox']
-                )
-                
-                # 创建上下文并设置更宽松的超时策略
-                context = await browser.new_context(
-                    viewport={'width': width, 'height': height},
-                    bypass_csp=True  # 绕过内容安全策略
-                )
-                
-                # 创建页面
-                page = await context.new_page()
+            # 启动浏览器，添加参数以确保JavaScript正常执行
+            browser = await launch(
+                headless=True,
+                executablePath=r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+            )
+            page = await browser.newPage()
+            # Set viewport size
+            await page.setViewport({'width': width, 'height': height})
 
-                await page.set_content(html_content, timeout=300000)
-                
-                # 等待内容渲染完成
-                await page.wait_for_timeout(wait_time)
-                
-                # 尝试等待图表元素
-                try:
-                    await page.wait_for_selector('#costChart', state='attached', timeout=3000)
-                    logger.info("图表元素已找到")
-                except Exception as e:
-                    logger.warning(f"等待图表元素超时: {e}")
 
-                # 使用全页面截图而不是裁剪
-                await page.screenshot(
-                    path=output_path,
-                    full_page=True
-                )
+            await page.setContent(html_content)
+            # Wait for network to be idle
+            try:
+                await page.waitForNavigation({'waitUntil': 'networkidle0', 'timeout': 1000})
+            except:
+                # If timeout occurs, continue anyway
+                pass
 
-                await browser.close()
-                return output_path
+            # Alternative way to wait
+            await asyncio.sleep(1)
+            await page.screenshot({'path': output_path, 'fullPage': True})
+            await browser.close()
+
+            return output_path
 
         except Exception as e:
             logger.error(f"生成图片失败: {e}")
             import traceback
             logger.error(traceback.format_exc())  # 打印完整堆栈跟踪
-            
-            # 尝试使用备用方法生成图片
-            try:
-                logger.info("尝试使用备用方法生成图片...")
-                
-                # 使用简化的HTML内容重试
-                simplified_html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <meta charset="UTF-8">
-                  <title>简化版本</title>
-                  <style>
-                    body {{ font-family: Arial, sans-serif; padding: 20px; }}
-                    .container {{ max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
-                    .header {{ font-size: 24px; font-weight: bold; margin-bottom: 10px; }}
-                    .info {{ margin-bottom: 20px; }}
-                    .price {{ font-size: 18px; margin-bottom: 5px; }}
-                  </style>
-                </head>
-                <body>
-                  <div class="container">
-                    <div class="header">物品信息</div>
-                    <div class="info">
-                      <p>无法生成完整图片，请查看HTML文件: {html_file_path}</p>
-                    </div>
-                  </div>
-                </body>
-                </html>
-                """
-                
-                async with async_playwright() as p:
-                    browser = await p.chromium.launch()
-                    page = await browser.new_page(viewport={'width': 550, 'height': 300})
-                    await page.set_content(simplified_html)
-                    await page.screenshot(path=output_path)
-                    await browser.close()
-                    
-                logger.info(f"已生成简化版图片: {output_path}")
-                return output_path
-            except Exception as backup_e:
-                logger.error(f"备用方法也失败: {backup_e}")
-                return None
+            raise KahunaException('图片生成失败')
 
     @classmethod
     def get_eve_item_icon_base64(cls, type_id: int):
