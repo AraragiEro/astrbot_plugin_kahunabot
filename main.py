@@ -81,7 +81,7 @@ class KahunaBot(Star):
 
     @filter.command('公司库存', alias={"corp_sell"})
     async def corp_sell(self, event: AstrMessageEvent):
-        yield await IndsEvent.rp_sell_list(event)
+        yield await IndsEvent.rp_sell_list(event, "buy")
 
     """ 管理 """
     @filter.custom_filter(AdminFilter)
@@ -352,8 +352,8 @@ class KahunaBot(Star):
         yield await IndsEvent.rp_costdetail(event, plan_name, product_name)
 
     @Inds_rp.command('出售', alias={"sell"})
-    async def Inds_rp_sell(self, event: AstrMessageEvent):
-        yield await IndsEvent.rp_sell_list(event)
+    async def Inds_rp_sell(self, event: AstrMessageEvent, price_type: str):
+        yield await IndsEvent.rp_sell_list(event, price_type)
 
     @Inds.command("refjobs")
     async def Inds_refjobs(self, event: AstrMessageEvent):

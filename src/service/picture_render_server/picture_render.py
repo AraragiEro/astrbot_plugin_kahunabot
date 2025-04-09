@@ -192,7 +192,7 @@ class PriceResRender():
         return pic_path
 
     @classmethod
-    async def render_sell_list(cls, sell_asset_list: list):
+    async def render_sell_list(cls, sell_asset_list: list, price_type: str):
         """
             j2模板传入
             items = [
@@ -209,12 +209,18 @@ class PriceResRender():
         items = []
         for asset in sell_asset_list:
             buy, sell = jita_mk.get_type_order_rouge(asset.type_id)
+            if price_type == 'mid':
+                price = (buy + sell) / 2
+            elif price_type == 'buy':
+                price = buy
+            else:
+                price = sell
             data = {
                 'icon': PriceResRender.get_eve_item_icon_base64(asset.type_id),
                 'id': asset.type_id,
                 'name': SdeUtils.get_name_by_id(asset.type_id),
                 'cn_name': SdeUtils.get_cn_name_by_id(asset.type_id),
-                'price': (buy + sell) / 2,
+                'price': price,
                 'quantity': asset.quantity
             }
             items.append(data)

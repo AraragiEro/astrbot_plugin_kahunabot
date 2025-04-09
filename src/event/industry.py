@@ -618,7 +618,7 @@ class IndsEvent:
             return event.plain_result("已有成本计算进行中，请稍候再试。")
 
     @staticmethod
-    async def rp_sell_list(event: AstrMessageEvent):
+    async def rp_sell_list(event: AstrMessageEvent, price_type: str):
         user_qq = int(event.get_sender_id())
         user = UserManager.get_user(user_qq)
 
@@ -631,7 +631,7 @@ class IndsEvent:
             asset.location_flag == 'CorpSAG4' and SdeUtils.get_category_by_id(asset.type_id) == 'Ship'
         ]
 
-        pic_path = await PriceResRender.render_sell_list(sell_asset_list2)
+        pic_path = await PriceResRender.render_sell_list(sell_asset_list2, price_type)
 
         chain = [
             Image.fromFileSystem(pic_path)
