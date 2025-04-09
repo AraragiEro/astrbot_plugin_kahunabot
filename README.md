@@ -103,20 +103,15 @@ kahunabot/
 ## 配置插件
 
 ### 安装依赖
-- 安装Playwright
+- 安装pyppeteer
 ```bash
-# 下载速度慢可以考虑使用加速源 pip install playwright -i https://pypi.tuna.tsinghua.edu.cn/simple
-pip install playwright、
+# 下载速度慢可以考虑使用加速源 pip install pyppeteer -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install pyppeteer
 ```
 
 2. 安装浏览器依赖
 ```bash
-python -m playwright install chromium
-```
-
-3. 如果在Linux环境下，可能需要安装额外的系统依赖
-```bash
-python -m playwright install-deps
+pyppeteer-install
 ```
 
 ### 准备SDE数据库

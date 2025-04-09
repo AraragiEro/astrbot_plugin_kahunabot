@@ -618,6 +618,27 @@ class IndsEvent:
             return event.plain_result("已有成本计算进行中，请稍候再试。")
 
     @staticmethod
+    async def rp_sell_list(event: AstrMessageEvent):
+        user_qq = int(event.get_sender_id())
+        user = UserManager.get_user(user_qq)
+
+        sell_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, 'sell')
+        sell_asset_result = AssetManager.get_asset_in_container_list(sell_container_list)
+        sell_asset_list = list(sell_asset_result)
+
+        sell_asset_list2 = [
+            asset for asset in sell_asset_list if
+            asset.location_flag == 'CorpSAG4' and SdeUtils.get_category_by_id(asset.type_id) == 'Ship'
+        ]
+
+        pic_path = await PriceResRender.render_sell_list(sell_asset_list2)
+
+        chain = [
+            Image.fromFileSystem(pic_path)
+        ]
+        return event.chain_result(chain)
+
+    @staticmethod
     def refjobs(event: AstrMessageEvent):
         IndustryManager.refresh_running_status()
 

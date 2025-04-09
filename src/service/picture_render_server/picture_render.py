@@ -10,6 +10,7 @@ from pyppeteer import launch
 import math
 
 from ..sde_service import SdeUtils
+from ..market_server import MarketManager
 from ...utils import KahunaException
 
 tmp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../tmp"))
@@ -19,6 +20,20 @@ resource_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../r
 template_path = os.path.join(resource_path, "templates")
 # CSS目录
 css_path = os.path.join(resource_path, "css")
+
+def format_number(value):
+    """将数字格式化为带千位分隔符的字符串"""
+    try:
+        # 转换为浮点数
+        num = float(value)
+        # 如果是整数，不显示小数部分
+        if num.is_integer():
+            return "{:,}".format(int(num))
+        # 否则保留两位小数
+        return "{:,.2f}".format(num)
+    except (ValueError, TypeError):
+        # 如果无法转换为数字，返回原值
+        return value
 
 class PriceResRender():
     @classmethod
@@ -137,21 +152,6 @@ class PriceResRender():
             }
         )
 
-        # 4.
-        def format_number(value):
-            """将数字格式化为带千位分隔符的字符串"""
-            try:
-                # 转换为浮点数
-                num = float(value)
-                # 如果是整数，不显示小数部分
-                if num.is_integer():
-                    return "{:,}".format(int(num))
-                # 否则保留两位小数
-                return "{:,.2f}".format(num)
-            except (ValueError, TypeError):
-                # 如果无法转换为数字，返回原值
-                return value
-
         # 开始渲染图片
         # 获取Jinja2环境
         try:
@@ -183,6 +183,56 @@ class PriceResRender():
 
         # 生成输出路径
         output_path = os.path.abspath(os.path.join((tmp_path), "single_cost_res.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=5000)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
+    async def render_sell_list(cls, sell_asset_list: list):
+        """
+            j2模板传入
+            items = [
+                {
+                    'icon': 'base64_encoded_image',  # 物品图标的base64编码
+                    'name': '物品名称',
+                    'price': 1000000,  # 售价
+                    'quantity': 10     # 剩余数量
+                },
+                # ... 更多物品
+            ]
+            """
+        jita_mk = MarketManager.get_market_by_type('jita')
+        items = []
+        for asset in sell_asset_list:
+            buy, sell = jita_mk.get_type_order_rouge(asset.type_id)
+            data = {
+                'icon': PriceResRender.get_eve_item_icon_base64(asset.type_id),
+                'id': asset.type_id,
+                'name': SdeUtils.get_name_by_id(asset.type_id),
+                'cn_name': SdeUtils.get_cn_name_by_id(asset.type_id),
+                'price': (buy + sell) / 2,
+                'quantity': asset.quantity
+            }
+            items.append(data)
+        items.sort(key=lambda x: x['price'] * x['quantity'], reverse=True)
+
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('sell_list_template.j2')
+        html_content = template.render(
+            items=items,
+            header_image=PriceResRender.get_image_base64(os.path.join(resource_path, 'img','sell_list_header.png'))
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((tmp_path), "sell_list.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
         pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=5000)

@@ -304,8 +304,8 @@ class IndustryAnalyser():
 
         # 2. 蓝图统计
         # owner_qq可用的蓝图仓库，即container_tag为bp的仓库，需要存在于目标建筑?
-        bp_container_list = AssetContainer.get_location_id_by_qq_tag(user_qq, "bp")
-        manu_container_list = AssetContainer.get_location_id_by_qq_tag(user_qq, "manu")
+        bp_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, "bp")
+        manu_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, "manu")
         bp_container_list += manu_container_list
         bp_container_list = [container for container in bp_container_list]
 
@@ -1126,8 +1126,12 @@ class IndustryAnalyser():
         return [plan_list[0][0], material_cost, eiv_cost, material_cost + eiv_cost]
         # return analyser, plan_list
 
+    cost_data_cache = TTLCache(maxsize=1000, ttl=60 * 60)
     @classmethod
     def get_cost_data(cls, user, plan_name: str, plan_list, batch_size=None):
+        """ 如何在緩存内，直接提取 """
+        if (user.user_qq, plan_name, str(plan_list)) in cls.cost_data_cache:
+            return cls.cost_data_cache[(user.user_qq, plan_name, str(plan_list))]
         """ 计算planlist中的材料成本，用于批量计算 """
         def chunks(lst, n):
             """按指定大小将列表分块"""
@@ -1155,6 +1159,7 @@ class IndustryAnalyser():
                         cost_dict[result[0]] = result[1:]
                         pbar.update()
 
+        cls.cost_data_cache[(user.user_qq, plan_name, str(plan_list))] = cost_dict
         return cost_dict
 
     @classmethod

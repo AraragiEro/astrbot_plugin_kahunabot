@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>销售列表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 标题区域 -->
+        <div class="relative h-[250px] mb-8 rounded-lg overflow-hidden">
+            <!-- 背景图片 -->
+            <img src="data:image/png;base64,{{ header_image }}" alt="背景" class="absolute inset-0 w-full h-full object-cover">
+            <!-- 标题内容 -->
+            <div class="absolute inset-0 flex justify-between items-center px-8">
+                <h1 class="text-3xl font-bold text-white shadow-text"> SETCR 紫竹梅重工 - AA超市</h1>
+            </div>
+        </div>
+
+        <!-- 卡片网格 -->
+        <div class="grid grid-cols-4 gap-4">
+            <!-- 卡片模板 -->
+            {% for item in items %}
+            <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow flex items-start">
+                <!-- 左侧物品图标 -->
+                <div class="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0">
+                    {% if item.icon %}
+                    <img src="data:image/png;base64,{{ item.icon }}" alt="{{ item.name }}" class="w-full h-full object-cover rounded-lg">
+                    {% endif %}
+                </div>
+                
+                <!-- 右侧信息 -->
+                <div class="ml-4 flex-grow">
+                    <div class="space-y-1">
+                        <div class="text-sm text-gray-600">
+                            <span class="font-semibold">ID：</span>
+                            <span>{{ item.id }}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <span class="font-semibold">name：</span>
+                            <span>{{ item.name }}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <span class="font-semibold">船名：</span>
+                            <span>{{ item.cn_name }}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <span class="font-semibold">售价：</span>
+                            <span>{{ item.price|format_number }}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <span class="font-semibold">剩余：</span>
+                            <span>{{ item.quantity }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 移动到最外层的页脚 -->
+    <div class="text-center text-gray-500 text-sm mt-4">
+        <p>{{ footer_text|default('紫竹梅实验型工业核心mk.1 - kahunaBot') }}</p>
+    </div>
+    
+    <style>
+        .shadow-text {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</body>
+</html>

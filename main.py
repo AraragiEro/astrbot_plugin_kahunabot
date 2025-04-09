@@ -347,6 +347,10 @@ class KahunaBot(Star):
     async def Inds_rp_costdetail(self, event: AstrMessageEvent, plan_name: str, product_name: str):
         yield await IndsEvent.rp_costdetail(event, plan_name, product_name)
 
+    @Inds_rp.command('出售', alias={"sell"})
+    async def Inds_rp_sell(self, event: AstrMessageEvent):
+        yield await IndsEvent.rp_sell_list(event)
+
     @Inds.command("refjobs")
     async def Inds_refjobs(self, event: AstrMessageEvent):
         """ 刷新进行中的工作 """

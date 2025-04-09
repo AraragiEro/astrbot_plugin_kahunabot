@@ -61,7 +61,7 @@ class EffStructUreType(Enum):
 class IndustryConfigManager():
     init_matcher_status = False
     config_owner_qq = "default"
-    matcher_type_set = {"bp", "structure", "prod_block"}
+    matcher_type_set = {"bp", "structure", "prod_block", "sell"}
     # {name: Matcher}
     matcher_dict = dict()
     # 最终材料效率为：
