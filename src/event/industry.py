@@ -1,6 +1,9 @@
 # import logger
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+
+from Demos.win32cred_demo import user_info_4
+
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.message_components import Image, BaseMessageComponent, Plain
 
@@ -618,9 +621,11 @@ class IndsEvent:
             return event.plain_result("已有成本计算进行中，请稍候再试。")
 
     @staticmethod
-    async def rp_sell_list(event: AstrMessageEvent, price_type: str):
-        user_qq = int(event.get_sender_id())
-        user = UserManager.get_user(user_qq)
+    async def rp_sell_list(event: AstrMessageEvent, price_type: str, corp: bool = False):
+        if not corp:
+            user_qq = int(event.get_sender_id())
+        else:
+            user_qq = int(config['APP']['CORP_ASSET_USER'])
 
         sell_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, 'sell')
         sell_asset_result = AssetManager.get_asset_in_container_list(sell_container_list)
