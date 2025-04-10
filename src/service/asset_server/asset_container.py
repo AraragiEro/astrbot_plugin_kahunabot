@@ -131,9 +131,7 @@ class AssetContainer:
 
         obj.save()
 
-    get_location_id_by_qq_tag_cache = TTLCache(maxsize=1024, ttl=120)
     @classmethod
-    @cached(get_location_id_by_qq_tag_cache)
     def get_contain_id_by_qq_tag(cls, qq: int, tag: str) -> list[int]:
         return [container.asset_location_id for container in
                 M_AssetContainer.select().where(M_AssetContainer.asset_owner_qq == qq, M_AssetContainer.tag == tag)]
