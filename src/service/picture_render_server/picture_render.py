@@ -243,7 +243,7 @@ class PriceResRender():
             current = current + timedelta(hours=8)
         html_content = template.render(
             items=items,
-            header_image=PriceResRender.get_image_base64('./src/resource/img/sell_list_header.png'),
+            header_image=PriceResRender.get_image_base64(os.path.join(resource_path, 'img' ,'sell_list_header.png')),
             current_time=current.strftime('%Y-%m-%d %H:%M:%S') + ' UTC+8',
         )
 
