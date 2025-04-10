@@ -6,6 +6,7 @@ import jinja2  # 添加Jinja2导入
 import requests
 import base64
 import asyncio
+from datetime import datetime, timedelta
 from pyppeteer import launch
 import math
 
@@ -215,16 +216,20 @@ class PriceResRender():
                 price = buy
             else:
                 price = sell
+            if sell == 0:
+                price = '价格详谈'
             data = {
                 'icon': PriceResRender.get_eve_item_icon_base64(asset.type_id),
                 'id': asset.type_id,
                 'name': SdeUtils.get_name_by_id(asset.type_id),
                 'cn_name': SdeUtils.get_cn_name_by_id(asset.type_id),
                 'price': price,
-                'quantity': asset.quantity
+                'quantity': asset.quantity,
+                'country': SdeUtils.get_market_group_list(asset.type_id, zh=True)[-2],
+                'ship_type': SdeUtils.get_groupname_by_id(asset.type_id, zh=True)
             }
             items.append(data)
-        items.sort(key=lambda x: x['price'] * x['quantity'], reverse=True)
+        items.sort(key=lambda x: x['ship_type'], reverse=True)
 
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(template_path),
@@ -232,9 +237,14 @@ class PriceResRender():
         )
         env.filters['format_number'] = format_number
         template = env.get_template('sell_list_template.j2')
+        current = datetime.now()
+        if current.astimezone().utcoffset().total_seconds() == 0:  # 如果是UTC时区
+            # 转换为北京时间 (UTC+8)
+            current = current + timedelta(hours=8)
         html_content = template.render(
             items=items,
-            header_image=PriceResRender.get_image_base64(os.path.join(resource_path, 'img','sell_list_header.png'))
+            header_image=PriceResRender.get_image_base64('./src/resource/img/sell_list_header.png'),
+            current_time=current.strftime('%Y-%m-%d %H:%M:%S') + ' UTC+8',
         )
 
         # 生成输出路径

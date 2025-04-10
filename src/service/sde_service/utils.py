@@ -4,6 +4,7 @@ from thefuzz import fuzz, process
 from peewee import DoesNotExist
 from cachetools import TTLCache, cached
 
+from ..sde_service import database as en_model, database_cn as zh_model
 from ...service.sde_service.database import InvTypes, InvGroups, InvCategories
 from ...service.sde_service.database import MetaGroups, MarketGroups
 from ..log_server import logger
@@ -94,7 +95,15 @@ class SdeUtils:
 
     @staticmethod
     @lru_cache(maxsize=1000)
-    def get_groupname_by_id(invtpye_id: int) -> str:
+    def get_groupname_by_id(invtpye_id: int, zh=False) -> str:
+        if zh:
+            model = zh_model
+        else:
+            model = en_model
+
+        InvTypes = model.InvTypes
+        InvGroups = model.InvGroups
+
         try:
             return (
                 InvTypes.select(InvGroups.groupName)
@@ -207,8 +216,12 @@ class SdeUtils:
 
     @staticmethod
     @lru_cache(maxsize=1000)
-    def get_market_group_name_by_groupid(market_group_id):
-        name = MarketGroups.get(MarketGroups.marketGroupID == market_group_id).nameID
+    def get_market_group_name_by_groupid(market_group_id, zh=False) -> str:
+        if zh:
+            model = zh_model
+        else:
+            model = en_model
+        name = model.MarketGroups.get(model.MarketGroups.marketGroupID == market_group_id).nameID
 
         return name
 
@@ -221,17 +234,17 @@ class SdeUtils:
 
     @classmethod
     @lru_cache(maxsize=1000)
-    def get_market_group_list(cls, type_id: int) -> list[str]:
+    def get_market_group_list(cls, type_id: int, zh=False) -> list[str]:
         try:
             market_tree = cls.get_market_group_tree()
             market_group_id = cls.get_invtpye_node_by_id(type_id).marketGroupID
             market_group_list = []
             if market_group_id:
-                market_group_list = [cls.get_name_by_id(type_id), cls.get_market_group_name_by_groupid(market_group_id)]
+                market_group_list = [cls.get_name_by_id(type_id), cls.get_market_group_name_by_groupid(market_group_id, zh)]
                 parent_nodes = [parent_id for parent_id in market_tree.predecessors(market_group_id)]
                 while parent_nodes:
                     parent_node = parent_nodes[0]
-                    parent_name = cls.get_market_group_name_by_groupid(parent_node)
+                    parent_name = cls.get_market_group_name_by_groupid(parent_node, zh)
                     market_group_list.append(parent_name)
                     parent_nodes = [parent_id for parent_id in market_tree.predecessors(parent_node)]
                 market_group_list.reverse()
@@ -255,16 +268,20 @@ class SdeUtils:
 
     @staticmethod
     @lru_cache(maxsize=1000)
-    def get_category_by_id(type_id: int) -> str:
+    def get_category_by_id(type_id: int, zh=False) -> str:
+        if zh:
+            model = zh_model
+        else:
+            model = en_model
         try:
             return (
-                InvTypes.select(InvCategories.categoryName)
+                model.InvTypes.select(InvCategories.categoryName)
                 .join(InvGroups, on=(InvTypes.groupID == InvGroups.groupID))
                 .join(InvCategories, on=(InvGroups.categoryID == InvCategories.categoryID))
                 .where(InvTypes.typeID == type_id)
                 .scalar()
             )
-        except InvTypes.DoesNotExist:
+        except model.InvTypes.DoesNotExist:
             return None
 
     # @classmethod

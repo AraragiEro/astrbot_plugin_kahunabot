@@ -18,45 +18,68 @@
             </div>
         </div>
 
-        <!-- 卡片网格 -->
-        <div class="grid grid-cols-4 gap-4">
-            <!-- 卡片模板 -->
-            {% for item in items %}
-            <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow flex items-start">
-                <!-- 左侧物品图标 -->
-                <div class="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0">
-                    {% if item.icon %}
-                    <img src="data:image/png;base64,{{ item.icon }}" alt="{{ item.name }}" class="w-full h-full object-cover rounded-lg">
-                    {% endif %}
-                </div>
-                
-                <!-- 右侧信息 -->
-                <div class="ml-4 flex-grow">
-                    <div class="space-y-1">
-                        <div class="text-sm text-gray-600">
-                            <span class="font-bold font-mono">ID：</span>
-                            <span class="font-bold font-mono">{{ item.id }}</span>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <span class="font-bold font-mono">name：</span>
-                            <span class="font-bold font-mono">{{ item.name }}</span>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <span class="font-bold font-mono">船名：</span>
-                            <span class="font-bold font-mono">{{ item.cn_name }}</span>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <span class="font-bold font-mono">售价：</span>
-                            <span class="font-bold font-mono">{{ item.price|format_number }}</span>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <span class="font-bold font-mono">剩余：</span>
-                            <span class="font-bold font-mono">{{ item.quantity }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+        <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+            <span class="text-[18px] font-bold text-gray-700">
+                价格生成时间：{{ current_time }}，数据来源eve官方API<br>
+                价格基准jita中间价，位置4H。<br>
+                交易时以实时估价为准。
+            </span>
+
+        </div>
+
+        <!-- 表格区域 -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-[24px] font-bold text-gray-700">ID</th>
+                        <th class="px-4 py-3 text-left text-[24px] font-bold text-gray-700">图标</th>
+                        <th class="px-4 py-3 text-left text-[24px] font-bold text-gray-700">Name</th>
+                        <th class="px-4 py-3 text-left text-[24px] font-bold text-gray-700">船名</th>
+                        <th class="px-4 py-3 text-left text-[24px] font-bold text-gray-700">售价</th>
+                        <th class="px-4 py-3 text-left text-[24px] font-bold text-gray-700">剩余</th>
+                        <th class="px-4 py-3 text-left text-[24px] font-bold text-gray-700">种族</th>
+                        <th class="px-4 py-3 text-left text-[24px] font-bold text-gray-700">船型</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for item in items %}
+                    <tr class="hover:bg-opacity-75 transition-colors">
+                        <td class="px-4 py-3 text-[20px] font-mono font-bold text-gray-700">{{ item.id }}</td>
+                        <td class="px-4 py-3">
+                            <div class="w-12 h-12 rounded-lg bg-gray-200">
+                                {% if item.icon %}
+                                <img src="data:image/png;base64,{{ item.icon }}" alt="{{ item.name }}" 
+                                     class="w-full h-full object-cover rounded-lg">
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-[20px] font-mono font-bold text-gray-700">{{ item.name }}</td>
+                        <td class="px-4 py-3 text-[20px] font-[微软雅黑体] font-bold text-gray-700">{{ item.cn_name }}</td>
+                        <td class="px-4 py-3 text-[20px] font-mono font-bold text-gray-700">{{ item.price|format_number }}</td>
+                        <td class="px-4 py-3 text-[20px] font-mono font-bold text-gray-700">{{ item.quantity }}</td>
+                        <td class="px-4 py-3 text-[20px] font-[微软雅黑体] font-bold text-gray-700
+                            {% if item.country == '加达里' %}
+                                bg-blue-400
+                            {% elif item.country == '艾玛' %}
+                                bg-amber-200
+                            {% elif item.country == '盖伦特' %}
+                                bg-emerald-300
+                            {% elif item.country == '米玛塔尔' %}
+                                bg-red-500
+                            {% elif item.country == 'Upwell' %}
+                                bg-sky-300
+                            {% elif item.country == '三神裔' %}
+                                bg-rose-500
+                            {% else %}
+                                bg-white
+                            {% endif %}
+                        ">{{ item.country }}</td>
+                        <td class="px-4 py-3 text-[20px] font-[微软雅黑体] font-bold text-gray-700">{{ item.ship_type }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
