@@ -508,7 +508,7 @@ class IndsEvent:
         for asset in sell_asset_result:
             asset_dict[asset.type_id] = asset.quantity
         for index, data in enumerate(t2mk_data):
-            t2mk_data[index].insert(2, asset_dict.get(data[0], 0))
+            t2mk_data[index].insert(3, asset_dict.get(data[0], 0))
         spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
         t2_cost_sheet = FeiShuKahuna.get_t2_ship_market_sheet(spreadsheet)
         FeiShuKahuna.output_mk_sheet(t2_cost_sheet, t2mk_data)
