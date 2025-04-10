@@ -506,7 +506,10 @@ class IndsEvent:
         sell_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, 'sell')
         sell_asset_result = AssetManager.get_asset_in_container_list(sell_container_list)
         for asset in sell_asset_result:
-            asset_dict[asset.type_id] = asset.quantity
+            if asset.type_id not in asset_dict:
+                asset_dict[asset.type_id] = asset.quantity
+            else:
+                asset_dict[asset.type_id] += asset.quantity
         for index, data in enumerate(t2mk_data):
             t2mk_data[index].insert(3, asset_dict.get(data[0], 0))
         spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
