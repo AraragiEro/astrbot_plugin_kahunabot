@@ -178,9 +178,9 @@ class FeiShuKahuna:
                  '月流水', '月销量', 'meta']] + data
         sheet.set_value([1, 1], data)
 
-        sheet.set_format([4,1], [1, len(data)], {'formatter': '#,##0.00'})
-        sheet.set_format([5, 1], [1, len(data)], {'formatter': '0.00%'})
-        sheet.set_format([6, 1], [7, len(data)], {'formatter': '#,##0.00'})
+        sheet.set_format([5,1], [1, len(data)], {'formatter': '#,##0.00'})
+        sheet.set_format([6, 1], [1, len(data)], {'formatter': '0.00%'})
+        sheet.set_format([7, 1], [7, len(data)], {'formatter': '#,##0.00'})
 
     @classmethod
     def output_cost_detail_sheet(cls, sheet: Sheet, detail_dict: dict):
