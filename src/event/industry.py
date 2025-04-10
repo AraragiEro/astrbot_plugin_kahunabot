@@ -2,8 +2,6 @@
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
 
-from Demos.win32cred_demo import user_info_4
-
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.message_components import Image, BaseMessageComponent, Plain
 
