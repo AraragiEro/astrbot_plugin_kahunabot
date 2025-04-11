@@ -80,7 +80,7 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((tmp_path), "price_res.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=5000)
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=10)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -186,7 +186,7 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((tmp_path), "single_cost_res.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=5000)
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=10)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -251,14 +251,14 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((tmp_path), "sell_list.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=1300, height=720, wait_time=5000)
+        pic_path = await cls.render_pic(output_path, html_content, width=1300, height=720, wait_time=5)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
         return pic_path
 
     @classmethod
-    async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 1000):
+    async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 5):
         # 将HTML内容保存到临时文件
         html_file_path = os.path.join(tmp_path, "temp_render.html")
         with open(html_file_path, 'w', encoding='utf-8') as f:
@@ -280,7 +280,7 @@ class PriceResRender():
         
         try:
             await page.setContent(html_content)
-            await asyncio.sleep(5)  # Give time for content to render
+            await asyncio.sleep(wait_time)  # Give time for content to render
             await page.screenshot({'path': output_path, 'fullPage': True})
         finally:
             await browser.close()
