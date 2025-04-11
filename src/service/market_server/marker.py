@@ -160,13 +160,21 @@ class Market:
 
 class MarketHistory:
     @classmethod
-    async def refresh_market_history(cls, type_id_list: list):
+    async def refresh_vale_market_history(cls, type_id_list: list):
+        await cls.refresh_market_history(type_id_list, REGION_VALE_ID)
+
+    @classmethod
+    async def refresh_forge_market_history(cls, type_id_list: list):
+        await cls.refresh_market_history(type_id_list, REGION_FORGE_ID)
+
+    @classmethod
+    async def refresh_market_history(cls, type_id_list: list, region_id: int):
         logger.info(f'刷新t2常规历史订单信息')
         with ThreadPoolExecutor(max_workers=100) as executor:
-            with tqdm(total=len(type_id_list), desc="刷新vale市场历史", unit="page", ascii='=-') as pbar:
+            with tqdm(total=len(type_id_list), desc="刷新市场历史", unit="page", ascii='=-') as pbar:
                 futures = []
                 for type_id in type_id_list:
-                    futures.append(executor.submit(cls.refresh_type_history_in_region, type_id, REGION_VALE_ID))
+                    futures.append(executor.submit(cls.refresh_type_history_in_region, type_id, region_id))
                     await asyncio.sleep(0.05)
                     pbar.update()
                 for future in futures:
@@ -185,9 +193,18 @@ class MarketHistory:
 
         model.MarketHistory.insert_many(result).on_conflict_ignore().execute()
 
-    history_cache = TTLCache(maxsize=3000, ttl=24*60*60)
+    type_region_histpry_data_cache = TTLCache(maxsize=3000, ttl=24 * 60 * 60)
     @classmethod
-    @cached(history_cache)
+    @cached(type_region_histpry_data_cache)
+    def get_type_region_histpry_data(cls, type_id: int, region_id: int) -> list:
+        region_year_data = model.MarketHistory.select().where((model.MarketHistory.type_id == type_id) & (model.MarketHistory.region_id == region_id)).order_by(model.MarketHistory.date.desc())
+        region_year_data_list = [[res.date, res.average] for res in region_year_data]
+
+        return region_year_data_list
+
+    type_history_detale_cache = TTLCache(maxsize=3000, ttl=24 * 60 * 60)
+    @classmethod
+    @cached(type_history_detale_cache)
     def get_type_history_detale(cls, type_id: int):
         mkhist = model.MarketHistory
         week_ago = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=9)

@@ -174,13 +174,13 @@ class FeiShuKahuna:
 
     @classmethod
     def output_mk_sheet(cls, sheet: Sheet, data: list):
-        data = [['id', 'name', 'cn_name', '利润', '利润率', '月利润空间', '成本', '4h出单', '吉他收单', '吉他出单',
+        data = [['id', 'name', 'cn_name', '库存', '利润', '利润率', '月利润空间', '成本', '4h出单', '吉他收单', '吉他出单',
                  '月流水', '月销量', 'meta']] + data
         sheet.set_value([1, 1], data)
 
-        sheet.set_format([4,1], [1, len(data)], {'formatter': '#,##0.00'})
-        sheet.set_format([5, 1], [1, len(data)], {'formatter': '0.00%'})
-        sheet.set_format([6, 1], [7, len(data)], {'formatter': '#,##0.00'})
+        sheet.set_format([5,1], [1, len(data)], {'formatter': '#,##0.00'})
+        sheet.set_format([6, 1], [1, len(data)], {'formatter': '0.00%'})
+        sheet.set_format([7, 1], [7, len(data)], {'formatter': '#,##0.00'})
 
     @classmethod
     def output_cost_detail_sheet(cls, sheet: Sheet, detail_dict: dict):

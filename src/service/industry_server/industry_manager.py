@@ -38,6 +38,7 @@ class IndustryManager:
 
     @classmethod
     def refresh_market_price(cls):
+        logger.info("开始刷新eiv价格。")
         MarketPrice.refresh_market_price()
 
     # 调起工业分析

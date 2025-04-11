@@ -63,6 +63,7 @@ class MarketManager():
     # 监视器，定时刷新
     @classmethod
     def refresh_market(cls):
+        logger.info("开始刷新市场数据。")
         for market in cls.market_dict.values():
             market.get_market_order()
         cls.copy_to_cache()

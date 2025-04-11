@@ -1,5 +1,6 @@
 import os
 import asyncio
+
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import llm_tool
@@ -15,6 +16,7 @@ from .src.event.price import TypesPriceEvent
 from .src.event.user import UserEvent
 from .src.event.industry import AssetEvent, MarketEvent, IndsEvent, SdeEvent
 from .src.event import llm_tool as kahuna_llmt
+from .src.event.admin import AdminEvent
 from .filter import AdminFilter, VipMemberFilter, MemberFilter
 
 
@@ -62,6 +64,36 @@ class KahunaBot(Star):
         message_str = event.message_str # 获取消息的纯文本内容
         yield event.plain_result(f"Hello, {user_name}!") # 发送一条纯文本消息
 
+    """ ---公共指令--- """
+    @filter.command("ojita")
+    async def ojita(self, event: AstrMessageEvent, require_str: str):
+        ''' 这是一个查询jita市场价格的插件 '''
+        yield await TypesPriceEvent.ojita_func(event, require_str)
+
+    @filter.command("ofrt")
+    async def ofrt(self, event: AstrMessageEvent, require_str: str):
+        ''' 这是一个查询jita市场价格的插件 '''
+        yield await TypesPriceEvent.ofrt_func(event, require_str)
+
+    @filter.command('成本', alias={'cost'})
+    async def cost(self, event: AstrMessageEvent, item_name: str):
+        yield await IndsEvent.rp_costdetail(event, "", item_name, public=True)
+
+    @filter.command('公司库存', alias={"corp_sell"})
+    async def corp_sell(self, event: AstrMessageEvent):
+        yield await IndsEvent.rp_sell_list(event, "buy", corp=True)
+
+    """ 管理 """
+    @filter.custom_filter(AdminFilter)
+    @filter.command_group('管理', alias={"admin"})
+    async def admin(self, event: AstrMessageEvent):
+        pass
+
+    @admin.command('设置公用成本计划', alias={'setpubliccostplan'})
+    async def admin_setpubliccostplan(self, event: AstrMessageEvent, user_qq: int, plan_name: str):
+        yield await AdminEvent.setpubliccostplan(event, user_qq, plan_name)
+
+    """ ---指令組--- """
     @filter.custom_filter(MemberFilter)
     @filter.command_group('角色', alias={"character"})
     async def character(self, event: AstrMessageEvent):
@@ -78,18 +110,8 @@ class KahunaBot(Star):
         yield CharacterEvent.add(event, back_url)
 
     @character.command('子角色', alias= {"addalias"})
-    async def user_addalias(self, event: AstrMessageEvent, character_id_list: str):
+    async def character_addalias(self, event: AstrMessageEvent, character_id_list: str):
         yield UserEvent.addalias(event)
-
-    @filter.command("ojita")
-    async def ojita(self, event: AstrMessageEvent, require_str: str):
-        ''' 这是一个查询jita市场价格的插件 '''
-        yield await TypesPriceEvent.ojita_func(event, require_str)
-
-    @filter.command("ofrt")
-    async def ofrt(self, event: AstrMessageEvent, require_str: str):
-        ''' 这是一个查询jita市场价格的插件 '''
-        yield await TypesPriceEvent.ofrt_func(event, require_str)
 
     @filter.custom_filter(AdminFilter)
     @filter.command_group("user")
@@ -328,6 +350,10 @@ class KahunaBot(Star):
     @Inds_rp.command('单品成本', alias={'costdetail'})
     async def Inds_rp_costdetail(self, event: AstrMessageEvent, plan_name: str, product_name: str):
         yield await IndsEvent.rp_costdetail(event, plan_name, product_name)
+
+    @Inds_rp.command('出售', alias={"sell"})
+    async def Inds_rp_sell(self, event: AstrMessageEvent, price_type: str):
+        yield await IndsEvent.rp_sell_list(event, price_type)
 
     @Inds.command("refjobs")
     async def Inds_refjobs(self, event: AstrMessageEvent):

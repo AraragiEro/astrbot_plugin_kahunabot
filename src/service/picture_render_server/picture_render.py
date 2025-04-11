@@ -5,10 +5,13 @@ import os
 import jinja2  # 添加Jinja2导入
 import requests
 import base64
-from playwright.async_api import async_playwright
+import asyncio
+from datetime import datetime, timedelta
+from pyppeteer import launch
 import math
 
 from ..sde_service import SdeUtils
+from ..market_server import MarketManager
 from ...utils import KahunaException
 
 tmp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../tmp"))
@@ -19,6 +22,20 @@ template_path = os.path.join(resource_path, "templates")
 # CSS目录
 css_path = os.path.join(resource_path, "css")
 
+def format_number(value):
+    """将数字格式化为带千位分隔符的字符串"""
+    try:
+        # 转换为浮点数
+        num = float(value)
+        # 如果是整数，不显示小数部分
+        if num.is_integer():
+            return "{:,}".format(int(num))
+        # 否则保留两位小数
+        return "{:,.2f}".format(num)
+    except (ValueError, TypeError):
+        # 如果无法转换为数字，返回原值
+        return value
+
 class PriceResRender():
     @classmethod
     def check_tmp_dir(cls):
@@ -27,7 +44,8 @@ class PriceResRender():
             os.makedirs(tmp_path)
 
     @classmethod
-    async def render_price_res_pic(cls, item_name: str, price_data: list):
+    async def render_price_res_pic(cls, item_name: str, price_data: list, history_data: list):
+        # 准备实时价格数据
         max_buy, mid_price, min_sell, fuzz_list = price_data
 
         cls.check_tmp_dir()
@@ -38,40 +56,21 @@ class PriceResRender():
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
 
-        # 读取CSS内容
-        try:
-            with open(os.path.join(css_path, "price_style.css"), 'r', encoding='utf-8') as f:
-                price_css_content = f.read()
-
-            with open(os.path.join(css_path, "fuzz_style.css"), 'r', encoding='utf-8') as f:
-                fuzz_css_content = f.read()
-        except FileNotFoundError as e:
-            logger.error(f"CSS文件不存在: {e}")
-            logger.error(f"请确保CSS文件已放置在 {css_path} 目录下")
-            return None
-
         # 根据是否有模糊匹配结果选择模板
         try:
-            if fuzz_list:
-                template = env.get_template('fuzz_template.j2')
-                html_content = template.render(
-                    fuzz_list=fuzz_list,
-                    css_content=fuzz_css_content
-                )
-            else:
-                # 下载并转换物品图片
-                item_image_path = cls.download_eve_item_image(SdeUtils.get_id_by_name(item_name))  # 这里的ID需要根据实际物品ID修改
-                item_image_base64 = cls.get_image_base64(item_image_path) if item_image_path else None
+            # 下载并转换物品图片
+            item_image_path = cls.download_eve_item_image(SdeUtils.get_id_by_name(item_name))  # 这里的ID需要根据实际物品ID修改
+            item_image_base64 = cls.get_image_base64(item_image_path) if item_image_path else None
 
-                template = env.get_template('price_template.j2')
-                html_content = template.render(
-                    item_name=item_name,
-                    max_buy=f"{max_buy:,.2f}",
-                    mid_price=f"{mid_price:,.2f}",
-                    min_sell=f"{min_sell:,.2f}",
-                    css_content=price_css_content,
-                    item_image_base64=item_image_base64
-                )
+            template = env.get_template('price_template.j2')
+            html_content = template.render(
+                item_name=item_name,
+                max_buy=f"{max_buy:,.2f}",
+                mid_price=f"{mid_price:,.2f}",
+                min_sell=f"{min_sell:,.2f}",
+                item_image_base64=item_image_base64,
+                price_history=history_data  # 添加这一行，格式为 [[date, price], ...]
+            )
         except jinja2.exceptions.TemplateNotFound as e:
             logger.error(f"模板文件不存在: {e}")
             logger.error(f"请确保模板文件已放置在 {template_path} 目录下")
@@ -80,38 +79,12 @@ class PriceResRender():
         # 生成输出路径
         output_path = os.path.abspath(os.path.join((tmp_path), "price_res.jpg"))
 
-        # 使用异步API生成图片
-        try:
-            async with async_playwright() as p:
-                # 启动浏览器
-                browser = await p.chromium.launch()
-                page = await browser.new_page(viewport={'width': 200, 'height': 600})
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=10)
 
-                # 设置HTML内容
-                await page.set_content(html_content)
-
-                # 等待内容渲染完成
-                await page.wait_for_timeout(1000)
-
-                # 获取实际内容高度
-                body_height = await page.evaluate('document.body.scrollHeight')
-                body_width = await page.evaluate('document.body.scrollWidth')
-
-                # 调整视口大小以适应内容
-                await page.set_viewport_size({'width': body_width, 'height': body_height})
-
-                # 截图
-                await page.screenshot(path=output_path, full_page=True)
-
-                # 关闭浏览器
-                await browser.close()
-
-                return output_path
-        except Exception as e:
-            logger.error(f"生成图片失败: {e}")
-            return None
-
-        return None
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
 
     @classmethod
     async def render_single_cost_pic(cls, single_cost_data: dict):
@@ -180,21 +153,6 @@ class PriceResRender():
             }
         )
 
-        # 4.
-        def format_number(value):
-            """将数字格式化为带千位分隔符的字符串"""
-            try:
-                # 转换为浮点数
-                num = float(value)
-                # 如果是整数，不显示小数部分
-                if num.is_integer():
-                    return "{:,}".format(int(num))
-                # 否则保留两位小数
-                return "{:,.2f}".format(num)
-            except (ValueError, TypeError):
-                # 如果无法转换为数字，返回原值
-                return value
-
         # 开始渲染图片
         # 获取Jinja2环境
         try:
@@ -228,106 +186,107 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((tmp_path), "single_cost_res.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=5000)
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=10)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
         return pic_path
 
     @classmethod
-    async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 1000):
-        # 使用异步API生成图片
+    async def render_sell_list(cls, sell_asset_list: list, price_type: str):
+        """
+            j2模板传入
+            items = [
+                {
+                    'icon': 'base64_encoded_image',  # 物品图标的base64编码
+                    'name': '物品名称',
+                    'price': 1000000,  # 售价
+                    'quantity': 10     # 剩余数量
+                },
+                # ... 更多物品
+            ]
+            """
+        jita_mk = MarketManager.get_market_by_type('jita')
+        items = []
+        for asset in sell_asset_list:
+            buy, sell = jita_mk.get_type_order_rouge(asset.type_id)
+            if price_type == 'mid':
+                price = (buy + sell) / 2
+            elif price_type == 'buy':
+                price = buy
+            else:
+                price = sell
+            if sell == 0:
+                price = '价格详谈'
+            data = {
+                'icon': PriceResRender.get_eve_item_icon_base64(asset.type_id),
+                'id': asset.type_id,
+                'name': SdeUtils.get_name_by_id(asset.type_id),
+                'cn_name': SdeUtils.get_cn_name_by_id(asset.type_id),
+                'price': price,
+                'quantity': asset.quantity,
+                'country': SdeUtils.get_market_group_list(asset.type_id, zh=True)[-2],
+                'ship_type': SdeUtils.get_groupname_by_id(asset.type_id, zh=True)
+            }
+            items.append(data)
+        items.sort(key=lambda x: x['ship_type'], reverse=True)
+
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('sell_list_template.j2')
+        current = datetime.now()
+        if current.astimezone().utcoffset().total_seconds() == 0:  # 如果是UTC时区
+            # 转换为北京时间 (UTC+8)
+            current = current + timedelta(hours=8)
+        html_content = template.render(
+            items=items,
+            header_image=PriceResRender.get_image_base64(os.path.join(resource_path, 'img' ,'sell_list_header.png')),
+            current_time=current.strftime('%Y-%m-%d %H:%M:%S') + ' UTC+8',
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((tmp_path), "sell_list.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=1300, height=720, wait_time=5)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
+    async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 5):
+        # 将HTML内容保存到临时文件
+        html_file_path = os.path.join(tmp_path, "temp_render.html")
+        with open(html_file_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+    
+        # 启动浏览器，添加必要的参数以确保在Linux环境下正常运行
+        browser = await launch(
+            headless=True,
+            args=[
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--single-process'
+            ]
+        )
+        
+        page = await browser.newPage()
+        await page.setViewport({'width': width, 'height': height})
+        
         try:
-            async with async_playwright() as p:
-                # 启动浏览器，添加参数以确保JavaScript正常执行
-                browser = await p.chromium.launch(
-                    args=['--disable-web-security', '--allow-file-access-from-files', '--no-sandbox']
-                )
-                
-                # 创建上下文并设置更宽松的超时策略
-                context = await browser.new_context(
-                    viewport={'width': width, 'height': height},
-                    bypass_csp=True  # 绕过内容安全策略
-                )
-                
-                # 创建页面
-                page = await context.new_page()
+            await page.setContent(html_content)
+            await asyncio.sleep(wait_time)  # Give time for content to render
+            await page.screenshot({'path': output_path, 'fullPage': True})
+        finally:
+            await browser.close()
+    
+        return output_path
 
-                await page.set_content(html_content)
-                
-                # 等待内容渲染完成
-                await page.wait_for_timeout(wait_time)
-                
-                # 尝试等待图表元素
-                try:
-                    await page.wait_for_selector('#costChart', state='attached', timeout=3000)
-                    logger.info("图表元素已找到")
-                    
-                    # 额外等待图表渲染完成
-                    await page.wait_for_timeout(2000)
-                except Exception as e:
-                    logger.warning(f"等待图表元素超时: {e}")
-
-                # 使用全页面截图而不是裁剪
-                await page.screenshot(
-                    path=output_path,
-                    full_page=True
-                )
-
-                await browser.close()
-                return output_path
-
-        except Exception as e:
-            logger.error(f"生成图片失败: {e}")
-            import traceback
-            logger.error(traceback.format_exc())  # 打印完整堆栈跟踪
-            
-            # 尝试使用备用方法生成图片
-            try:
-                logger.info("尝试使用备用方法生成图片...")
-                # 将HTML内容保存到临时文件
-                html_file_path = os.path.join(tmp_path, "temp_render.html")
-                with open(html_file_path, 'w', encoding='utf-8') as f:
-                    f.write(html_content)
-                
-                # 使用简化的HTML内容重试
-                simplified_html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <meta charset="UTF-8">
-                  <title>简化版本</title>
-                  <style>
-                    body {{ font-family: Arial, sans-serif; padding: 20px; }}
-                    .container {{ max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
-                    .header {{ font-size: 24px; font-weight: bold; margin-bottom: 10px; }}
-                    .info {{ margin-bottom: 20px; }}
-                    .price {{ font-size: 18px; margin-bottom: 5px; }}
-                  </style>
-                </head>
-                <body>
-                  <div class="container">
-                    <div class="header">物品信息</div>
-                    <div class="info">
-                      <p>无法生成完整图片，请查看HTML文件: {html_file_path}</p>
-                    </div>
-                  </div>
-                </body>
-                </html>
-                """
-                
-                async with async_playwright() as p:
-                    browser = await p.chromium.launch()
-                    page = await browser.new_page(viewport={'width': 550, 'height': 300})
-                    await page.set_content(simplified_html)
-                    await page.screenshot(path=output_path)
-                    await browser.close()
-                    
-                logger.info(f"已生成简化版图片: {output_path}")
-                return output_path
-            except Exception as backup_e:
-                logger.error(f"备用方法也失败: {backup_e}")
-                return None
 
     @classmethod
     def get_eve_item_icon_base64(cls, type_id: int):

@@ -11,7 +11,7 @@ from ..feishu_server.feishu_kahuna import FeiShuKahuna
 
 class UserData():
     user_qq: int = 0
-    user_data_colunms = ["plan", "alias"]
+    user_data_colunms = ["plan", "alias", "sell_data"]
     """ 
     plan: dict = {
         plan_name: {
@@ -30,6 +30,20 @@ class UserData():
 
     def __init__(self, user_qq: int):
         self.user_qq = user_qq
+        plan: list = []
+        alias: dict = {}
+
+        """ sell setting """
+        sell_data: dict = {
+            "name": "",
+            "sell_container_id": 0,
+            "sell_location_flag": None,
+            "market_group": [],
+            "group": [],
+            "meta": [],
+            "category": []
+        }
+
         self.load_self_data()
 
     def get_from_db(self) -> M_UserData:

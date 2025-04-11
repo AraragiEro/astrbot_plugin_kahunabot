@@ -77,6 +77,13 @@ class IndustryActivities(BaseModel):
             (('activityID',), False)  # 普通索引
         )
 
+class IndustryBlueprints(BaseModel):
+    blueprintTypeID = IntegerField(primary_key=True)  # 主键
+    maxProductionLimit = IntegerField(null=True)  # 可为空的整数字段
+
+    class Meta:
+        table_name = 'industryBlueprints'  # 指定表名
+
 # 元组id信息
 class MetaGroups(BaseModel):
     metaGroupID = IntegerField(primary_key=True)

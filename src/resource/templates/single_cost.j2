@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style type="text/tailwindcss">
     @layer utilities {
@@ -84,6 +84,10 @@
         <!-- 图例将由JavaScript动态生成 -->
       </div>
     </div>
+  </div>
+  <!-- 移动到最外层的页脚 -->
+  <div class="text-center text-gray-500 text-sm mt-4">
+      <p>{{ footer_text|default('紫竹梅实验型工业核心mk.1 - kahunaBot') }}</p>
   </div>
 
   <script>
