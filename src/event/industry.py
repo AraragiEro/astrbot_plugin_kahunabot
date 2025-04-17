@@ -611,7 +611,7 @@ class IndsEvent:
                 detail_dict.update({'name': SdeUtils.get_name_by_id(type_id), 'cn_name': SdeUtils.get_cn_name_by_id(type_id)})
                 spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
                 cost_sheet = FeiShuKahuna.get_detail_cost_sheet(spreadsheet)
-                # FeiShuKahuna.output_cost_detail_sheet(cost_sheet, detail_dict)
+                FeiShuKahuna.output_cost_detail_sheet(cost_sheet, detail_dict)
 
                 detail_dict["type_id"] = type_id
                 detail_dict["market_detail"] = PriceService.get_price_rouge(product, 'jita')
