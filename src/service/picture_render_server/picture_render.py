@@ -279,9 +279,52 @@ class PriceResRender():
         await page.setViewport({'width': width, 'height': height})
         
         try:
+            # 设置页面内容
             await page.setContent(html_content)
-            await asyncio.sleep(wait_time)  # Give time for content to render
+            
+            # 等待字体加载完成
+            await page.waitForFunction('document.fonts.ready')
+            
+            # 检查是否有Chart.js图表，如果有则等待图表渲染完成
+            has_chart = await page.evaluate('typeof Chart !== "undefined" && document.getElementById("costChart") !== null')
+            if has_chart:
+                # 禁用Chart.js动画以加速渲染
+                await page.evaluate('''
+                    if (typeof Chart !== "undefined") {
+                        Chart.defaults.animation = false;
+                        // 添加一个全局标志，表示图表渲染完成
+                        window.chartRendered = false;
+                        const originalDraw = Chart.prototype.draw;
+                        Chart.prototype.draw = function() {
+                            originalDraw.apply(this, arguments);
+                            window.chartRendered = true;
+                        };
+                    }
+                ''')
+                
+                # 等待图表渲染完成或超时
+                try:
+                    await page.waitForFunction('window.chartRendered === true', {'timeout': wait_time * 1000})
+                except Exception as e:
+                    logger.warning(f"等待图表渲染超时: {e}，使用备用等待时间")
+                    await asyncio.sleep(wait_time)  # 备用等待机制
+            else:
+                # 如果没有图表，等待DOM内容加载完成
+                await page.waitForFunction('document.readyState === "complete"')
+                # 额外等待一小段时间确保CSS渲染完成
+                await asyncio.sleep(1)
+            
+            # 截图
             await page.screenshot({'path': output_path, 'fullPage': True})
+        except Exception as e:
+            logger.error(f"渲染过程发生错误: {e}")
+            # 发生错误时仍尝试截图
+            try:
+                await asyncio.sleep(wait_time)  # 使用原始等待时间作为备用
+                await page.screenshot({'path': output_path, 'fullPage': True})
+            except Exception as screenshot_error:
+                logger.error(f"截图失败: {screenshot_error}")
+                raise
         finally:
             await browser.close()
     
