@@ -698,7 +698,7 @@ class IndsEvent:
         minedata = report['material']['矿石']
         material_list = [[data[0], data[3]] for data in minedata]
 
-        ref_res = await IndustryAdvice.material_ref_advice(material_list)
+        ref_res = await IndustryAdvice.material_ref_advice(material_list, material_flag, compress_flag)
 
         pic_path = await PriceResRender.render_refine_result(ref_res)
         chain = [

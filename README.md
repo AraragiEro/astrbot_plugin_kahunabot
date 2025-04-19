@@ -25,10 +25,10 @@ _一座新的**X**山拔地而起！_
 # ⭐功能展示
 
 #### 吉他和联盟市场价格查询
-![吉他和联盟市场价格查询](https://github.com/user-attachments/assets/3ba07ddf-a136-407c-95bd-5850b0b55657)
+![吉他和联盟市场价格查询](https://github.com/user-attachments/assets/fc70e5ea-51af-41b2-b947-93ccfa6aa908)
 
 #### 成本查询
-![成本查询](https://github.com/user-attachments/assets/63ecbd0c-2f91-491a-9ead-693646a81e5a)
+![成本查询](https://github.com/user-attachments/assets/924da9e1-335d-422f-b2b3-2fbb441b6915)
 
 #### 工业规划与报表输出
 ![工业规划](https://github.com/user-attachments/assets/f23b7873-dbb3-48df-9ee9-4d07ed4dba21)
@@ -36,6 +36,9 @@ _一座新的**X**山拔地而起！_
 ![报表输出1](https://github.com/user-attachments/assets/9d2f4b57-04a4-4f31-909e-fbb72e86e4fb)
 
 ![报表输出2](https://github.com/user-attachments/assets/235c724e-f465-4966-98b8-0dc4cf7acc50)
+
+#### 化矿分析
+![ac2a49e3c136d18bd767e7ebc6794a30](https://github.com/user-attachments/assets/8a1f865f-ec7a-416d-9640-fd87f3e46b55)
 
 #### 利润分析
 ![利润分析](https://github.com/user-attachments/assets/8b835d57-e093-42c0-896d-bb93579c9935)
