@@ -702,7 +702,7 @@ class IndsEvent:
         need_d = ref_res['need']
         output_str = '采购清单：\n'
         for tid, data in need_d.items():
-            output_str += f'{data['name']}\t{data['need']}\n'
+            output_str += f"{data['name']}\t{data['need']}\n"
 
         pic_path = await PriceResRender.render_refine_result(ref_res)
         chain = [
