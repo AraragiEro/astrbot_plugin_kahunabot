@@ -1,6 +1,9 @@
 # import logger
+import json
+import os
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+from datetime import datetime, timedelta
 
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.message_components import Image, BaseMessageComponent, Plain
@@ -24,8 +27,12 @@ from ..service.log_server import logger
 from ..service.picture_render_server.picture_render import PriceResRender
 from ..service.config_server.config import config
 
-# import Exception
-from ..utils import KahunaException
+from ..utils import (
+    KahunaException,
+    get_user_tmp_cache_prefix,
+    get_beijing_utctime
+)
+from ..utils.path import TMP_PATH
 
 calculate_lock = asyncio.Lock()
 async def try_acquire_lock(lock, timeout=0.01):
@@ -35,8 +42,6 @@ async def try_acquire_lock(lock, timeout=0.01):
         return True
     except asyncio.TimeoutError:
         return False
-
-
 
 def print_name_fuzz_list(event: AstrMessageEvent, type_name: str):
     fuzz_list = SdeUtils.fuzz_type(type_name, list_len=10)
@@ -263,7 +268,7 @@ class IndsEvent:
 
             return event.plain_result("已配置，可以使用Inds matcher info 查看详情。")
 
-
+        return event.plain_result('matcher_type 未匹配分支。')
 
     @staticmethod
     def matcher_unset(event: AstrMessageEvent, matcher_name:str, matcher_key_type: str):
@@ -282,6 +287,7 @@ class IndsEvent:
                 matcher.matcher_data[matcher_key_type].pop(matcher_key)
                 matcher.insert_to_db()
             return event.plain_result("已配置，可以使用Inds matcher info 查看详情。")
+        return event.plain_result('matcher_type 未匹配分支。')
 
     @staticmethod
     def structure_ls(event: AstrMessageEvent):
@@ -453,7 +459,7 @@ class IndsEvent:
         return event.plain_result("执行完成")
 
     @staticmethod
-    async def rp_all(event: AstrMessageEvent, plan_name: str):
+    async def rp_plan(event: AstrMessageEvent, plan_name: str):
         user_qq = int(event.get_sender_id())
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
@@ -477,6 +483,16 @@ class IndsEvent:
         FeiShuKahuna.output_work_flow(work_flow_sheet, report['work_flow'])
         logistic_sheet = FeiShuKahuna.get_logistic_sheet(spreadsheet)
         FeiShuKahuna.output_logistic_plan(logistic_sheet, report['logistic'])
+
+        # 删除不可写入json的多余部分
+        report.pop('logistic')
+        plan_cache = get_user_tmp_cache_prefix(user_qq) + f'{plan_name}_' + 'plan_report.json'
+        with open(os.path.join(TMP_PATH, plan_cache), 'w') as file:
+            cache_dict = {
+                'date': get_beijing_utctime(datetime.now()).isoformat(),
+                'data': report
+            }
+            json.dump(cache_dict, file, indent=4)
 
         return event.plain_result(f"执行完成, 当前计划蓝图分解:{work_tree_sheet.url}")
 
@@ -656,6 +672,40 @@ class IndsEvent:
         IndustryManager.refresh_running_status()
 
         return event.plain_result("执行完成")
+
+    @staticmethod
+    async def rp_mineral_analyse(
+            event: AstrMessageEvent, plan_name: str,
+            material_flag: str = 'buy',
+            compress_flag: str = 'buy'
+    ):
+        user_qq = int(event.get_sender_id())
+        user = UserManager.get_user(user_qq)
+        if plan_name not in user.user_data.plan:
+            raise KahunaException(f"plan {plan_name} not exist")
+        if material_flag not in {'buy', 'sell'}:
+            return event.plain_result("material_flag must be in {buy, sell}")
+        if compress_flag not in {'buy', 'sell'}:
+            return event.plain_result("compress_flag must be in {buy, sell}")
+
+        plan_cache = get_user_tmp_cache_prefix(user_qq) + f'{plan_name}_' + 'plan_report.json'
+        with open(os.path.join(TMP_PATH, plan_cache), 'r') as file:
+            plan_data = json.load(file)
+        report_time = datetime.fromisoformat(plan_data['date'])
+        report = plan_data['data']
+
+        # 化矿分析
+        minedata = report['material']['矿石']
+        material_list = [[data[0], data[3]] for data in minedata]
+
+        ref_res = await IndustryAdvice.material_ref_advice(material_list)
+
+        pic_path = await PriceResRender.render_refine_result(ref_res)
+        chain = [
+            Image.fromFileSystem(pic_path)
+        ]
+        return event.chain_result(chain)
+
 
 class MarketEvent:
     @staticmethod

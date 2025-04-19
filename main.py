@@ -333,7 +333,7 @@ class KahunaBot(Star):
     @Inds_rp.command('计划报表', alias={'workrp'})
     async def Inds_rp_workrp(self, event: AstrMessageEvent, plan_name: str):
         """ 计划材料清单 """
-        yield await IndsEvent.rp_all(event, plan_name)
+        yield await IndsEvent.rp_plan(event, plan_name)
 
     @Inds_rp.command('t2市场', alias={'t2mk'})
     async def Inds_rp_t2cost(self, event: AstrMessageEvent, plan_name: str):
@@ -354,6 +354,14 @@ class KahunaBot(Star):
     @Inds_rp.command('出售', alias={"sell"})
     async def Inds_rp_sell(self, event: AstrMessageEvent, price_type: str):
         yield await IndsEvent.rp_sell_list(event, price_type)
+
+    @Inds_rp.command('化矿', alias={"refine"})
+    async def Inds_rp_ref(
+            self,event: AstrMessageEvent, plan_name: str,
+            material_flag: str = 'buy',
+            compress_flag: str = 'buy'
+    ):
+        yield await IndsEvent.rp_mineral_analyse(event, plan_name, material_flag, compress_flag)
 
     @Inds.command("refjobs")
     async def Inds_refjobs(self, event: AstrMessageEvent):
@@ -405,7 +413,7 @@ class KahunaBot(Star):
         Args:
             plan_name(string): 计划名称
         '''
-        tool_result = await IndsEvent.rp_all(event, plan_name)
+        tool_result = await IndsEvent.rp_plan(event, plan_name)
         yield await kahuna_llmt.return_tool_result_with_llm(self, event, tool_result)
 
     @llm_tool(name="get_eve_capital_cost_with_plan_data")  # 如果 name 不填，将使用函数名

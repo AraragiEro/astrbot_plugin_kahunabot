@@ -10,7 +10,7 @@ import traceback
 from ..database_server.model import Character as M_Character
 from ..evesso_server.oauth import refresh_token
 from ..log_server import logger
-from ...utils import KahunaException
+from ...utils import KahunaException, get_beijing_utctime
 
 
 class Character(BaseModel):
@@ -76,12 +76,7 @@ class Character(BaseModel):
     def token_avaliable(self):
         expire_time = self.expires_date.replace(tzinfo=None)
         # 获取当前时间
-        current = datetime.now()
-
-        # 检查是否为UTC时间（通过检查系统时区）
-        if current.astimezone().utcoffset().total_seconds() == 0:  # 如果是UTC时区
-            # 转换为北京时间 (UTC+8)
-            current = current + timedelta(hours=8)
+        current = get_beijing_utctime(datetime.now())
 
         # 添加15分钟缓冲并移除时区信息
         now = (current + timedelta(minutes=5)).replace(tzinfo=None)
