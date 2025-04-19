@@ -1,6 +1,9 @@
 import math
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
+
+
 # import transformers
 
 class KahunaException(Exception):
@@ -38,6 +41,16 @@ async def refresh_per_min(start_delay, interval, func):
                 await asyncio.sleep(5)
             await asyncio.sleep(interval * 60)
 
+def get_user_tmp_cache_prefix(user_qq: int):
+    return f"cache_{user_qq}_"
+
+def get_beijing_utctime(current: datetime) -> datetime:
+    # 检查是否为UTC时间（通过检查系统时区）
+    if current.astimezone().utcoffset().total_seconds() == 0:  # 如果是UTC时区
+        # 转换为北京时间 (UTC+8)
+        current = current + timedelta(hours=8)
+    return current
+
 class classproperty(property):
     def __get__(self, instance, cls):
         return self.fget(cls)
@@ -50,7 +63,6 @@ class ClassPropertyMetaclass(type):
             if type(obj) is classproperty:
                 return obj.__set__(self, value)
         return super().__setattr__(key, value)
-
 
 # from .deepseek_tokenizer import tokenizer
 # def get_chat_token_count(input: str):

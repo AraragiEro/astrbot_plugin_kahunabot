@@ -113,6 +113,7 @@
         },
         options: {
           responsive: true,
+          animation: false, // 禁用动画以加速渲染
           plugins: {
             legend: {
               display: false
@@ -120,6 +121,9 @@
           }
         }
       });
+      
+      // 设置全局渲染完成标志
+      window.chartRendered = true;
       
       // 格式化数字函数
       function formatNumber(num) {

@@ -2,6 +2,7 @@
 from astrbot.api import logger
 import imgkit
 import os
+import sys
 import jinja2  # 添加Jinja2导入
 import requests
 import base64
@@ -13,14 +14,12 @@ import math
 from ..sde_service import SdeUtils
 from ..market_server import MarketManager
 from ...utils import KahunaException
+from ...utils.path import TMP_PATH, RESOURCE_PATH
 
-tmp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../tmp"))
-# 资源目录
-resource_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../resource"))
 # 模板目录
-template_path = os.path.join(resource_path, "templates")
+template_path = os.path.join(RESOURCE_PATH, "templates")
 # CSS目录
-css_path = os.path.join(resource_path, "css")
+css_path = os.path.join(RESOURCE_PATH, "css")
 
 def format_number(value):
     """将数字格式化为带千位分隔符的字符串"""
@@ -40,8 +39,8 @@ class PriceResRender():
     @classmethod
     def check_tmp_dir(cls):
         # 确保临时目录存在
-        if not os.path.exists(tmp_path):
-            os.makedirs(tmp_path)
+        if not os.path.exists(TMP_PATH):
+            os.makedirs(TMP_PATH)
 
     @classmethod
     async def render_price_res_pic(cls, item_name: str, price_data: list, history_data: list):
@@ -77,10 +76,10 @@ class PriceResRender():
             return None
 
         # 生成输出路径
-        output_path = os.path.abspath(os.path.join((tmp_path), "price_res.jpg"))
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "price_res.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=10)
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=20)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -175,7 +174,7 @@ class PriceResRender():
                 profit_rate=profit_rate,
                 cost_components=cost_components
             )
-            with open(os.path.join(tmp_path, "single_cost.html"), 'w', encoding='utf-8') as f:
+            with open(os.path.join(TMP_PATH, "single_cost.html"), 'w', encoding='utf-8') as f:
                 f.write(html_content)
         except jinja2.exceptions.TemplateNotFound as e:
             logger.error(f"模板文件不存在: {e}")
@@ -183,10 +182,10 @@ class PriceResRender():
             return None
 
         # 生成输出路径
-        output_path = os.path.abspath(os.path.join((tmp_path), "single_cost_res.jpg"))
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "single_cost_res.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=10)
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=30)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -243,12 +242,12 @@ class PriceResRender():
             current = current + timedelta(hours=8)
         html_content = template.render(
             items=items,
-            header_image=PriceResRender.get_image_base64(os.path.join(resource_path, 'img' ,'sell_list_header.png')),
+            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
             current_time=current.strftime('%Y-%m-%d %H:%M:%S') + ' UTC+8',
         )
 
         # 生成输出路径
-        output_path = os.path.abspath(os.path.join((tmp_path), "sell_list.jpg"))
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "sell_list.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
         pic_path = await cls.render_pic(output_path, html_content, width=1300, height=720, wait_time=5)
@@ -258,30 +257,107 @@ class PriceResRender():
         return pic_path
 
     @classmethod
+    async def render_refine_result(cls, ref_res):
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('refine_template.j2')
+        current = datetime.now()
+        if current.astimezone().utcoffset().total_seconds() == 0:  # 如果是UTC时区
+            # 转换为北京时间 (UTC+8)
+            current = current + timedelta(hours=8)
+        html_content = template.render(
+            data=ref_res,
+            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "refine_report.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=1000, height=720, wait_time=5)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
     async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 5):
         # 将HTML内容保存到临时文件
-        html_file_path = os.path.join(tmp_path, "temp_render.html")
+        html_file_path = os.path.join(TMP_PATH, "temp_render.html")
         with open(html_file_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
-    
+
+        # 检查是否为 Linux 系统
+        if sys.platform.startswith('linux'):
         # 启动浏览器，添加必要的参数以确保在Linux环境下正常运行
-        browser = await launch(
+            browser = await launch(
             headless=True,
-            args=[
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--single-process'
-            ]
-        )
-        
+                args=[
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--single-process'
+                ]
+            )
+        else:
+            browser = await launch(
+                executablePath=r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+                headless=True
+            )
+
         page = await browser.newPage()
         await page.setViewport({'width': width, 'height': height})
         
         try:
+            # 设置页面内容
             await page.setContent(html_content)
-            await asyncio.sleep(wait_time)  # Give time for content to render
+            
+            # 等待字体加载完成
+            await page.waitForFunction('document.fonts.ready')
+            
+            # 检查是否有Chart.js图表，如果有则等待图表渲染完成
+            has_chart = await page.evaluate('typeof Chart !== "undefined" && document.getElementById("costChart") !== null')
+            if has_chart:
+                # 禁用Chart.js动画以加速渲染
+                await page.evaluate('''
+                    if (typeof Chart !== "undefined") {
+                        Chart.defaults.animation = false;
+                        // 添加一个全局标志，表示图表渲染完成
+                        window.chartRendered = false;
+                        const originalDraw = Chart.prototype.draw;
+                        Chart.prototype.draw = function() {
+                            originalDraw.apply(this, arguments);
+                            window.chartRendered = true;
+                        };
+                    }
+                ''')
+                
+                # 等待图表渲染完成或超时
+                try:
+                    await page.waitForFunction('window.chartRendered === true', {'timeout': wait_time * 1000})
+                except Exception as e:
+                    logger.warning(f"等待图表渲染超时: {e}，使用备用等待时间")
+                    await asyncio.sleep(wait_time)  # 备用等待机制
+            else:
+                # 如果没有图表，等待DOM内容加载完成
+                await page.waitForFunction('document.readyState === "complete"')
+                # 额外等待一小段时间确保CSS渲染完成
+                await asyncio.sleep(1)
+            
+            # 截图
             await page.screenshot({'path': output_path, 'fullPage': True})
+        except Exception as e:
+            logger.error(f"渲染过程发生错误: {e}")
+            # 发生错误时仍尝试截图
+            try:
+                await asyncio.sleep(wait_time)  # 使用原始等待时间作为备用
+                await page.screenshot({'path': output_path, 'fullPage': True})
+            except Exception as screenshot_error:
+                logger.error(f"截图失败: {screenshot_error}")
+                raise
         finally:
             await browser.close()
     
@@ -304,7 +380,7 @@ class PriceResRender():
         :return: 图片本地路径
         """
         # 创建图片存储目录
-        image_path = os.path.join(resource_path, "img")
+        image_path = os.path.join(RESOURCE_PATH, "img")
         if not os.path.exists(image_path):
             os.makedirs(image_path)
 
@@ -349,7 +425,7 @@ class PriceResRender():
                 logger.error(f"从备用URL下载EVE物品图片也失败: {backup_e}")
                 
                 # 如果两个URL都失败，返回默认图片路径
-                default_image = os.path.join(resource_path, "img", "default_item.png")
+                default_image = os.path.join(RESOURCE_PATH, "img", "default_item.png")
                 
                 # 如果默认图片不存在，创建一个简单的默认图片
                 if not os.path.exists(default_image):
@@ -373,3 +449,4 @@ class PriceResRender():
         except Exception as e:
             logger.error(f"图片转base64失败: {e}")
             return None
+
