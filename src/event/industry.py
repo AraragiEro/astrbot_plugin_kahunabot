@@ -699,10 +699,15 @@ class IndsEvent:
         material_list = [[data[0], data[3]] for data in minedata]
 
         ref_res = await IndustryAdvice.material_ref_advice(material_list, material_flag, compress_flag)
+        need_d = ref_res['need']
+        output_str = '采购清单：\n'
+        for tid, data in need_d.items():
+            output_str += f'{data['name']}\t{data['need']}\n'
 
         pic_path = await PriceResRender.render_refine_result(ref_res)
         chain = [
-            Image.fromFileSystem(pic_path)
+            Image.fromFileSystem(pic_path),
+            Plain(output_str)
         ]
         return event.chain_result(chain)
 
