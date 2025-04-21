@@ -548,9 +548,9 @@ class IndsEvent:
                     f"推荐制造：\n")
         for index, data in enumerate(t2mk_data[:10]):
             res_str += (f'{index+1}.{data[1]}\n'
-                        f'  利润率:{data[4]:.2%}\n'
-                        f'  月利润:{data[5]:,.2f}\n'
-                        f'  月销量:{data[11]:,}\n')
+                        f'  利润率:{data[5]:.2%}\n'
+                        f'  月利润:{data[6]:,.2f}\n'
+                        f'  月销量:{data[12]:,}\n')
 
         return event.plain_result(res_str)
 
