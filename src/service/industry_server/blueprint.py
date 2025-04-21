@@ -54,7 +54,6 @@ class BPManager:
     @classmethod
     @lru_cache(maxsize=100)
     def get_bp_id_by_prod_typeid(cls, type_id: int) -> int:
-        black_list = [45732]
         return (IndustryActivityProducts
                  .select(IndustryActivityProducts.blueprintTypeID)
                  .where((IndustryActivityProducts.productTypeID == type_id) &
