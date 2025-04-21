@@ -170,12 +170,14 @@ class IndsEvent:
 
     @staticmethod
     def matcher_del(event: AstrMessageEvent, matcher_name: str):
-        delete_matcher = IndustryConfigManager.delete_matcher(matcher_name, int(event.get_sender_id()))
+        user_qq = get_user(event)
+        delete_matcher = IndustryConfigManager.delete_matcher(matcher_name, user_qq)
         return event.plain_result(f"已删除工业系数匹配器： {delete_matcher.matcher_name}")
 
     @staticmethod
     def matcher_ls(event: AstrMessageEvent):
-        matcher_list = IndustryConfigManager.get_user_matcher(int(event.get_sender_id()))
+        user_qq = get_user(event)
+        matcher_list = IndustryConfigManager.get_user_matcher(user_qq)
 
         res_str = f"您可以使用以下工业系数匹配器：\n"
         for matcher in matcher_list:
@@ -255,7 +257,7 @@ class IndsEvent:
             if matcher_key_type == "bp":
                 matcher_key = SdeUtils.get_name_by_id(SdeUtils.get_id_by_name(matcher_key))
 
-            character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(int(event.get_sender_id())))
+            character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(user_qq))
             structure = StructureManager.get_structure(structure_id, character.ac_token)
             if not structure:
                 return event.plain_result("获取建筑信息失败")
@@ -286,8 +288,9 @@ class IndsEvent:
     @staticmethod
     def matcher_unset(event: AstrMessageEvent, matcher_name:str, matcher_key_type: str):
         config_data = event.get_message_str().split(" ")[5:]
+        user_qq = get_user(event)
 
-        matcher = IndustryConfigManager.get_matcher_of_user_by_name(matcher_name, int(event.get_sender_id()))
+        matcher = IndustryConfigManager.get_matcher_of_user_by_name(matcher_name, user_qq)
         if not matcher:
             return event.plain_result("未找到匹配器，可用指令 .Inds matcher ls 查询可用匹配器")
 
@@ -315,7 +318,8 @@ class IndsEvent:
 
     @staticmethod
     def structure_info(event: AstrMessageEvent, structure_id: int):
-        character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(int(event.get_sender_id())))
+        user_qq = get_user(event)
+        character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(user_qq))
         structure = StructureManager.get_structure(structure_id, character.ac_token)
         return event.plain_result(
             f"name: {structure.name}\n"
@@ -331,7 +335,8 @@ class IndsEvent:
         if mater_rig_level < 0 or mater_rig_level > 2 \
             or time_rig_level < 0 or time_rig_level > 2:
             return event.plain_result("rig_level must be 0, 1 or 2")
-        character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(int(event.get_sender_id())))
+        user_qq = get_user(event)
+        character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(user_qq))
         structrue = StructureManager.get_structure(structure_id, character.ac_token)
         structrue.mater_rig_level = mater_rig_level
         structrue.time_rig_level = time_rig_level
@@ -740,8 +745,9 @@ class MarketEvent:
 
     @staticmethod
     async def market_set_ac(event: AstrMessageEvent):
+        user_qq = get_user(event)
         character_name = ' '.join(event.get_message_str().split(" ")[2:])
-        character = CharacterManager.get_character_by_name_qq(character_name, int(event.get_sender_id()))
+        character = CharacterManager.get_character_by_name_qq(character_name, user_qq)
         MarketManager.set_ac_character(character.character_id)
         return event.plain_result(f"设置市场访问角色为 {character_name}")
 
