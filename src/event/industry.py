@@ -115,8 +115,7 @@ class AssetEvent():
 
         print_str = "你可访问以下库存：\n"
         for container in AssetManager.container_dict.values():
-            if (AssetContainer.operater_has_container_permission(user_qq, container.asset_owner_id) and
-                user_qq == container.asset_owner_qq):
+            if (user_qq == container.asset_owner_qq):
                 logger.info(f'{user_qq} == container.asset_owner_qq')
                 print_str += f"{container}\n"
         return event.plain_result(print_str)
