@@ -52,7 +52,8 @@ class UserEvent():
 
     @staticmethod
     def self_info(event: AstrMessageEvent):
-        user = UserManager.get_user(int(event.get_sender_id()))
+        user_qq = get_user(event)
+        user = UserManager.get_user(user_qq)
         return event.plain_result(user.info)
 
     @staticmethod
