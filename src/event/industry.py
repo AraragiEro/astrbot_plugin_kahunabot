@@ -206,8 +206,9 @@ class IndsEvent:
     @staticmethod
     def matcher_set(event: AstrMessageEvent, matcher_name:str, matcher_key_type: str):
         config_data = event.get_message_str().split(" ")[5:]
+        user_qq = get_user(event)
 
-        matcher = IndustryConfigManager.get_matcher_of_user_by_name(matcher_name, int(event.get_sender_id()))
+        matcher = IndustryConfigManager.get_matcher_of_user_by_name(matcher_name, user_qq)
         if not matcher:
             return event.plain_result("未找到匹配器，可用指令 .Inds matcher ls 查询可用匹配器")
 
