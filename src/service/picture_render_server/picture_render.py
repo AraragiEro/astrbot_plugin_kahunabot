@@ -79,7 +79,7 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "price_res.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=20)
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -185,7 +185,7 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "single_cost_res.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=30)
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -250,7 +250,7 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "sell_list.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=1300, height=720, wait_time=5)
+        pic_path = await cls.render_pic(output_path, html_content, width=1300, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -277,7 +277,7 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "refine_report.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=1000, height=720, wait_time=5)
+        pic_path = await cls.render_pic(output_path, html_content, width=1000, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -316,7 +316,7 @@ class PriceResRender():
             await page.setContent(html_content)
             
             # 等待字体加载完成
-            await page.waitForFunction('document.fonts.ready')
+            await page.waitForFunction('document.fonts.ready', {'timeout': wait_time * 1000})
             
             # 检查是否有Chart.js图表，如果有则等待图表渲染完成
             has_chart = await page.evaluate('typeof Chart !== "undefined" && document.getElementById("costChart") !== null')
