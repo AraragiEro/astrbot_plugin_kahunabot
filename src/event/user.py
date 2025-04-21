@@ -25,7 +25,7 @@ def get_user(event: AstrMessageEvent):
     if get_debug_qq():
         user_qq = get_debug_qq()
     else:
-        user_qq = get_user(event)
+        user_qq = int(event.get_sender_id())
 
     return user_qq
 
