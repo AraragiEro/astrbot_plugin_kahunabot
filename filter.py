@@ -7,9 +7,22 @@ from datetime import datetime
 from .src.service.log_server import logger
 from .src.utils import KahunaException
 
+# import Exception
+from .src.utils import (
+    get_debug_qq
+)
+
+def get_user(event: AstrMessageEvent):
+    if get_debug_qq():
+        user_qq = get_debug_qq()
+    else:
+        user_qq = get_user(event)
+
+    return user_qq
+
 class MemberFilter(CustomFilter):
     def filter(self, event: AstrMessageEvent, cfg: AstrBotConfig) -> bool:
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         if UserManager.user_exists(user_qq):
             return True
         else:
@@ -18,7 +31,7 @@ class MemberFilter(CustomFilter):
 
 class VipMemberFilter(CustomFilter):
     def filter(self, event: AstrMessageEvent, cfg: AstrBotConfig) -> bool:
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         if not UserManager.user_exists(user_qq):
             logger.error(f"vip member filter error: user {user_qq} not exists")
             return False
