@@ -99,7 +99,7 @@ class KahunaBot(Star):
         set_debug_qq(qq)
         yield event.plain_result(f'已设置调试模式对象： {qq}')
 
-    @admin.comman('undebug')
+    @admin.command('undebug')
     async def admin_undebug(self, event: AstrMessageEvent, qq: int):
         unset_debug_qq()
         yield event.plain_result('调试模式关闭')
