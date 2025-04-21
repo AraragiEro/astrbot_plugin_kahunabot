@@ -39,6 +39,7 @@ class UserManager():
                 if user.main_character_id:
                     usr_obj.main_character_id = user.main_character_id
                 cls.user_dict[usr_obj.user_qq] = usr_obj
+                logger.info(f'初始化用户 {user.user_qq} 成功。')
         cls.init_status = True
         logger.info(f"init user list complete. {id(cls)}")
 

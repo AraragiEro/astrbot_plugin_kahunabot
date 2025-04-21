@@ -71,6 +71,8 @@ class StructureManager():
                 data.pop('id')
                 structure = Structure(**data)
                 cls.structure_dict[structure.structure_id] = structure
+
+                logger.info(f'初始化建筑 {structure.name} 成功')
             cls.init_status = True
 
         logger.info(f"init structure dict complete. {id(cls)}")

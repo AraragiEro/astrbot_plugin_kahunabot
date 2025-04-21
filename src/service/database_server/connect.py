@@ -40,7 +40,7 @@ class DatabaseConectManager():
             }, timeout=120)
 
             cls._connect_dict["config"].initialize(db)
-            logger.info("config db connect success")
+            logger.info("链接配置数据库成功。")
         else:
             raise KahunaException("bot db open failed")
 
@@ -55,7 +55,7 @@ class DatabaseConectManager():
             }, timeout=120)
 
             cls._connect_dict["cache"].initialize(db)
-            logger.info("cache db connect success")
+            logger.info("链接缓存数据库成功。")
         else:
             raise KahunaException("bot db open failed")
 
@@ -83,7 +83,7 @@ class DatabaseConectManager():
                 logger.info(f"create table {model._meta.table_name}")
                 model.create_table()
 
-        logger.info("create default table success.")
+        logger.info("创建默认表结构成功.")
 
     @classmethod
     def clean_table_not_in_list(cls):

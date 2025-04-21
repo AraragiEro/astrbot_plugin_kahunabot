@@ -143,6 +143,7 @@ class IndustryConfigManager():
         if not cls.init_matcher_status:
             for matcher_data in M_Matcher.select():
                 cls.matcher_dict[matcher_data.matcher_name] = Matcher.init_from_db_data(matcher_data)
+                logger.info(f'初始化匹配器 {matcher_data.matcher_name}.')
             cls.init_matcher_status = True
         logger.info(f'Matcher dict inited. {id(cls)}')
 
