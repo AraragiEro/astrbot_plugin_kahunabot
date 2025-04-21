@@ -346,7 +346,7 @@ class IndustryAnalyser():
         if source_id not in self.bp_quantity_dict:
             self.bp_quantity_dict[source_id] = len(avaliable_bpc_list)
             if len(avaliable_bpo_count_list) > 0:
-                self.bp_quantity_dict[source_id] += len(avaliable_bpo_count_list)
+                self.bp_quantity_dict[source_id] += sum([i[0] for i in avaliable_bpo_count_list])
                 self.have_bpo[source_id] = True
         if source_id not in self.bp_runs_dict:
             self.bp_runs_dict[source_id] = sum([bp[0] for bp in avaliable_bpc_list])
