@@ -31,7 +31,7 @@ from ..utils import (
     KahunaException,
     get_user_tmp_cache_prefix,
     get_beijing_utctime,
-    DEBUG_QQ
+    get_debug_qq
 )
 from ..utils.path import TMP_PATH
 
@@ -52,8 +52,8 @@ def print_name_fuzz_list(event: AstrMessageEvent, type_name: str):
         return event.plain_result(fuzz_rely)
 
 def get_user(event: AstrMessageEvent):
-    if DEBUG_QQ:
-        user_qq = DEBUG_QQ
+    if get_debug_qq():
+        user_qq = get_debug_qq()
     else:
         user_qq = int(event.get_sender_id())
     
