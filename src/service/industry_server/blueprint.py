@@ -197,7 +197,7 @@ class BPManager:
                 IndustryActivities.time
             ).where(
                 (IndustryActivities.blueprintTypeID == blueprint_type_id) &
-                (IndustryActivityProducts.blueprintTypeID != 45732)
+                (IndustryActivities.blueprintTypeID != 45732)
             )
             
             for activity in activities:
