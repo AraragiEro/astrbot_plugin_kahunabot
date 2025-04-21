@@ -22,6 +22,7 @@ from .filter import AdminFilter, VipMemberFilter, MemberFilter
 
 
 from .src.utils import refresh_per_min, run_func_delay_min
+from .src.utils import set_debug_qq, unset_debug_qq, DEBUG_QQ
 
 # 环境变量
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -92,6 +93,16 @@ class KahunaBot(Star):
     @admin.command('设置公用成本计划', alias={'setpubliccostplan'})
     async def admin_setpubliccostplan(self, event: AstrMessageEvent, user_qq: int, plan_name: str):
         yield await AdminEvent.setpubliccostplan(event, user_qq, plan_name)
+
+    @admin.command('debug')
+    async def admin_debug(self, event: AstrMessageEvent, qq: int):
+        set_debug_qq(qq)
+        yield event.plain_result(f'已设置调试模式对象： {qq}')
+
+    @admin.comman('undebug')
+    async def admin_undebug(self, event: AstrMessageEvent, qq: int):
+        unset_debug_qq()
+        yield event.plain_result('调试模式关闭')
 
     """ ---指令組--- """
     @filter.custom_filter(MemberFilter)

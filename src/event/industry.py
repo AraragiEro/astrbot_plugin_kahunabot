@@ -30,7 +30,8 @@ from ..service.config_server.config import config
 from ..utils import (
     KahunaException,
     get_user_tmp_cache_prefix,
-    get_beijing_utctime
+    get_beijing_utctime,
+    DEBUG_QQ
 )
 from ..utils.path import TMP_PATH
 
@@ -49,6 +50,14 @@ def print_name_fuzz_list(event: AstrMessageEvent, type_name: str):
         fuzz_rely = (f"你是否在寻找：\n")
         fuzz_rely += '\n'.join(fuzz_list)
         return event.plain_result(fuzz_rely)
+
+def get_user(event: AstrMessageEvent):
+    if DEBUG_QQ:
+        user_qq = DEBUG_QQ
+    else:
+        user_qq = get_user(event)
+    
+    return user_qq
 
 class AssetEvent():
     @staticmethod
@@ -71,7 +80,7 @@ class AssetEvent():
 
     @staticmethod
     def owner_add(event: AstrMessageEvent, owner_type: str, character_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         character = CharacterManager.get_character_by_name_qq(character_name, user_qq)
 
         owner_id = AssetEvent.get_owner_id(owner_type, character_name, character)
@@ -82,7 +91,7 @@ class AssetEvent():
 
     @staticmethod
     def owner_refresh(event: AstrMessageEvent, owner_type: str, character_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         character = CharacterManager.get_character_by_name_qq(character_name, user_qq)
 
         owner_id = AssetEvent.get_owner_id(owner_type, character_name, character)
@@ -92,7 +101,7 @@ class AssetEvent():
 
     @staticmethod
     def container_add(event: AstrMessageEvent, location_id: int, location_flag: str, target_qq: int, container_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
 
         main_character_id = UserManager.get_main_character_id(user_qq)
         main_character = CharacterManager.get_character_by_id(main_character_id)
@@ -102,7 +111,8 @@ class AssetEvent():
 
     @staticmethod
     def container_ls(event: AstrMessageEvent):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
+
         print_str = "你可访问以下库存：\n"
         for container in AssetManager.container_dict.values():
             if (AssetContainer.operater_has_container_permission(user_qq, container.asset_owner_id) and
@@ -113,7 +123,7 @@ class AssetEvent():
 
     @staticmethod
     def container_find(event: AstrMessageEvent, secret_type: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         secret_type = " ".join(event.get_message_str().split(" ")[3:])
         if SdeUtils.maybe_chinese(secret_type):
             type_id = SdeUtils.get_id_by_name(secret_type)
@@ -136,7 +146,8 @@ class AssetEvent():
 
     @staticmethod
     def container_settag(event: AstrMessageEvent, location_id_list: str, tag: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
+            
         location_id_list = [int(lid) for lid in location_id_list.split(",")]
         success_list = AssetManager.set_container_tag([(user_qq, location_id) for location_id in location_id_list], tag)
 
@@ -331,7 +342,7 @@ class IndsEvent:
 
     @staticmethod
     def plan_setprod(event: AstrMessageEvent, plan_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         config_data = event.get_message_str().split(" ")[4:]
         prod_name = " ".join(config_data[:-1])
         quantity = config_data[-1]
@@ -352,7 +363,7 @@ class IndsEvent:
 
     @staticmethod
     def plan_setcycletime(event: AstrMessageEvent, plan_name:str, time_type: str, hour: int):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if time_type == 'reac':
             user.set_reac_cycle_time(plan_name, hour)
@@ -365,7 +376,7 @@ class IndsEvent:
 
     @staticmethod
     def plan_set_line(event:AstrMessageEvent, plan_name:str, line_type: str, line_num:int):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if line_type == 'reac':
             user.set_reac_line_num(plan_name, line_num)
@@ -379,7 +390,7 @@ class IndsEvent:
     @staticmethod
     def plan_create(event: AstrMessageEvent, plan_name: str,
                     bp_matcher_name: str, st_matcher_name: str, prod_block_matcher_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         bp_matcher = IndustryConfigManager.get_matcher_of_user_by_name(bp_matcher_name, user_qq)
         st_matcher = IndustryConfigManager.get_matcher_of_user_by_name(st_matcher_name, user_qq)
         prod_block_matcher = IndustryConfigManager.get_matcher_of_user_by_name(prod_block_matcher_name, user_qq)
@@ -390,7 +401,7 @@ class IndsEvent:
 
     @staticmethod
     def plan_ls(event: AstrMessageEvent, plan_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
 
         plan_detail = user.user_data.get_plan_detail(plan_name)
@@ -399,7 +410,7 @@ class IndsEvent:
 
     @staticmethod
     def plan_delprod(event: AstrMessageEvent, plan_name: str, index_list: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         index_list = index_list.split(",")
         index_list = [int(index) for index in index_list]
         index_list.sort(reverse=True)
@@ -412,7 +423,7 @@ class IndsEvent:
 
     @staticmethod
     def plan_changeindex(event: AstrMessageEvent, plan_name: str, index: int, target_index: int):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
 
         if not plan_name in user.user_data.plan:
@@ -432,7 +443,7 @@ class IndsEvent:
 
     @staticmethod
     def plan_delplan(event: AstrMessageEvent, plan_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         user.delete_plan(plan_name)
 
@@ -440,7 +451,7 @@ class IndsEvent:
 
     @staticmethod
     def plan_hidecontainer(event: AstrMessageEvent, plan_name: str, container_id: int):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
@@ -450,7 +461,7 @@ class IndsEvent:
 
     @staticmethod
     def plan_unhidecontainer(event: AstrMessageEvent, plan_name: str, container_id: int):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
@@ -460,7 +471,8 @@ class IndsEvent:
 
     @staticmethod
     async def rp_plan(event: AstrMessageEvent, plan_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
+        
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
@@ -498,7 +510,7 @@ class IndsEvent:
 
     @staticmethod
     async def rp_t2mk(event: AstrMessageEvent, plan_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
@@ -544,7 +556,7 @@ class IndsEvent:
 
     @staticmethod
     async def rp_battalship_mk(event: AstrMessageEvent, plan_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
@@ -585,7 +597,7 @@ class IndsEvent:
 
     @staticmethod
     async def rp_capcost(event: AstrMessageEvent, plan_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
@@ -613,7 +625,7 @@ class IndsEvent:
                     plan_name = config['APP']['COST_PLAN_NAME']
                     product = ' '.join(event.get_message_str().split(" ")[1:])
                 else:
-                    user_qq = int(event.get_sender_id())
+                    user_qq = get_user(event)
                     product = ' '.join(event.get_message_str().split(" ")[4:])
 
                 user = UserManager.get_user(user_qq)
@@ -647,7 +659,7 @@ class IndsEvent:
     @staticmethod
     async def rp_sell_list(event: AstrMessageEvent, price_type: str, corp: bool = False):
         if not corp:
-            user_qq = int(event.get_sender_id())
+            user_qq = get_user(event)
         else:
             user_qq = int(config['APP']['CORP_ASSET_USER'])
 
@@ -679,7 +691,7 @@ class IndsEvent:
             material_flag: str = 'buy',
             compress_flag: str = 'buy'
     ):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
