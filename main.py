@@ -10,6 +10,7 @@ from .src.service.character_server.character_manager import CharacterManager
 from .src.service.asset_server.asset_manager import AssetManager
 from .src.service.market_server.market_manager import MarketManager
 from .src.service.industry_server.industry_manager import IndustryManager
+from .src.service.database_server.connect import DatabaseConectManager
 
 from .src.event.character import CharacterEvent
 from .src.event.price import TypesPriceEvent
@@ -50,12 +51,14 @@ class KahunaBot(Star):
         init_server()
 
         # 延时初始化
-        asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
+        asyncio.create_task(refresh_per_min(0, 10, DatabaseConectManager.perform_checkpoint))
+        asyncio.create_task(run_func_delay_min(1, CharacterManager.refresh_all_characters_at_init))
         asyncio.create_task(refresh_per_min(1, 22, MarketManager.refresh_market))
         asyncio.create_task(refresh_per_min(2, 10, AssetManager.refresh_all_asset))
         asyncio.create_task(refresh_per_min(2, 11, IndustryManager.refresh_running_status))
         asyncio.create_task(refresh_per_min(3, 60, IndustryManager.refresh_system_cost))
         asyncio.create_task(refresh_per_min(3, 120, IndustryManager.refresh_market_price))
+
 
     # @filter.custom_filter(SelfFilter1)
     @filter.command("helloworld")

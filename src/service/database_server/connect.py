@@ -60,6 +60,17 @@ class DatabaseConectManager():
             raise KahunaException("bot db open failed")
 
     @classmethod
+    def perform_checkpoint(cls):
+        # wal缓存合并
+        # 确保在执行检查点时获取数据库连接
+        with cls._connect_dict["config"].connection_context():
+            cls._connect_dict["config"].execute_sql('PRAGMA wal_checkpoint(FULL);')
+            logger.info("config 数据库执行了WAL检查点")
+        with cls._connect_dict["cache"].connection_context():
+            cls._connect_dict["cache"].execute_sql('PRAGMA wal_checkpoint(FULL);')
+            logger.info("cache数据库执行了WAL检查点")
+
+    @classmethod
     def config_db(cls) -> DatabaseProxy:
         return cls._connect_dict["config"]
 
