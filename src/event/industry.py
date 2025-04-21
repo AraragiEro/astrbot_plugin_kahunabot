@@ -161,11 +161,12 @@ class AssetEvent():
 class IndsEvent:
     @staticmethod
     def matcher_create(event: AstrMessageEvent, matcher_name: str, matcher_type: str):
+        user_qq = get_user(event)
         if matcher_type not in IndustryConfigManager.matcher_type_set:
             raise KahunaException(f"matcher_type {matcher_type} must be {IndustryConfigManager.matcher_type_set}")
-        matcher = IndustryConfigManager.add_matcher(matcher_name, int(event.get_sender_id()), matcher_type)
+        matcher = IndustryConfigManager.add_matcher(matcher_name, user_qq, matcher_type)
 
-        return event.plain_result(f"已为用户 {int(event.get_sender_id())} 添加适配器 {matcher.matcher_name}")
+        return event.plain_result(f"已为用户 {user_qq} 添加适配器 {matcher.matcher_name}")
 
     @staticmethod
     def matcher_del(event: AstrMessageEvent, matcher_name: str):
@@ -184,8 +185,9 @@ class IndsEvent:
 
     @staticmethod
     def matcher_info(event: AstrMessageEvent, matcher_name: str):
+        user_qq = get_user(event)
         matcher = IndustryConfigManager.matcher_dict.get(matcher_name, None)
-        if not matcher or matcher.user_qq != int(event.get_sender_id()):
+        if not matcher or matcher.user_qq != user_qq:
             return event.plain_result("匹配器不存在。")
 
         res = f"{matcher.matcher_name}: type:{matcher.matcher_type}\n"
