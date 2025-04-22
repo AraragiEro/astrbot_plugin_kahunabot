@@ -519,6 +519,7 @@ class IndsEvent:
     async def rp_t2mk(event: AstrMessageEvent, plan_name: str):
         if await try_acquire_lock(calculate_lock, 1):
             try:
+                yield event.plain_result(f'开始计算t2常规市场数据，需要较长时间，完成前其他计算功能受到限制。')
                 user_qq = get_user(event)
                 user = UserManager.get_user(user_qq)
                 if plan_name not in user.user_data.plan:
@@ -562,18 +563,18 @@ class IndsEvent:
                 t2_cost_sheet = FeiShuKahuna.get_t2_ship_market_sheet(spreadsheet)
                 FeiShuKahuna.output_mk_sheet(t2_cost_sheet, t2mk_data)
 
-                output_path = PriceResRender.rebder_mk_feature(t2mk_dict)
+                output_path = await PriceResRender.rebder_mk_feature(t2mk_dict)
                 res_str = f'报表详情 {t2_cost_sheet.url}'
 
                 chain = [
                     Image.fromFileSystem(output_path),
                     Plain(res_str)
                 ]
-                return event.chain_result(chain)
+                yield event.chain_result(chain)
             finally:
                 calculate_lock.release()
         else:
-            return event.plain_result("已有计算进行中，请稍候再试。")
+            yield event.plain_result("已有计算进行中，请稍候再试。")
 
     @staticmethod
     async def rp_battalship_mk(event: AstrMessageEvent, plan_name: str):
