@@ -13,6 +13,7 @@ import math
 
 from ..sde_service import SdeUtils
 from ..market_server import MarketManager
+from ..config_server.config import config
 from ...utils import KahunaException
 from ...utils.path import TMP_PATH, RESOURCE_PATH
 
@@ -290,22 +291,30 @@ class PriceResRender():
         with open(html_file_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
 
+        launch_a = [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--single-process'
+        ]
+
+        if config['APP']['PIC_RENDER_PROXY'] != '':
+            proxy_arg = [config['APP']['PIC_RENDER_PROXY']]
+        else:
+            proxy_arg = []
+
         # 检查是否为 Linux 系统
         if sys.platform.startswith('linux'):
         # 启动浏览器，添加必要的参数以确保在Linux环境下正常运行
             browser = await launch(
-            headless=True,
-                args=[
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--single-process'
-                ]
+                headless=True,
+                args=launch_a + proxy_arg
             )
         else:
             browser = await launch(
                 executablePath=r'C:\Program Files\Google\Chrome\Application\chrome.exe',
-                headless=True
+                headless=True,
+                args=proxy_arg
             )
 
         page = await browser.newPage()
