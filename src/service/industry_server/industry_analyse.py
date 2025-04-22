@@ -1150,7 +1150,7 @@ class IndustryAnalyser():
 
         with tqdm(total=total_plans, desc="成本计算", unit="个", ascii='=-') as pbar:
             for batch in chunks(plan_list, batch_size):
-                with ProcessPoolExecutor(max_workers=cpu_count) as executor:
+                with ProcessPoolExecutor(max_workers=min(6, cpu_count)) as executor:
                     futures = [
                         executor.submit(cls.signal_async_progress_work_type, user, plan_name, [plan])
                         for plan in batch

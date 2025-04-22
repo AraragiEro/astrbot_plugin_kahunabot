@@ -14,7 +14,7 @@ import math
 from ..sde_service import SdeUtils
 from ..market_server import MarketManager
 from ..config_server.config import config
-from ...utils import KahunaException
+from ...utils import KahunaException, get_beijing_utctime
 from ...utils.path import TMP_PATH, RESOURCE_PATH
 
 # 模板目录
@@ -279,6 +279,40 @@ class PriceResRender():
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
         pic_path = await cls.render_pic(output_path, html_content, width=1000, height=720, wait_time=120)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
+    async def rebder_mk_feature(cls, mk_data: dict):
+        data_list = [data for data in mk_data.values() if data['profit_rate'] < 2]
+        data_list.sort(key=lambda x: x['month_profit'], reverse=True)
+        feature_list = [
+            data for data in data_list
+            if data['cost'] * data['asset_exist'] < 1500000000
+            and data['cost'] > 30000000
+        ][:30]
+
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('t2mk_template.j2')
+        current = get_beijing_utctime(datetime.now())
+        html_content = template.render(
+            all_data=data_list,
+            feature_list=feature_list,
+            header_title='T2常规舰船市场推荐',
+            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "mk_feature.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=1100, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")

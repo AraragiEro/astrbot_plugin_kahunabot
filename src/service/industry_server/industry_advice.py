@@ -23,6 +23,7 @@ class IndustryAdvice:
         t2_cost_data = IndustryAnalyser.get_cost_data(user, plan_name, t2_plan)
         t2_cost_data = [[name] + value for name, value in t2_cost_data.items()]
         t2ship_data = []
+        t2ship_dict = {}
         for data in t2_cost_data:
             tid = SdeUtils.get_id_by_name(data[0])
             vale_mk_his_data, forge_mk_his_data = MarketHistory.get_type_history_detale(tid)
@@ -45,11 +46,27 @@ class IndustryAdvice:
                 SdeUtils.get_metaname_by_typeid(tid)    # 元组信息
             ]
 
+            market_data_dict = {
+                'id': tid,
+                'name': data[0],
+                'cn_name': SdeUtils.get_cn_name_by_id(tid),
+                'profit': (frt_sell * 0.956 - data[3] * 1.01),
+                'profit_rate': (frt_sell * 0.956 - data[3] * 1.01) / data[3],
+                'month_profit': vale_mk_his_data['monthflow'] * ((frt_sell * 0.956 - data[3] * 1.01) / data[3]),
+                'cost': data[3],
+                'frt_sell': frt_sell,
+                'jita_buy': jita_buy,
+                'jita_sell': jita_sell,
+                'month_flow': vale_mk_his_data['monthflow'],
+                'month_volume': vale_mk_his_data['month_volume'],
+                'meta': SdeUtils.get_metaname_by_typeid(tid)
+            }
 
             t2ship_data.append(market_data)
+            t2ship_dict[tid] = market_data_dict
 
         t2ship_data.sort(key=lambda x: x[5], reverse=True)
-        return t2ship_data
+        return t2ship_dict
 
     @classmethod
     async def material_ref_advice(
