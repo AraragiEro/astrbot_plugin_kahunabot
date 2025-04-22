@@ -54,7 +54,7 @@ class KahunaBot(Star):
         asyncio.create_task(refresh_per_min(0, 10, DatabaseConectManager.perform_checkpoint))
         asyncio.create_task(run_func_delay_min(1, CharacterManager.refresh_all_characters_at_init))
         asyncio.create_task(refresh_per_min(1, 22, MarketManager.refresh_market))
-        asyncio.create_task(refresh_per_min(2, 10, AssetManager.refresh_all_asset))
+        asyncio.create_task(refresh_per_min(2, 15, AssetManager.refresh_all_asset))
         asyncio.create_task(refresh_per_min(2, 11, IndustryManager.refresh_running_status))
         asyncio.create_task(refresh_per_min(3, 60, IndustryManager.refresh_system_cost))
         asyncio.create_task(refresh_per_min(3, 120, IndustryManager.refresh_market_price))
