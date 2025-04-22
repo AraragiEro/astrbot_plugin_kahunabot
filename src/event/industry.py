@@ -478,42 +478,48 @@ class IndsEvent:
 
     @staticmethod
     async def rp_plan(event: AstrMessageEvent, plan_name: str):
-        user_qq = get_user(event)
-        
-        user = UserManager.get_user(user_qq)
-        if plan_name not in user.user_data.plan:
-            raise KahunaException(f"plan {plan_name} not exist")
+        if await try_acquire_lock(calculate_lock, 1):
+            try:
+                user_qq = get_user(event)
 
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            analyser = IndustryAnalyser.get_analyser_by_plan(user, plan_name)
-            analyser.bp_block_level = 2
-            future = executor.submit(analyser.get_work_tree_data)
-            while not future.done():
-                await asyncio.sleep(1)
-            report = future.result()
+                user = UserManager.get_user(user_qq)
+                if plan_name not in user.user_data.plan:
+                    raise KahunaException(f"plan {plan_name} not exist")
 
-        spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
-        FeiShuKahuna.create_default_spreadsheet(spreadsheet)
-        work_tree_sheet = FeiShuKahuna.get_worktree_sheet(spreadsheet)
-        FeiShuKahuna.output_work_tree(work_tree_sheet, report['work'])
-        material_sheet = FeiShuKahuna.get_material_sheet(spreadsheet)
-        FeiShuKahuna.output_material_tree(material_sheet, report['material'])
-        work_flow_sheet = FeiShuKahuna.get_workflow_sheet(spreadsheet)
-        FeiShuKahuna.output_work_flow(work_flow_sheet, report['work_flow'])
-        logistic_sheet = FeiShuKahuna.get_logistic_sheet(spreadsheet)
-        FeiShuKahuna.output_logistic_plan(logistic_sheet, report['logistic'])
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    analyser = IndustryAnalyser.get_analyser_by_plan(user, plan_name)
+                    analyser.bp_block_level = 2
+                    future = executor.submit(analyser.get_work_tree_data)
+                    while not future.done():
+                        await asyncio.sleep(1)
+                    report = future.result()
 
-        # 删除不可写入json的多余部分
-        report.pop('logistic')
-        plan_cache = get_user_tmp_cache_prefix(user_qq) + f'{plan_name}_' + 'plan_report.json'
-        with open(os.path.join(TMP_PATH, plan_cache), 'w') as file:
-            cache_dict = {
-                'date': get_beijing_utctime(datetime.now()).isoformat(),
-                'data': report
-            }
-            json.dump(cache_dict, file, indent=4)
+                spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
+                FeiShuKahuna.create_default_spreadsheet(spreadsheet)
+                work_tree_sheet = FeiShuKahuna.get_worktree_sheet(spreadsheet)
+                FeiShuKahuna.output_work_tree(work_tree_sheet, report['work'])
+                material_sheet = FeiShuKahuna.get_material_sheet(spreadsheet)
+                FeiShuKahuna.output_material_tree(material_sheet, report['material'])
+                work_flow_sheet = FeiShuKahuna.get_workflow_sheet(spreadsheet)
+                FeiShuKahuna.output_work_flow(work_flow_sheet, report['work_flow'])
+                logistic_sheet = FeiShuKahuna.get_logistic_sheet(spreadsheet)
+                FeiShuKahuna.output_logistic_plan(logistic_sheet, report['logistic'])
 
-        return event.plain_result(f"执行完成, 当前计划蓝图分解:{work_tree_sheet.url}")
+                # 删除不可写入json的多余部分
+                report.pop('logistic')
+                plan_cache = get_user_tmp_cache_prefix(user_qq) + f'{plan_name}_' + 'plan_report.json'
+                with open(os.path.join(TMP_PATH, plan_cache), 'w') as file:
+                    cache_dict = {
+                        'date': get_beijing_utctime(datetime.now()).isoformat(),
+                        'data': report
+                    }
+                    json.dump(cache_dict, file, indent=4)
+
+                return event.plain_result(f"执行完成, 当前计划蓝图分解:{work_tree_sheet.url}")
+            finally:
+                calculate_lock.release()
+        else:
+            return event.plain_result("已有计算进行中，请稍候再试。")
 
     @staticmethod
     async def rp_t2mk(event: AstrMessageEvent, plan_name: str):
