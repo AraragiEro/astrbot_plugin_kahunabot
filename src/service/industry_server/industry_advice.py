@@ -119,7 +119,7 @@ class IndustryAdvice:
                                            lowBound=0)
 
         # 目标1：原材料总成本
-        material_cost = pulp.lpSum([material_units[m] * 100 * source_price[m] for m in materials])
+        material_cost = pulp.lpSum([material_units[m] * (100 if m not in ref_target else 1) * source_price[m] for m in materials])
 
         # 目标2：总产出价值 - 原材料总成本
         product_value = pulp.lpSum([
@@ -131,11 +131,11 @@ class IndustryAdvice:
         ])
 
         # 设置权重
-        material_weight = 0.5  # 原材料成本权重
-        profit_weight = 0.5  # 利润权重 (负号表示我们要最大化这部分)
+        material_weight = 0.2  # 原材料成本权重
+        profit_weight = 0.8  # 利润权重 (负号表示我们要最大化这部分)
 
         # 多目标优化：最小化原材料成本同时最大化利润
-        prob += material_weight * material_cost - profit_weight * product_value
+        prob += material_weight * material_cost - profit_weight * (product_value - material_cost)
 
         # 添加约束：waste_vars[m, p] 必须大于等于冗余量
         for m in materials:
@@ -157,20 +157,19 @@ class IndustryAdvice:
 
         # 求解问题
         prob.solve(pulp.PULP_CBC_CMD(msg=False))
-
-        # 检查求解状态
-        if pulp.LpStatus[prob.status] != 'Optimal':
-            print(f"未找到最优解，状态：{pulp.LpStatus[prob.status]}")
-            return []
-
-        # 输出结果
-        # print(f"优化状态: {pulp.LpStatus[prob.status]}")
-
         res = {
             'need': {},
             'product': {},
             'connect': {}
         }
+
+        # 检查求解状态
+        if pulp.LpStatus[prob.status] != 'Optimal':
+            raise KahunaException(f"未找到最优解，状态：{pulp.LpStatus[prob.status]}")
+
+        # 输出结果
+        # print(f"优化状态: {pulp.LpStatus[prob.status]}")
+
         need_d = res['need']
         product_d = res['product']
         connect_d = res['connect']
