@@ -1,7 +1,8 @@
 from .google_sheet_provider import GoogleSheetsProvider, YueseProvider
 from ..third_provider import provider_manager
+from ...config_server import config
 
-
+proxy = config['APP']['PROXY']
 
 async def init_providers():
     pl_provider = GoogleSheetsProvider(
@@ -17,7 +18,7 @@ async def init_providers():
                 'Gas',
                 'Salvage'
             ],
-            'proxy': 'http://127.0.0.1:7890',
+            'proxy': proxy,
             'id_column': 'type_id',
             'quantity_column': 'quantity'
         }
@@ -29,7 +30,7 @@ async def init_providers():
         config={
             'sheet_id': '15mCAFk_EVpYcEDyO3i-7WjxHZbn6lZB1SN0AiICzrVE',
             'sheet_name': ['仓库筛选'],
-            'proxy': 'http://127.0.0.1:7890',
+            'proxy': proxy,
             'id_column': '英名',
             'quantity_column': '数量'
         }
