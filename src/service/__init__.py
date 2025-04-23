@@ -10,7 +10,7 @@ from .log_server import logger
 
 init_flag = False
 
-def init_server(log=True):
+async def init_server(log=True):
     if not log:
         logger.setLevel(sys.maxsize)
     DatabaseConectManager.init()
@@ -20,5 +20,4 @@ def init_server(log=True):
     AssetManager.init()
     IndustryConfigManager.init()
     MarketManager.init()
-
     init_flag = True

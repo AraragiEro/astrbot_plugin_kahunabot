@@ -318,6 +318,33 @@ class PriceResRender():
             raise KahunaException("pic_path not exist.")
         return pic_path
 
+
+    @classmethod
+    async def rebder_buy_list(cls, lack_dict: dict, provider_data: dict):
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('buy_list_template.j2')
+        current = get_beijing_utctime(datetime.now())
+        html_content = template.render(
+            buy_list_data=lack_dict,
+            provider_data=provider_data,
+            header_title='采购清单',
+            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "buy_list.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=800, height=720, wait_time=120)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
     @classmethod
     async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 5):
         # 将HTML内容保存到临时文件
