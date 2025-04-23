@@ -149,6 +149,8 @@ pip install pyppeteer -i https://pypi.tuna.tsinghua.edu.cn/simple
 2. 安装浏览器依赖
 ```bash
 pyppeteer-install
+
+apt-get install -y libglib2.0-0 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libatspi2.0-0
 ```
 
 #### 准备SDE数据库

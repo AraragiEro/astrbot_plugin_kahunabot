@@ -357,15 +357,6 @@ class PriceResRender():
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-gpu',  # 禁用GPU加速
-            '--disable-software-rasterizer',  # 禁用软件光栅器
-            '--single-process',
-            '--disable-extensions',  # 禁用扩展
-            '--ignore-certificate-errors',  # 忽略证书错误
-            '--disable-web-security',  # 禁用Web安全检查
-            '--allow-running-insecure-content',  # 允许运行不安全的内容
-            '--font-render-hinting=none',  # 禁用字体渲染微调
-            '--disable-features=site-per-process',  # 禁用站点隔离
-            '--mute-audio'  # 静音
         ]
 
         if config['APP']['PIC_RENDER_PROXY'] != '':
@@ -378,12 +369,7 @@ class PriceResRender():
         # 启动浏览器，添加必要的参数以确保在Linux环境下正常运行
             browser = await launch(
                 headless=True,
-                args=launch_a + proxy_arg,
-                ignoreHTTPSErrors=True,  # 忽略HTTPS错误
-                handleSIGINT=False,      # 不处理SIGINT信号
-                handleSIGTERM=False,     # 不处理SIGTERM信号
-                handleSIGHUP=False,      # 不处理SIGHUP信号
-                dumpio=True              # 将浏览器进程的stderr和stdout导向process.stderr和process.stdout
+                args=launch_a + proxy_arg
             )
 
         else:
