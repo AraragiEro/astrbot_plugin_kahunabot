@@ -10,7 +10,7 @@ from .log_server import logger
 
 init_flag = False
 
-async def init_server(log=True):
+def init_server(log=True):
     if not log:
         logger.setLevel(sys.maxsize)
     DatabaseConectManager.init()

@@ -50,7 +50,7 @@ class KahunaBot(Star):
         # 初始化
         # asyncio.create_task(self.init_plugin())
         asyncio.create_task(init_server())
-        asyncio.create_task(init_providers())
+        init_providers()
 
         # 延时初始化
         asyncio.create_task(refresh_per_min(0, 10, DatabaseConectManager.perform_checkpoint))
