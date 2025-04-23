@@ -20,5 +20,4 @@ def init_server(log=True):
     AssetManager.init()
     IndustryConfigManager.init()
     MarketManager.init()
-
     init_flag = True

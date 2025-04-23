@@ -318,6 +318,33 @@ class PriceResRender():
             raise KahunaException("pic_path not exist.")
         return pic_path
 
+
+    @classmethod
+    async def rebder_buy_list(cls, lack_dict: dict, provider_data: dict):
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('buy_list_template.j2')
+        current = get_beijing_utctime(datetime.now())
+        html_content = template.render(
+            buy_list_data=lack_dict,
+            provider_data=provider_data,
+            header_title='采购清单',
+            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "buy_list.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=1200, height=720, wait_time=120)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
     @classmethod
     async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 5):
         # 将HTML内容保存到临时文件
@@ -329,7 +356,7 @@ class PriceResRender():
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--single-process'
+            '--disable-gpu',  # 禁用GPU加速
         ]
 
         if config['APP']['PIC_RENDER_PROXY'] != '':
@@ -344,6 +371,7 @@ class PriceResRender():
                 headless=True,
                 args=launch_a + proxy_arg
             )
+
         else:
             browser = await launch(
                 executablePath=r'C:\Program Files\Google\Chrome\Application\chrome.exe',
@@ -357,7 +385,7 @@ class PriceResRender():
         try:
             # 设置页面内容
             await page.setContent(html_content)
-            
+
             # 等待字体加载完成
             await page.waitForFunction('document.fonts.ready', {'timeout': wait_time * 1000})
             
@@ -394,16 +422,18 @@ class PriceResRender():
             await page.screenshot({'path': output_path, 'fullPage': True})
         except Exception as e:
             logger.error(f"渲染过程发生错误: {e}")
-            # 发生错误时仍尝试截图
-            try:
-                await asyncio.sleep(wait_time)  # 使用原始等待时间作为备用
-                await page.screenshot({'path': output_path, 'fullPage': True})
-            except Exception as screenshot_error:
-                logger.error(f"截图失败: {screenshot_error}")
-                raise
+            # 记录更详细的错误信息
+            logger.error(f"详细错误: {str(e)}")
+            logger.error(f"错误类型: {type(e).__name__}")
+            # 尝试使用备用渲染方法
+            return await cls.fallback_render(html_content, output_path)
         finally:
-            await browser.close()
-    
+            try:
+                if 'browser' in locals() and browser:
+                    await browser.close()
+            except Exception as close_error:
+                logger.error(f"关闭浏览器时发生错误: {close_error}")
+
         return output_path
 
 

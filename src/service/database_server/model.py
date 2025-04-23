@@ -229,7 +229,7 @@ class SystemCostCache(CacheModel):
 DatabaseConectManager.add_model(SystemCostCache)
 
 class BlueprintAsset(CacheModel):
-    item_id = BigIntegerField(primary_key=True)
+    item_id = BigIntegerField()
     location_flag = CharField()
     location_id = BigIntegerField()
     material_efficiency = IntegerField()
@@ -245,7 +245,7 @@ class BlueprintAsset(CacheModel):
 DatabaseConectManager.add_model(BlueprintAsset)
 
 class BlueprintAssetCache(CacheModel):
-    item_id = BigIntegerField(primary_key=True)
+    item_id = BigIntegerField()
     location_flag = CharField()
     location_id = BigIntegerField()
     material_efficiency = IntegerField()

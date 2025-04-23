@@ -25,7 +25,9 @@ from ..service.sde_service.utils import SdeUtils
 from ..service.feishu_server.feishu_kahuna import FeiShuKahuna
 from ..service.log_server import logger
 from ..service.picture_render_server.picture_render import PriceResRender
+from ..service.industry_server.third_provider import provider_manager as pm
 from ..service.config_server.config import config
+
 
 from ..utils import (
     KahunaException,
@@ -521,6 +523,95 @@ class IndsEvent:
         else:
             return event.plain_result("已有计算进行中，请稍候再试。")
 
+
+    @staticmethod
+    async def rp_mineral_analyse(
+            event: AstrMessageEvent, plan_name: str,
+            material_flag: str = 'buy',
+            compress_flag: str = 'buy'
+    ):
+        user_qq = get_user(event)
+        user = UserManager.get_user(user_qq)
+        if plan_name not in user.user_data.plan:
+            raise KahunaException(f"plan {plan_name} not exist")
+        if material_flag not in {'buy', 'sell'}:
+            return event.plain_result("material_flag must be in {buy, sell}")
+        if compress_flag not in {'buy', 'sell'}:
+            return event.plain_result("compress_flag must be in {buy, sell}")
+
+        plan_cache = get_user_tmp_cache_prefix(user_qq) + f'{plan_name}_' + 'plan_report.json'
+        with open(os.path.join(TMP_PATH, plan_cache), 'r') as file:
+            plan_data = json.load(file)
+        report_time = datetime.fromisoformat(plan_data['date'])
+        report = plan_data['data']
+
+        # 化矿分析
+        minedata = report['material']['矿石']
+        material_list = [[data[0], data[3]] for data in minedata]
+
+        ref_res = await IndustryAdvice.material_ref_advice(material_list, material_flag, compress_flag)
+        need_d = ref_res['need']
+        output_str = '采购清单：\n'
+        for tid, data in need_d.items():
+            output_str += f"{data['name']}\t{data['need']}\n"
+
+        pic_path = await PriceResRender.render_refine_result(ref_res)
+        chain = [
+            Image.fromFileSystem(pic_path),
+            Plain(output_str)
+        ]
+        return event.chain_result(chain)
+
+    @staticmethod
+    async def rp_buy_list(event: AstrMessageEvent, plan_name: str):
+        user_qq = get_user(event)
+        user = UserManager.get_user(user_qq)
+
+        plan_cache = get_user_tmp_cache_prefix(user_qq) + f'{plan_name}_' + 'plan_report.json'
+        with open(os.path.join(TMP_PATH, plan_cache), 'r') as file:
+            plan_data = json.load(file)
+        report_time = datetime.fromisoformat(plan_data['date'])
+        report = plan_data['data']
+
+        asset = await pm.get_all_assets()
+        new_asset = {}
+        for k, data in asset.items():
+            new_asset[k] = {}
+            for tid, quantity in data.items():
+                new_asset[k][tid] = {
+                    'id': tid,
+                    'name': SdeUtils.get_name_by_id(tid),
+                    'cn_name': SdeUtils.get_cn_name_by_id(tid),
+                    'quantity': quantity
+                }
+
+        plan_cache = get_user_tmp_cache_prefix(user_qq) + f'{plan_name}_' + 'plan_report.json'
+        with open(os.path.join(TMP_PATH, plan_cache), 'r') as file:
+            plan_data = json.load(file)
+        report_time = datetime.fromisoformat(plan_data['date'])
+        report = plan_data['data']
+
+        lack_material = report['material']
+        buy_data = {}
+        for k, data in report['material'].items():
+            if not data:
+                continue
+            new_data = [
+                {'id': d[0],
+                 'icon': PriceResRender.get_eve_item_icon_base64(d[0]),
+                 'name': d[1],
+                 'cn_name': d[2],
+                 'lack': d[3]} for d in data if d[3] > 0
+            ]
+
+            buy_data[k] = new_data
+
+        output_path = await PriceResRender.rebder_buy_list(buy_data, new_asset)
+        chain = [
+            Image.fromFileSystem(output_path)
+        ]
+        return event.chain_result(chain)
+
     @staticmethod
     async def rp_t2mk(event: AstrMessageEvent, plan_name: str):
         if await try_acquire_lock(calculate_lock, 1):
@@ -713,44 +804,6 @@ class IndsEvent:
         IndustryManager.refresh_running_status()
 
         return event.plain_result("执行完成")
-
-    @staticmethod
-    async def rp_mineral_analyse(
-            event: AstrMessageEvent, plan_name: str,
-            material_flag: str = 'buy',
-            compress_flag: str = 'buy'
-    ):
-        user_qq = get_user(event)
-        user = UserManager.get_user(user_qq)
-        if plan_name not in user.user_data.plan:
-            raise KahunaException(f"plan {plan_name} not exist")
-        if material_flag not in {'buy', 'sell'}:
-            return event.plain_result("material_flag must be in {buy, sell}")
-        if compress_flag not in {'buy', 'sell'}:
-            return event.plain_result("compress_flag must be in {buy, sell}")
-
-        plan_cache = get_user_tmp_cache_prefix(user_qq) + f'{plan_name}_' + 'plan_report.json'
-        with open(os.path.join(TMP_PATH, plan_cache), 'r') as file:
-            plan_data = json.load(file)
-        report_time = datetime.fromisoformat(plan_data['date'])
-        report = plan_data['data']
-
-        # 化矿分析
-        minedata = report['material']['矿石']
-        material_list = [[data[0], data[3]] for data in minedata]
-
-        ref_res = await IndustryAdvice.material_ref_advice(material_list, material_flag, compress_flag)
-        need_d = ref_res['need']
-        output_str = '采购清单：\n'
-        for tid, data in need_d.items():
-            output_str += f"{data['name']}\t{data['need']}\n"
-
-        pic_path = await PriceResRender.render_refine_result(ref_res)
-        chain = [
-            Image.fromFileSystem(pic_path),
-            Plain(output_str)
-        ]
-        return event.chain_result(chain)
 
 
 class MarketEvent:

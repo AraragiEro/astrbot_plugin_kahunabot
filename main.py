@@ -11,6 +11,7 @@ from .src.service.asset_server.asset_manager import AssetManager
 from .src.service.market_server.market_manager import MarketManager
 from .src.service.industry_server.industry_manager import IndustryManager
 from .src.service.database_server.connect import DatabaseConectManager
+from .src.service.industry_server.providers import init_providers
 
 from .src.event.character import CharacterEvent
 from .src.event.price import TypesPriceEvent
@@ -49,15 +50,16 @@ class KahunaBot(Star):
         # 初始化
         # asyncio.create_task(self.init_plugin())
         init_server()
+        asyncio.create_task(init_providers())
 
         # 延时初始化
         asyncio.create_task(refresh_per_min(0, 10, DatabaseConectManager.perform_checkpoint))
         asyncio.create_task(run_func_delay_min(1, CharacterManager.refresh_all_characters_at_init))
         asyncio.create_task(refresh_per_min(1, 22, MarketManager.refresh_market))
-        asyncio.create_task(refresh_per_min(2, 15, AssetManager.refresh_all_asset))
+        asyncio.create_task(refresh_per_min(1, 15, AssetManager.refresh_all_asset))
         asyncio.create_task(refresh_per_min(2, 11, IndustryManager.refresh_running_status))
-        asyncio.create_task(refresh_per_min(3, 60, IndustryManager.refresh_system_cost))
-        asyncio.create_task(refresh_per_min(3, 120, IndustryManager.refresh_market_price))
+        asyncio.create_task(refresh_per_min(2, 60, IndustryManager.refresh_system_cost))
+        asyncio.create_task(refresh_per_min(2, 120, IndustryManager.refresh_market_price))
 
 
     # @filter.custom_filter(SelfFilter1)
@@ -377,6 +379,10 @@ class KahunaBot(Star):
             compress_flag: str = 'buy'
     ):
         yield await IndsEvent.rp_mineral_analyse(event, plan_name, material_flag, compress_flag)
+
+    @Inds_rp.command('采购', alias={"buylist"})
+    async def Inds_rp_buy_list(self, event: AstrMessageEvent, plan_name: str):
+        yield await IndsEvent.rp_buy_list(event, plan_name)
 
     @Inds.command("refjobs")
     async def Inds_refjobs(self, event: AstrMessageEvent):

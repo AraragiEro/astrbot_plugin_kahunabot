@@ -11,3 +11,5 @@ thefuzz==0.22.1
 tqdm==4.67.1
 pyppeteer==2.0.0
 pulp==3.1.1
+pandas==2.2.3
+aiohttp==3.9.5
