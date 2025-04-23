@@ -386,26 +386,6 @@ class PriceResRender():
             # 设置页面内容
             await page.setContent(html_content)
 
-            await page.evaluate('''
-// 强制设置所有元素的字体为微软雅黑
-document.querySelectorAll('*').forEach(element => {
-    element.style.fontFamily = '"Microsoft YaHei", "微软雅黑", sans-serif';
-});
-
-// 确保动态加载的内容也使用微软雅黑
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-    @font-face {
-        font-family: "Microsoft YaHei";
-        src: local("Microsoft YaHei");
-    }
-    * {
-        font-family: "Microsoft YaHei", "微软雅黑", sans-serif !important;
-    }
-`;
-document.head.appendChild(styleSheet);
-''')
-
             # 等待字体加载完成
             await page.waitForFunction('document.fonts.ready', {'timeout': wait_time * 1000})
             
