@@ -1,6 +1,6 @@
 from .google_sheet_provider import GoogleSheetsProvider, YueseProvider
 from ..third_provider import provider_manager
-from ...config_server import config
+from ...config_server.config import config
 
 proxy = config['APP']['PROXY']
 
