@@ -960,7 +960,7 @@ class IndustryAnalyser():
             structure = StructureManager.get_structure(structure_id, ac_token)
             if not structure:
                 logger.error(f'type {SdeUtils.get_name_by_id(asset.type_id)} '
-                             f'location structure[{structure_id}] access error.')
+                             f'location structure[{structure_id}] access error. location_id is {asset.location_id}')
                 continue
             if structure not in structure_provide_dict:
                 structure_provide_dict[structure] = dict()
