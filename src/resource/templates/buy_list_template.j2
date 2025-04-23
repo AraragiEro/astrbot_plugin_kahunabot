@@ -160,7 +160,7 @@
         </div>
     </div>
 
-    <div class="text-center text-gray-500 text-sm mt-8 mb-4">
+    <div class="text-center text-gray-950 text-sm mt-8 mb-4">
         <p>EVE工业物资采购系统 - kahunaBot</p>
     </div>
 
@@ -169,7 +169,7 @@
         const buyListData = {{ buy_list_data|tojson }};
         // 供应商数据
         const providerData = {{ provider_data|tojson|default('{}') }};
-        
+
         // 合并供应商数据到材料数据
         Object.keys(buyListData).forEach(category => {
             buyListData[category].forEach(item => {
@@ -187,14 +187,14 @@
         function calculateTotals() {
             let totalTypes = 0;
             let totalItems = 0;
-            
+
             Object.keys(buyListData).forEach(category => {
                 totalTypes += buyListData[category].length;
                 buyListData[category].forEach(item => {
                     totalItems += item.lack;
                 });
             });
-            
+
             document.getElementById('total-types').textContent = totalTypes;
         }
 
@@ -202,27 +202,28 @@
         function calculateSupplyRate(item) {
             // 如果缺少数量为0，则满足率为100%
             if (item.lack <= 0) return 1;
-            
+
             // 计算总供应量
             const totalSupply = (item.pl_supply || 0) + (item.yuese_supply || 0);
             // 计算满足率，并确保不超过100%
             const rate = Math.min(totalSupply / item.lack, 1);
             return rate;
         }
-        
+
         // 获取满足度状态
         function getSupplyStatus(rate) {
             if (rate >= 0.9) return { class: 'success', text: '充足' };
             if (rate >= 0.5) return { class: 'warning', text: '部分' };
             return { class: 'danger', text: '紧缺' };
         }
-        
+
         // 计算总体满足率
         function calculateTotalSupplyRate() {
             let totalLack = 0;
             let totalSupply = 0;
+            let TotalRealSupply = 0;
             let totalRealLack = 0;
-            
+
             // 遍历所有分类和物品，累计总缺少量和总供应量
             Object.keys(buyListData).forEach(category => {
                 buyListData[category].forEach(item => {
@@ -234,55 +235,57 @@
                         if (item_real_lack > 0) {
                             totalRealLack += item_real_lack;
                         }
+                        TotalRealSupply += Math.min((item.pl_supply || 0) + (item.yuese_supply || 0), item.lack);
                         totalSupply += (item.pl_supply || 0) + (item.yuese_supply || 0);
                     }
                 });
             });
-            
+
             // 计算满足率，如果没有缺少量，则满足率为100%
-            const rate = totalLack > 0 ? Math.min(totalRealLack / totalLack, 1) : 1;
+            const rate = totalLack > 0 ? Math.min(TotalRealSupply / totalLack, 1) : 1;
             const status = getSupplyStatus(rate);
-            
+
             // 更新UI显示
             document.getElementById('total-supply-rate').textContent = `${Math.round(rate * 100)}%`;
             document.getElementById('total-supply-badge').className = `status-badge badge-${status.class} ml-2`;
             document.getElementById('total-supply-badge').textContent = status.text;
-            
+
             // 更新进度条
             const progressFill = document.getElementById('total-progress-fill');
             progressFill.className = `progress-bar-fill bg-${status.class}`;
             progressFill.style.width = `${rate * 100}%`;
-            
+
             return { rate, totalLack, totalRealLack };
         }
-        
+
         // 渲染每个分类的材料
         function renderMaterialsByCategory() {
             const container = document.getElementById('materials-container');
             container.innerHTML = '';
-            
+
             Object.keys(buyListData).forEach(category => {
                 const items = buyListData[category];
                 if (items.length === 0) return; // 跳过空分类
-                
+
                 // 创建分类卡片
                 const categoryCard = document.createElement('div');
                 categoryCard.className = 'bg-white rounded-lg shadow-md p-6 mb-6 hover-card transition-all duration-300';
-                
+
                 // 分类标题
                 const categoryTitle = document.createElement('h2');
                 categoryTitle.className = 'text-xl font-bold text-gray-800 mb-4 pb-2 border-b';
                 categoryTitle.textContent = category;
-                
+
                 // 分类统计信息
                 const categoryStats = document.createElement('div');
                 categoryStats.className = 'mb-4 flex justify-between items-center';
-                
+
                 // 计算该分类的总缺少量和总供应量
                 let categoryTotalLack = 0;
                 let categoryTotalSupply = 0;
+                let categoryTotalRealSupply = 0;
                 let categoryTotalRealLack = 0;
-                
+
                 items.forEach(item => {
                     // 只累计有效的缺少量（大于0的）
                     if (item.lack > 0) {
@@ -292,98 +295,99 @@
                         if (item_real_lack > 0) {
                             categoryTotalRealLack += item_real_lack;
                         }
+                        categoryTotalRealSupply += Math.min(item.lack, (item.pl_supply || 0) + (item.yuese_supply || 0));
                         categoryTotalSupply += (item.pl_supply || 0) + (item.yuese_supply || 0);
                     }
                 });
-                
+
                 // 计算满足率，如果没有缺少量，则满足率为100%
-                const categorySupplyRate = categoryTotalLack > 0 ? Math.min(categoryTotalRealLack / categoryTotalLack, 1) : 1;
+                const categorySupplyRate = categoryTotalLack > 0 ? Math.min(categoryTotalRealSupply / categoryTotalLack, 1) : 1;
                 const categoryStatus = getSupplyStatus(categorySupplyRate);
-                
+
                 categoryStats.innerHTML = `
                     <div>
                         <span class="font-semibold">总缺少: ${formatNumber(categoryTotalLack)}</span>
                         <span class="status-badge badge-${categoryStatus.class}">${categoryStatus.text}</span>
                     </div>
-                    <div class="text-sm text-gray-500">供应满足率: ${Math.round(categorySupplyRate * 100)}%</div>
+                    <div class="text-sm text-gray-950">供应满足率: ${Math.round(categorySupplyRate * 100)}%</div>
                 `;
-                
+
                 // 进度条
                 const progressBar = document.createElement('div');
                 progressBar.className = 'progress-bar mb-4';
-                
+
                 const progressFill = document.createElement('div');
                 progressFill.className = `progress-bar-fill bg-${categoryStatus.class}`;
                 progressFill.style.width = `${categorySupplyRate * 100}%`;
-                
+
                 progressBar.appendChild(progressFill);
-                
+
                 // 材料表格
                 const tableContainer = document.createElement('div');
                 tableContainer.className = 'overflow-x-auto';
-                
+
                 const table = document.createElement('table');
                 table.className = 'min-w-full';
-                
+
                 // 表头
                 const thead = document.createElement('thead');
                 thead.className = 'bg-gray-50';
                 thead.innerHTML = `
                     <tr>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">ID</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">图标</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">英文名称</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">中文名称</th>
-                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-500">PL供应</th>
-                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-500">Yuese供应</th>
-                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-500">缺少数量</th>
-                        <th class="px-4 py-3 text-center text-sm font-medium text-gray-500">满足度</th>
+                        <th class="text-xl px-4 py-3 text-left text-sm font-bold text-gray-950">ID</th>
+                        <th class="text-xl px-4 py-3 text-left text-sm font-bold text-gray-950">图标</th>
+                        <th class="text-xl px-4 py-3 text-left text-sm font-bold text-gray-950 font-['YaHei']">英文名称</th>
+                        <th class="text-xl px-4 py-3 text-left text-sm font-bold text-gray-950">中文名称</th>
+                        <th class="text-xl px-4 py-3 text-right text-sm font-bold text-gray-950">PL供应</th>
+                        <th class="text-xl px-4 py-3 text-right text-sm font-bold text-gray-950">Yuese供应</th>
+                        <th class="text-xl px-4 py-3 text-right text-sm font-bold text-gray-950">缺少数量</th>
+                        <th class="text-xl px-4 py-3 text-center text-sm font-bold text-gray-950">满足度</th>
                     </tr>
                 `;
-                
+
                 // 表体
                 const tbody = document.createElement('tbody');
                 tbody.className = 'text-sm table-text';
-                
+
                 // 排序：按照缺少数量降序
                 items.sort((a, b) => b.lack - a.lack);
-                
+
                 items.forEach(item => {
                     const row = document.createElement('tr');
                     row.className = 'hover:bg-gray-50 transition-colors';
-                    
+
                     // 计算该物品的供应满足率
                     const supplyRate = calculateSupplyRate(item);
                     const status = getSupplyStatus(supplyRate);
-                    
+
                     // 高亮显示缺失量大的物品
                     const lackClass = item.lack > 10000 ? 'high-priority' : '';
                     const rowClass = item.lack > 50000 ? 'bg-red-50' : (item.lack > 20000 ? 'bg-yellow-50' : '');
                     if (rowClass) {
                         row.classList.add(rowClass);
                     }
-                    
+
                     // 创建进度条
                     const itemProgressBar = `
                         <div class="progress-bar">
                             <div class="progress-bar-fill bg-${status.class}" style="width: ${supplyRate * 100}%"></div>
                         </div>
                     `;
-                    
+
                     // 供应商图标
                     const plIcon = item.pl_supply ? `<span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>` : '';
                     const yueseIcon = item.yuese_supply ? `<span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>` : '';
-                    
+
                     row.innerHTML = `
                         <td class="px-4 py-3 text-left">${item.id}</td>
                         <td class="px-4 py-3 text-left">
                             <div class="w-9 h-9 rounded-lg bg-gray-200">
-                                <img src="data:image/png;base64,${item.icon}" alt="${item.name}" 
+                                <img src="data:image/png;base64,${item.icon}" alt="${item.name}"
                                      class="w-full h-full object-cover rounded-lg">
                             </div>
                         </td>
-                        <td class="px-4 py-3 text-left">${item.name}</td>
-                        <td class="px-4 py-3 text-left">${item.cn_name}</td>
+                        <td class="px-4 py-3 text-left font-bold">${item.name}</td>
+                        <td class="px-4 py-3 text-left text-xl font-bold">${item.cn_name}</td>
                         <td class="px-4 py-3 text-right">
                             ${plIcon}
                             ${item.pl_supply ? formatNumber(item.pl_supply) : '-'}
@@ -392,7 +396,7 @@
                             ${yueseIcon}
                             ${item.yuese_supply ? formatNumber(item.yuese_supply) : '-'}
                         </td>
-                        <td class="px-4 py-3 text-right font-medium ${lackClass}">${formatNumber(item.lack)}</td>
+                        <td class="px-4 py-3 text-right font-bold ${lackClass}">${formatNumber(item.lack)}</td>
                         <td class="px-4 py-3">
                             <div class="flex flex-col items-center">
                                 <span class="status-badge badge-${status.class} mb-1">${status.text}</span>
