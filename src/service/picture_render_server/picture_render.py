@@ -378,8 +378,14 @@ class PriceResRender():
         # 启动浏览器，添加必要的参数以确保在Linux环境下正常运行
             browser = await launch(
                 headless=True,
-                args=launch_a + proxy_arg
+                args=launch_a + proxy_arg,
+                ignoreHTTPSErrors=True,  # 忽略HTTPS错误
+                handleSIGINT=False,      # 不处理SIGINT信号
+                handleSIGTERM=False,     # 不处理SIGTERM信号
+                handleSIGHUP=False,      # 不处理SIGHUP信号
+                dumpio=True              # 将浏览器进程的stderr和stdout导向process.stderr和process.stdout
             )
+
         else:
             browser = await launch(
                 executablePath=r'C:\Program Files\Google\Chrome\Application\chrome.exe',
@@ -430,16 +436,18 @@ class PriceResRender():
             await page.screenshot({'path': output_path, 'fullPage': True})
         except Exception as e:
             logger.error(f"渲染过程发生错误: {e}")
-            # 发生错误时仍尝试截图
-            try:
-                await asyncio.sleep(wait_time)  # 使用原始等待时间作为备用
-                await page.screenshot({'path': output_path, 'fullPage': True})
-            except Exception as screenshot_error:
-                logger.error(f"截图失败: {screenshot_error}")
-                raise
+            # 记录更详细的错误信息
+            logger.error(f"详细错误: {str(e)}")
+            logger.error(f"错误类型: {type(e).__name__}")
+            # 尝试使用备用渲染方法
+            return await cls.fallback_render(html_content, output_path)
         finally:
-            await browser.close()
-    
+            try:
+                if 'browser' in locals() and browser:
+                    await browser.close()
+            except Exception as close_error:
+                logger.error(f"关闭浏览器时发生错误: {close_error}")
+
         return output_path
 
 
