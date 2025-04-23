@@ -316,6 +316,7 @@
                 thead.innerHTML = `
                     <tr>
                         <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">ID</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">图标</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">英文名称</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">中文名称</th>
                         <th class="px-4 py-3 text-right text-sm font-medium text-gray-500">PL供应</th>
@@ -360,6 +361,12 @@
                     
                     row.innerHTML = `
                         <td class="px-4 py-3 text-left">${item.id}</td>
+                        <td class="px-4 py-3 text-left">
+                            <div class="w-9 h-9 rounded-lg bg-gray-200">
+                                <img src="data:image/png;base64,${item.icon}" alt="${item.name}" 
+                                     class="w-full h-full object-cover rounded-lg">
+                            </div>
+                        </td>
                         <td class="px-4 py-3 text-left">${item.name}</td>
                         <td class="px-4 py-3 text-left">${item.cn_name}</td>
                         <td class="px-4 py-3 text-right">

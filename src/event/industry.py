@@ -598,6 +598,7 @@ class IndsEvent:
                 continue
             new_data = [
                 {'id': d[0],
+                 'icon': PriceResRender.get_eve_item_icon_base64(d[0]),
                  'name': d[1],
                  'cn_name': d[2],
                  'lack': d[3]} for d in data if d[3] > 0
