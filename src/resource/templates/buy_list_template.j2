@@ -103,6 +103,21 @@
                 box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
                 transition: all 0.2s ease;
             }
+            * {
+                font-family: "Microsoft YaHei", "微软雅黑", sans-serif !important;
+            }
+
+            /* 针对中文字符特别设置 */
+            :lang(zh),
+            :lang(zh-CN) {
+                font-family: "Microsoft YaHei", "微软雅黑", sans-serif !important;
+            }
+
+            /* 确保特定元素也使用微软雅黑 */
+            body, h1, h2, h3, p, div, span, button, input, select, textarea {
+                font-family: "Microsoft YaHei", "微软雅黑", sans-serif !important;
+            }
+
         }
     </style>
 </head>
