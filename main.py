@@ -10,6 +10,7 @@ from .src.service.character_server.character_manager import CharacterManager
 from .src.service.asset_server.asset_manager import AssetManager
 from .src.service.market_server.market_manager import MarketManager
 from .src.service.industry_server.industry_manager import IndustryManager
+from .src.service.database_server.connect import DatabaseConectManager
 
 from .src.event.character import CharacterEvent
 from .src.event.price import TypesPriceEvent
@@ -22,6 +23,7 @@ from .filter import AdminFilter, VipMemberFilter, MemberFilter
 
 
 from .src.utils import refresh_per_min, run_func_delay_min
+from .src.utils import set_debug_qq, unset_debug_qq, DEBUG_QQ
 
 # 环境变量
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -49,12 +51,14 @@ class KahunaBot(Star):
         init_server()
 
         # 延时初始化
-        asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
+        asyncio.create_task(refresh_per_min(0, 10, DatabaseConectManager.perform_checkpoint))
+        asyncio.create_task(run_func_delay_min(1, CharacterManager.refresh_all_characters_at_init))
         asyncio.create_task(refresh_per_min(1, 22, MarketManager.refresh_market))
-        asyncio.create_task(refresh_per_min(2, 10, AssetManager.refresh_all_asset))
+        asyncio.create_task(refresh_per_min(2, 15, AssetManager.refresh_all_asset))
         asyncio.create_task(refresh_per_min(2, 11, IndustryManager.refresh_running_status))
         asyncio.create_task(refresh_per_min(3, 60, IndustryManager.refresh_system_cost))
         asyncio.create_task(refresh_per_min(3, 120, IndustryManager.refresh_market_price))
+
 
     # @filter.custom_filter(SelfFilter1)
     @filter.command("helloworld")
@@ -92,6 +96,16 @@ class KahunaBot(Star):
     @admin.command('设置公用成本计划', alias={'setpubliccostplan'})
     async def admin_setpubliccostplan(self, event: AstrMessageEvent, user_qq: int, plan_name: str):
         yield await AdminEvent.setpubliccostplan(event, user_qq, plan_name)
+
+    @admin.command('debug')
+    async def admin_debug(self, event: AstrMessageEvent, qq: int):
+        set_debug_qq(qq)
+        yield event.plain_result(f'已设置调试模式对象： {qq}')
+
+    @admin.command('undebug')
+    async def admin_undebug(self, event: AstrMessageEvent, qq: int):
+        unset_debug_qq()
+        yield event.plain_result('调试模式关闭')
 
     """ ---指令組--- """
     @filter.custom_filter(MemberFilter)
@@ -337,7 +351,8 @@ class KahunaBot(Star):
 
     @Inds_rp.command('t2市场', alias={'t2mk'})
     async def Inds_rp_t2cost(self, event: AstrMessageEvent, plan_name: str):
-        yield await IndsEvent.rp_t2mk(event, plan_name)
+        async for result in IndsEvent.rp_t2mk(event, plan_name):
+            yield result
 
     @Inds_rp.command('战列市场', alias={'btspmk'})
     async def Inds_rp_btsp_cost(self, event: AstrMessageEvent, plan_name: str):

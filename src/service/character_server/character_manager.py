@@ -39,6 +39,7 @@ class CharacterManager():
                     corp_id = character.corp_id,
                 )
                 cls.character_dict[character.character_id] = character_obj
+                logger.info(f"初始化角色凭据 {character.character_name} 成功.")
 
         logger.info(f"init character dict complete. {id(cls)}")
 

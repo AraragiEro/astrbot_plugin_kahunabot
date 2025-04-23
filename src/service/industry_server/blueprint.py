@@ -15,6 +15,7 @@ class BPManager:
                 .join(IndustryActivityProducts,
                       on=(IndustryActivityMaterials.blueprintTypeID==IndustryActivityProducts.blueprintTypeID))
                 .where((IndustryActivityProducts.productTypeID==type_id) &
+                       (IndustryActivityProducts.blueprintTypeID != 45732) &
                        ((IndustryActivityMaterials.activityID == 1) | (IndustryActivityMaterials.activityID == 11)))
         )
         return {material.materialTypeID: material.quantity for material in material_search}
@@ -54,9 +55,12 @@ class BPManager:
     @classmethod
     @lru_cache(maxsize=100)
     def get_bp_id_by_prod_typeid(cls, type_id: int) -> int:
-        return (IndustryActivityProducts
+        return (
+            IndustryActivityProducts
                  .select(IndustryActivityProducts.blueprintTypeID)
-                 .where(IndustryActivityProducts.productTypeID == type_id)).scalar()
+                 .where((IndustryActivityProducts.productTypeID == type_id) &
+                        (IndustryActivityProducts.blueprintTypeID != 45732)).scalar()
+        )
 
     @classmethod
     @lru_cache(maxsize=100)
@@ -169,6 +173,7 @@ class BPManager:
                 on=(IndustryActivityMaterials.blueprintTypeID == 
                     IndustryActivityProducts.blueprintTypeID)
             ).where((IndustryActivityProducts.productTypeID == product_id) &
+                    (IndustryActivityProducts.blueprintTypeID != 45732) &
                     ((IndustryActivityMaterials.activityID == 1) | (IndustryActivityMaterials.activityID == 11)))
             
             for material in materials:
@@ -182,7 +187,8 @@ class BPManager:
             blueprint_type_id = IndustryActivityProducts.select(
                 IndustryActivityProducts.blueprintTypeID
             ).where(
-                IndustryActivityProducts.productTypeID == product_id
+                (IndustryActivityProducts.productTypeID == product_id) &
+                (IndustryActivityProducts.blueprintTypeID != 45732)
             ).get().blueprintTypeID
             
             # 然后使用 blueprintTypeID 查询 IndustryActivities
@@ -190,7 +196,8 @@ class BPManager:
                 IndustryActivities.activityID,
                 IndustryActivities.time
             ).where(
-                IndustryActivities.blueprintTypeID == blueprint_type_id
+                (IndustryActivities.blueprintTypeID == blueprint_type_id) &
+                (IndustryActivities.blueprintTypeID != 45732)
             )
             
             for activity in activities:

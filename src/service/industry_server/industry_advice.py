@@ -23,6 +23,7 @@ class IndustryAdvice:
         t2_cost_data = IndustryAnalyser.get_cost_data(user, plan_name, t2_plan)
         t2_cost_data = [[name] + value for name, value in t2_cost_data.items()]
         t2ship_data = []
+        t2ship_dict = {}
         for data in t2_cost_data:
             tid = SdeUtils.get_id_by_name(data[0])
             vale_mk_his_data, forge_mk_his_data = MarketHistory.get_type_history_detale(tid)
@@ -45,11 +46,27 @@ class IndustryAdvice:
                 SdeUtils.get_metaname_by_typeid(tid)    # 元组信息
             ]
 
+            market_data_dict = {
+                'id': tid,
+                'name': data[0],
+                'cn_name': SdeUtils.get_cn_name_by_id(tid),
+                'profit': (frt_sell * 0.956 - data[3] * 1.01),
+                'profit_rate': (frt_sell * 0.956 - data[3] * 1.01) / data[3],
+                'month_profit': vale_mk_his_data['monthflow'] * ((frt_sell * 0.956 - data[3] * 1.01) / data[3]),
+                'cost': data[3],
+                'frt_sell': frt_sell,
+                'jita_buy': jita_buy,
+                'jita_sell': jita_sell,
+                'month_flow': vale_mk_his_data['monthflow'],
+                'month_volume': vale_mk_his_data['month_volume'],
+                'meta': SdeUtils.get_metaname_by_typeid(tid)
+            }
 
             t2ship_data.append(market_data)
+            t2ship_dict[tid] = market_data_dict
 
         t2ship_data.sort(key=lambda x: x[5], reverse=True)
-        return t2ship_data
+        return t2ship_dict
 
     @classmethod
     async def material_ref_advice(
@@ -119,7 +136,7 @@ class IndustryAdvice:
                                            lowBound=0)
 
         # 目标1：原材料总成本
-        material_cost = pulp.lpSum([material_units[m] * 100 * source_price[m] for m in materials])
+        material_cost = pulp.lpSum([material_units[m] * (100 if m not in ref_target else 1) * source_price[m] for m in materials])
 
         # 目标2：总产出价值 - 原材料总成本
         product_value = pulp.lpSum([
@@ -131,8 +148,8 @@ class IndustryAdvice:
         ])
 
         # 设置权重
-        material_weight = 0.9  # 原材料成本权重
-        profit_weight = 0.1  # 利润权重 (负号表示我们要最大化这部分)
+        material_weight = 0.2  # 原材料成本权重
+        profit_weight = 0.8  # 利润权重 (负号表示我们要最大化这部分)
 
         # 多目标优化：最小化原材料成本同时最大化利润
         prob += material_weight * material_cost - profit_weight * (product_value - material_cost)
@@ -157,20 +174,19 @@ class IndustryAdvice:
 
         # 求解问题
         prob.solve(pulp.PULP_CBC_CMD(msg=False))
-
-        # 检查求解状态
-        if pulp.LpStatus[prob.status] != 'Optimal':
-            print(f"未找到最优解，状态：{pulp.LpStatus[prob.status]}")
-            return []
-
-        # 输出结果
-        # print(f"优化状态: {pulp.LpStatus[prob.status]}")
-
         res = {
             'need': {},
             'product': {},
             'connect': {}
         }
+
+        # 检查求解状态
+        if pulp.LpStatus[prob.status] != 'Optimal':
+            raise KahunaException(f"未找到最优解，状态：{pulp.LpStatus[prob.status]}")
+
+        # 输出结果
+        # print(f"优化状态: {pulp.LpStatus[prob.status]}")
+
         need_d = res['need']
         product_d = res['product']
         connect_d = res['connect']

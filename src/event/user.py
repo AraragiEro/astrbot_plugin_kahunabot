@@ -13,7 +13,21 @@ from ..service.evesso_server.eveesi import characters_character
 from ..service.feishu_server.feishu_kahuna import FeiShuKahuna
 
 # import Exception
-from ..utils import KahunaException
+from ..utils import (
+    KahunaException,
+    get_user_tmp_cache_prefix,
+    get_beijing_utctime,
+    get_debug_qq
+)
+
+
+def get_user(event: AstrMessageEvent):
+    if get_debug_qq():
+        user_qq = get_debug_qq()
+    else:
+        user_qq = int(event.get_sender_id())
+
+    return user_qq
 
 class UserEvent():
     @staticmethod
@@ -38,19 +52,20 @@ class UserEvent():
 
     @staticmethod
     def self_info(event: AstrMessageEvent):
-        user = UserManager.get_user(int(event.get_sender_id()))
+        user_qq = get_user(event)
+        user = UserManager.get_user(user_qq)
         return event.plain_result(user.info)
 
     @staticmethod
     def setMainCharacter(event: AstrMessageEvent):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         main_character= " ".join(event.get_message_str().split(" ")[2:])
         UserManager.set_main_character(user_qq, main_character)
         return event.plain_result("设置主角色 执行完成")
 
     @staticmethod
     def sign(event: AstrMessageEvent):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         if UserManager.user_exists(user_qq):
             return event.plain_result(f'用户已存在。')
         user_obj = UserManager.create_user(user_qq)
@@ -58,7 +73,7 @@ class UserEvent():
 
     @staticmethod
     def addalias(event: AstrMessageEvent):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         context = " ".join(event.get_message_str().split(" ")[2:])
 
         user = UserManager.get_user(user_qq)
@@ -79,7 +94,7 @@ class UserEvent():
 
     @staticmethod
     def sheet_create(event: AstrMessageEvent):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user.user_qq)
         FeiShuKahuna.create_default_spreadsheet(spreadsheet)
@@ -87,7 +102,7 @@ class UserEvent():
 
     @staticmethod
     def sheet_url(event: AstrMessageEvent, plan_name: str):
-        user_qq = int(event.get_sender_id())
+        user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         spreadsheet = FeiShuKahuna.get_user_plan_spreadsheet(user.user_qq, plan_name)
 

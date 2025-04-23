@@ -306,7 +306,9 @@ class IndustryAnalyser():
         # owner_qq可用的蓝图仓库，即container_tag为bp的仓库，需要存在于目标建筑?
         bp_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, "bp")
         manu_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, "manu")
+        reac_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, "reac")
         bp_container_list += manu_container_list
+        bp_container_list += reac_container_list
         bp_container_list = [container for container in bp_container_list]
 
         # 根据source_id获得user_qq所属的所有蓝图
@@ -346,7 +348,7 @@ class IndustryAnalyser():
         if source_id not in self.bp_quantity_dict:
             self.bp_quantity_dict[source_id] = len(avaliable_bpc_list)
             if len(avaliable_bpo_count_list) > 0:
-                self.bp_quantity_dict[source_id] += len(avaliable_bpo_count_list)
+                self.bp_quantity_dict[source_id] += sum([i[0] for i in avaliable_bpo_count_list])
                 self.have_bpo[source_id] = True
         if source_id not in self.bp_runs_dict:
             self.bp_runs_dict[source_id] = sum([bp[0] for bp in avaliable_bpc_list])
@@ -1148,7 +1150,7 @@ class IndustryAnalyser():
 
         with tqdm(total=total_plans, desc="成本计算", unit="个", ascii='=-') as pbar:
             for batch in chunks(plan_list, batch_size):
-                with ProcessPoolExecutor(max_workers=cpu_count) as executor:
+                with ProcessPoolExecutor(max_workers=min(6, cpu_count)) as executor:
                     futures = [
                         executor.submit(cls.signal_async_progress_work_type, user, plan_name, [plan])
                         for plan in batch

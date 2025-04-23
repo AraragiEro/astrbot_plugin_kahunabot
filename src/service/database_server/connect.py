@@ -40,7 +40,7 @@ class DatabaseConectManager():
             }, timeout=120)
 
             cls._connect_dict["config"].initialize(db)
-            logger.info("config db connect success")
+            logger.info("链接配置数据库成功。")
         else:
             raise KahunaException("bot db open failed")
 
@@ -55,9 +55,20 @@ class DatabaseConectManager():
             }, timeout=120)
 
             cls._connect_dict["cache"].initialize(db)
-            logger.info("cache db connect success")
+            logger.info("链接缓存数据库成功。")
         else:
             raise KahunaException("bot db open failed")
+
+    @classmethod
+    def perform_checkpoint(cls):
+        # wal缓存合并
+        # 确保在执行检查点时获取数据库连接
+        with cls._connect_dict["config"].connection_context():
+            cls._connect_dict["config"].execute_sql('PRAGMA wal_checkpoint(FULL);')
+            logger.info("config 数据库执行了WAL检查点")
+        with cls._connect_dict["cache"].connection_context():
+            cls._connect_dict["cache"].execute_sql('PRAGMA wal_checkpoint(FULL);')
+            logger.info("cache数据库执行了WAL检查点")
 
     @classmethod
     def config_db(cls) -> DatabaseProxy:
@@ -83,7 +94,7 @@ class DatabaseConectManager():
                 logger.info(f"create table {model._meta.table_name}")
                 model.create_table()
 
-        logger.info("create default table success.")
+        logger.info("创建默认表结构成功.")
 
     @classmethod
     def clean_table_not_in_list(cls):

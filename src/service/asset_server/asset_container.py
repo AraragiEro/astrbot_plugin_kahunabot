@@ -103,7 +103,7 @@ class AssetContainer:
     def get_from_db(self):
         return M_AssetContainer.get_or_none(
             (M_AssetContainer.asset_location_id == self.asset_location_id) &
-            (M_AssetContainer.asset_location_type == self.asset_location_type))
+            (M_AssetContainer.asset_owner_qq == self.asset_owner_qq))
 
     def insert_to_db(self):
         obj = self.get_from_db()

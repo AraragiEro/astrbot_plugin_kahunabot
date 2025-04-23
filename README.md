@@ -1,59 +1,91 @@
 
 <div align="center">
 
-![9213766CB158786A6C4C0291F715FE5F](https://github.com/user-attachments/assets/40c09a45-f898-4167-9315-20df6a1dc59a)
+# 🌟 Kahuna Bot 🌟
 
-</div>
+![Logo](https://github.com/user-attachments/assets/40c09a45-f898-4167-9315-20df6a1dc59a)
 
-<div align="center">
+[![开发状态](https://img.shields.io/badge/状态-开发中-yellow)](https://github.com/AraragiEro/astrbot_plugin_kahunabot)
+[![EVE Online](https://img.shields.io/badge/游戏-EVE%20Online-blue)](https://www.eveonline.com/)
+[![AstrBot](https://img.shields.io/badge/框架-AstrBot-green)](https://github.com/AstrBotDevs/AstrBot.git)
 
 _笨笨的kahuna不停的计算自己离买牛角包还有多远_
 
 _一座新的**X**山拔地而起！_
 
-🥰_爱来自 凛冬联盟群 紫竹梅重工_
+🥰 _爱来自 凛冬联盟群 紫竹梅重工_
 
 ![sty](https://github.com/user-attachments/assets/f37a6a06-b925-4836-8561-282720f06506)
 
 </div>
 
-本插件处于早期开发阶段，还有好多好多的bug~
+## 📝 项目简介
 
-欢迎提issue~
+本插件是基于AstrBot框架的EVE Online游戏辅助机器人，为玩家提供市场价格查询、成本计算、工业规划等功能。
+
+> ⚠️ 本插件处于早期开发阶段，还有好多好多的bug~
+> 
+> 欢迎提issue~
+
+## 📋 目录
+
+- [🌟 Kahuna Bot 🌟](#-kahuna-bot-)
+  - [📝 项目简介](#-项目简介)
+  - [📋 目录](#-目录)
+  - [⭐ 功能展示](#-功能展示)
+    - [吉他和联盟市场价格查询](#吉他和联盟市场价格查询)
+    - [成本查询](#成本查询)
+    - [工业规划与报表输出](#工业规划与报表输出)
+    - [化矿分析](#化矿分析)
+    - [利润分析](#利润分析)
+  - [😇 如何部署？](#-如何部署)
+    - [部署AstrBot](#部署astrbot)
+    - [下载插件](#下载插件)
+    - [配置插件](#配置插件)
+      - [安装依赖](#安装依赖)
+      - [准备SDE数据库](#准备sde数据库)
+      - [飞书API获取](#飞书api获取)
+      - [修改配置文件](#修改配置文件)
+  - [关于工业规划如何使用的一份粗略的说明，先凑合用](#关于工业规划如何使用的一份粗略的说明先凑合用)
+  - [🌟 支持一下](#-支持一下)
 
 ---
-# ⭐功能展示
 
-#### 吉他和联盟市场价格查询
+## ⭐ 功能展示
+
+### 吉他和联盟市场价格查询
 ![吉他和联盟市场价格查询](https://github.com/user-attachments/assets/fc70e5ea-51af-41b2-b947-93ccfa6aa908)
 
-#### 成本查询
+### 成本查询
 ![成本查询](https://github.com/user-attachments/assets/924da9e1-335d-422f-b2b3-2fbb441b6915)
 
-#### 工业规划与报表输出
+### 工业规划与报表输出
 ![工业规划](https://github.com/user-attachments/assets/f23b7873-dbb3-48df-9ee9-4d07ed4dba21)
 
 ![报表输出1](https://github.com/user-attachments/assets/9d2f4b57-04a4-4f31-909e-fbb72e86e4fb)
 
 ![报表输出2](https://github.com/user-attachments/assets/235c724e-f465-4966-98b8-0dc4cf7acc50)
 
-#### 化矿分析
-![ac2a49e3c136d18bd767e7ebc6794a30](https://github.com/user-attachments/assets/8a1f865f-ec7a-416d-9640-fd87f3e46b55)
+### 化矿分析
+![化矿分析](https://github.com/user-attachments/assets/8a1f865f-ec7a-416d-9640-fd87f3e46b55)
 
-#### 利润分析
+### 利润分析
 ![利润分析](https://github.com/user-attachments/assets/8b835d57-e093-42c0-896d-bb93579c9935)
 
-👉报表内容丰富，包括任务分解，材料采购，物流清单，工作任务等，一站式解放工业制造的脑力消耗，🫡公司级别提供智能计算服务。
-
-
-# 😇如何部署？
-## 部署AstrBot
-本项目是astrbot框架面向QQ的机器人插件，你需要先部署基于astrbot的qq机器人。
-
-这里前往 [AstrBot](https://github.com/AstrBotDevs/AstrBot.git) 仓库。
+👉 报表内容丰富，包括任务分解，材料采购，物流清单，工作任务等，一站式解放工业制造的脑力消耗，🫡公司级别提供智能计算服务。
 
 ---
-## 下载插件
+
+## 😇 如何部署？
+
+### 部署AstrBot
+
+本项目是AstrBot框架面向QQ的机器人插件，你需要先部署基于AstrBot的QQ机器人。
+
+👉 前往 [AstrBot官方仓库](https://github.com/AstrBotDevs/AstrBot.git) 获取详细部署指南。
+
+### 下载插件
+
 插件暂时没有上架插件商场，需要手动部署。
 
 首先前往plugin目录：
@@ -65,7 +97,7 @@ AstrBot/
 │   ├── plugins/              # 插件目录
 ```
 
-将项目clone到plugin文件夹下
+将项目clone到plugin文件夹下：
 ```bash
 git clone https://github.com/AraragiEro/astrbot_plugin_kahunabot.git
 ```
@@ -93,6 +125,8 @@ kahunabot/
 │   │   ├── log_server/  # 日志服务
 │   │   ├── market_server/ # 市场服务
 │   │   ├── sde_service/   # SDE数据服务
+│   │   ├── picture_render_service/   # html生图服务
+│   │   ├── resource/   # 静态资源
 │   │   └── user_server/   # 用户管理模块
 │   └── utils/             # 工具模块
 ├── data/                   # 数据库存放目录，可选用
@@ -102,14 +136,14 @@ kahunabot/
 └── requirements.txt       # 依赖包列表
 ```
 
----
-## 配置插件
+### 配置插件
 
-### 安装依赖
-- 安装pyppeteer
+#### 安装依赖
+
+1. 安装pyppeteer
 ```bash
-# 下载速度慢可以考虑使用加速源 pip install pyppeteer -i https://pypi.tuna.tsinghua.edu.cn/simple
-pip install pyppeteer
+# 下载速度慢可以考虑使用加速源
+pip install pyppeteer -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 2. 安装浏览器依赖
@@ -117,44 +151,48 @@ pip install pyppeteer
 pyppeteer-install
 ```
 
-### 准备SDE数据库
-- sde数据库生成工具：**[EVE-SDE-Database-Builder](https://github.com/EVEIPH/EVE-SDE-Database-Builder.git)**
-- 官方sde数据库更新地址：**[https://developers.eveonline.com/](https://developers.eveonline.com/)**
+#### 准备SDE数据库
 
-使用数据库生成工具处理ccp官方发布的sde数据库输出英文和中文的sqlite版本数据库备用。
+- SDE数据库生成工具：**[EVE-SDE-Database-Builder](https://github.com/EVEIPH/EVE-SDE-Database-Builder.git)**
+- 官方SDE数据库更新地址：**[https://developers.eveonline.com/](https://developers.eveonline.com/)**
 
-👇参考下图👇
+使用数据库生成工具处理CCP官方发布的SDE数据库，输出英文和中文的SQLite版本数据库备用。
 
-![image2](https://github.com/user-attachments/assets/8db7c904-dbd7-4497-a0ad-efdc6358c58b)
+👇 参考下图 👇
 
-### 飞书api获取
+![SDE数据库生成](https://github.com/user-attachments/assets/8db7c904-dbd7-4497-a0ad-efdc6358c58b)
 
-前往 **[飞书开发平台](https://open.feishu.cn/app)** 注册账号，并创建一个应用获取appid和Secretid
+#### 飞书API获取
 
-![image3](https://github.com/user-attachments/assets/3e321503-edaa-48f8-b964-5a2d39712a73)
+1. 前往 **[飞书开发平台](https://open.feishu.cn/app)** 注册账号，并创建一个应用获取AppID和SecretID
 
-![image4](https://github.com/user-attachments/assets/820341a3-c37d-42af-a67b-b05c0eed8706)
+   ![飞书开发平台](https://github.com/user-attachments/assets/3e321503-edaa-48f8-b964-5a2d39712a73)
 
-添加机器人应用
+   ![获取AppID和SecretID](https://github.com/user-attachments/assets/820341a3-c37d-42af-a67b-b05c0eed8706)
 
-![image5](https://github.com/user-attachments/assets/310e6f16-93a1-45fc-b5d4-6d65b85814ba)
+2. 添加机器人应用
 
-开通应用权限，全选云文档权限即可
+   ![添加机器人应用](https://github.com/user-attachments/assets/310e6f16-93a1-45fc-b5d4-6d65b85814ba)
 
-![image6](https://github.com/user-attachments/assets/e83653ed-3e72-4264-94a7-77ca751109fd)
+3. 开通应用权限，全选云文档权限即可
 
-给机器人添加云文档权限 [如何为应用开通云文档相关资源的权限](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-add-permissions-to-app)
+   ![开通应用权限](https://github.com/user-attachments/assets/e83653ed-3e72-4264-94a7-77ca751109fd)
 
-新建一个云文档文件夹并获取链接，形式为`https://bcnzl0ndjqqq.feishu.cn/drive/folder/{folder_id}` ,将folder_id记录
+4. 给机器人添加云文档权限 [如何为应用开通云文档相关资源的权限](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-add-permissions-to-app)
 
+5. 新建一个云文档文件夹并获取链接，形式为`https://bcnzl0ndjqqq.feishu.cn/drive/folder/{folder_id}`，将folder_id记录
 
+#### 修改配置文件
 
-### 修改配置文件
-将`config.ini.example`复制一份,重命名为`config.ini`。
+将`config.ini.example`复制一份，重命名为`config.ini`。
 
 ```ini
 [APP]
 DBTYPE = sqlite # 数据库类型，暂时只支持sqlite。本地数据库记得多备份哦~
+COST_PLAN_USER = # 公共成本计算接口基准角色
+COST_PLAN_NAME = # 公共成本计算接口基准角色名称
+CORP_ASSET_USER =   # 
+PIC_RENDER_PROXY =  # 图片渲染代理地址，默认为空，不使用代理
 
 [FEISHU]
 APP_ID = MyApp      # 飞书表格输出相关配置
@@ -189,10 +227,12 @@ esi-mail.organize_mail.v1 = true
 ```
 
 ## 关于工业规划如何使用的一份粗略的说明，先凑合用
-[小卡bot初级使用指南](https://conscious-cord-0d1.notion.site/bot-1920b0a9ac1b80998d71c4349b241145)
 
-# 🌟支持一下
-觉得好用的话，给孩子打点isk呗~ 
+👉 [小卡bot初级使用指南](https://conscious-cord-0d1.notion.site/bot-1920b0a9ac1b80998d71c4349b241145)
+
+## 🌟 支持一下
+求个star。
+觉得好用的话，给孩子打点ISK呗~ 
 
 `ID: Alero AraragiEro`
 

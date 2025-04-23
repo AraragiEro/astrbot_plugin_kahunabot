@@ -41,6 +41,7 @@ class AssetManager():
                     owner.asset_owner_id,
                     access_character)
                 cls.asset_dict[(asset_owner.owner_type, asset_owner.owner_id)] = asset_owner
+                logger.info(f"初始化库存凭据: {asset_owner.owner_type}, QQ:{owner.asset_owner_qq}")
         cls.init_status = True
         logger.info(f"init asset complete. {id(cls)}")
 

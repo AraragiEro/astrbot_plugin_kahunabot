@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 
 # import transformers
 
+DEBUG_QQ = None
+
 class KahunaException(Exception):
     def __init__(self, message):
         super(KahunaException, self).__init__(message)
@@ -63,6 +65,17 @@ class ClassPropertyMetaclass(type):
             if type(obj) is classproperty:
                 return obj.__set__(self, value)
         return super().__setattr__(key, value)
+
+def set_debug_qq(qq: int):
+    global DEBUG_QQ
+    DEBUG_QQ = qq
+
+def get_debug_qq():
+    return DEBUG_QQ
+
+def unset_debug_qq():
+    global DEBUG_QQ
+    DEBUG_QQ = None
 
 # from .deepseek_tokenizer import tokenizer
 # def get_chat_token_count(input: str):

@@ -13,7 +13,8 @@ import math
 
 from ..sde_service import SdeUtils
 from ..market_server import MarketManager
-from ...utils import KahunaException
+from ..config_server.config import config
+from ...utils import KahunaException, get_beijing_utctime
 from ...utils.path import TMP_PATH, RESOURCE_PATH
 
 # 模板目录
@@ -79,7 +80,7 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "price_res.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=20)
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -185,7 +186,7 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "single_cost_res.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=30)
+        pic_path = await cls.render_pic(output_path, html_content, width=550, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -250,7 +251,7 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "sell_list.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=1300, height=720, wait_time=5)
+        pic_path = await cls.render_pic(output_path, html_content, width=1300, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -277,7 +278,41 @@ class PriceResRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "refine_report.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=1000, height=720, wait_time=5)
+        pic_path = await cls.render_pic(output_path, html_content, width=1000, height=720, wait_time=120)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
+    async def rebder_mk_feature(cls, mk_data: dict):
+        data_list = [data for data in mk_data.values() if data['profit_rate'] < 2]
+        data_list.sort(key=lambda x: x['month_profit'], reverse=True)
+        feature_list = [
+            data for data in data_list
+            if data['cost'] * data['asset_exist'] < 1500000000
+            and data['cost'] > 30000000
+        ][:30]
+
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('t2mk_template.j2')
+        current = get_beijing_utctime(datetime.now())
+        html_content = template.render(
+            all_data=data_list,
+            feature_list=feature_list,
+            header_title='T2常规舰船市场推荐',
+            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "mk_feature.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=1100, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -290,22 +325,30 @@ class PriceResRender():
         with open(html_file_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
 
+        launch_a = [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--single-process'
+        ]
+
+        if config['APP']['PIC_RENDER_PROXY'] != '':
+            proxy_arg = [config['APP']['PIC_RENDER_PROXY']]
+        else:
+            proxy_arg = []
+
         # 检查是否为 Linux 系统
         if sys.platform.startswith('linux'):
         # 启动浏览器，添加必要的参数以确保在Linux环境下正常运行
             browser = await launch(
-            headless=True,
-                args=[
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--single-process'
-                ]
+                headless=True,
+                args=launch_a + proxy_arg
             )
         else:
             browser = await launch(
                 executablePath=r'C:\Program Files\Google\Chrome\Application\chrome.exe',
-                headless=True
+                headless=True,
+                args=proxy_arg
             )
 
         page = await browser.newPage()
@@ -316,7 +359,7 @@ class PriceResRender():
             await page.setContent(html_content)
             
             # 等待字体加载完成
-            await page.waitForFunction('document.fonts.ready')
+            await page.waitForFunction('document.fonts.ready', {'timeout': wait_time * 1000})
             
             # 检查是否有Chart.js图表，如果有则等待图表渲染完成
             has_chart = await page.evaluate('typeof Chart !== "undefined" && document.getElementById("costChart") !== null')

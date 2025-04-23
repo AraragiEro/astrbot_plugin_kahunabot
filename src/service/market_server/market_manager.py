@@ -42,7 +42,7 @@ class MarketManager():
             cls.market_dict["jita"] = jita_market
             cls.market_dict["frt"] = frt_market
         cls.init_status = True
-        logger.info(f"init market complete. {id(cls)}")
+        logger.info(f"初始化市场. {id(cls)}")
 
     @classmethod
     def set_ac_character(cls, ac_character_id: int):
