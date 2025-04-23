@@ -356,7 +356,16 @@ class PriceResRender():
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--single-process'
+            '--disable-gpu',  # 禁用GPU加速
+            '--disable-software-rasterizer',  # 禁用软件光栅器
+            '--single-process',
+            '--disable-extensions',  # 禁用扩展
+            '--ignore-certificate-errors',  # 忽略证书错误
+            '--disable-web-security',  # 禁用Web安全检查
+            '--allow-running-insecure-content',  # 允许运行不安全的内容
+            '--font-render-hinting=none',  # 禁用字体渲染微调
+            '--disable-features=site-per-process',  # 禁用站点隔离
+            '--mute-audio'  # 静音
         ]
 
         if config['APP']['PIC_RENDER_PROXY'] != '':
