@@ -37,16 +37,22 @@ class TypesPriceEvent():
         # 准备实时价格数据
         max_buy, mid_price, min_sell, fuzz_list = PriceService.get_price_rouge(item_name, market)
 
-        # 准备历史价格数据
-        item_id = SdeUtils.get_id_by_name(item_name)
-        await MarketHistory.refresh_forge_market_history([item_id])
-        history_data = MarketHistory.get_type_region_histpry_data(item_id, REGION_FORGE_ID)
-        chart_history_data = [[data[0].strftime("%Y-%m-%d"), data[1]] for data in history_data[:365]]
+        # TODO 特别的物品组合map映射
+        # 找不到物品时输出模糊匹配结果
         if fuzz_list:
             fuzz_rely = (f"物品 {item_name} 不存在于数据库\n"
                          f"你是否在寻找：\n")
             fuzz_rely += '\n'.join(fuzz_list)
             return event.plain_result(fuzz_rely)
+
+        # 准备历史价格数据
+        item_id = SdeUtils.get_id_by_name(item_name)
+        await MarketHistory.refresh_forge_market_history([item_id])
+        history_data = MarketHistory.get_type_region_histpry_data(item_id, REGION_FORGE_ID)
+        chart_history_data = [[data[0].strftime("%Y-%m-%d"), data[1]] for data in history_data[:365]]
+
+        quantity_str = ''
+
         res_path = await PriceResRender.render_price_res_pic(
             item_name,
             [max_buy, mid_price, min_sell, fuzz_list],
@@ -55,4 +61,10 @@ class TypesPriceEvent():
         chain = [
             Image.fromFileSystem(res_path)
         ]
+        if quantity > 1:
+            quantity_str += f'--------总计--------\n'
+            quantity_str += f'sell: {min_sell * quantity:,}\n'
+            quantity_str += f'buy: {max_buy * quantity:,}\n'
+            quantity_str += f'mid: {mid_price * quantity:,}\n'
+            chain += [quantity_str]
         return event.chain_result(chain)
