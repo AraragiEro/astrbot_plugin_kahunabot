@@ -81,6 +81,9 @@ class Asset(CacheModel):
     type_id = IntegerField()
     class Meta:
         table_name = 'asset'
+        indexes = (
+            (('item_id', 'owner_id', 'quantity'), True),
+        )
 DatabaseConectManager.add_model(Asset)
 
 class AssetCache(CacheModel):
@@ -96,6 +99,9 @@ class AssetCache(CacheModel):
     type_id = IntegerField()
     class Meta:
         table_name = 'asset_cache'
+        indexes = (
+            (('item_id', 'owner_id', 'quantity'), True),
+        )
 DatabaseConectManager.add_model(AssetCache)
 
 class AssetOwner(ConfigModel):
