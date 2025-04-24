@@ -1,6 +1,7 @@
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api.message_components import Image
+from astrbot.core.message.components import Plain
 
 # kahuna model
 from ..service.market_server import PriceService
@@ -66,5 +67,5 @@ class TypesPriceEvent():
             quantity_str += f'sell: {min_sell * quantity:,}\n'
             quantity_str += f'buy: {max_buy * quantity:,}\n'
             quantity_str += f'mid: {mid_price * quantity:,}\n'
-            chain += [quantity_str]
+            chain += [Plain(quantity_str)]
         return event.chain_result(chain)
