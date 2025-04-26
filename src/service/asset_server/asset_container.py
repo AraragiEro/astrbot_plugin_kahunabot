@@ -7,6 +7,7 @@ from ..database_server.model import AssetCache
 from ..database_server.model import AssetContainer as M_AssetContainer
 from ..character_server.character_manager import CharacterManager
 from ..industry_server.structure import StructureManager
+from ..log_server import logger
 
 class ContainerTag(Enum):
     bp = 'blueprint'
@@ -42,6 +43,7 @@ class AssetContainer:
             if (owner_id == character.character_id and operate_qq == character.QQ) or \
                (owner_id == character.corp_id and operate_qq == character.QQ):
                 return True
+        logger.error(f'鉴权失败. QQ:{operate_qq} 角色:{character.character_name}')
         return False
 
     @classmethod
