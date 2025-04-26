@@ -268,6 +268,8 @@ class KahunaGoogleSheetManager:
                     logger.info(f'等待市场监视器刷新线程完成 ......')
                     time.sleep(30)
                 future1.result()
+
+            RefreshDateUtils.update_refresh_date('market_monitor')
         finally:
             self.refresh_running = False
 
