@@ -46,7 +46,7 @@ class RunningJobOwner:
         db = DatabaseConectManager.cache_db()
         db.execute_sql(
             f"INSERT INTO {M_IndustryJobsCache._meta.table_name} SELECT * FROM {M_IndustryJobs._meta.table_name}")
-        logger.info("copy data to cache complete")
+        logger.info("job 复制数据到缓存")
 
     @classmethod
     def get_job_with_starter(cls, character_id_list: list):

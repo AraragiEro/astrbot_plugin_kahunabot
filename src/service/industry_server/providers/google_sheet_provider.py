@@ -9,6 +9,7 @@ import io
 
 from ..third_provider import Provider
 from ...sde_service import SdeUtils
+from ...database_server.utils import RefreshDateUtils
 
 class GoogleSheetsProvider(Provider):
     """
@@ -67,6 +68,9 @@ class GoogleSheetsProvider(Provider):
         if not self.sheet_names:
             raise ValueError("At least one sheet_name must be provided")
 
+    def get_refreshdate_id(self):
+        return f'provider_{self.provider_id}_refreshdate'
+
     async def initialize(self) -> bool:
         """
         初始化供货商，验证参数并测试连接
@@ -92,7 +96,7 @@ class GoogleSheetsProvider(Provider):
             List[Tuple[str, float]]: 资产列表，每项为(资产ID, 数量)元组
         """
         # 对于同步调用，运行异步函数
-        if 'cache' in self.cache:
+        if 'cache' in self.cache and not RefreshDateUtils.out_of_hour_interval(self.get_refreshdate_id(), 2):
             return self.cache['cache']
         res = await self.get_assets_async()
         self.cache['cache'] = res
@@ -173,6 +177,7 @@ class GoogleSheetsProvider(Provider):
 
             result.append((tid, quantity))
 
+        RefreshDateUtils.update_refresh_date(self.get_refreshdate_id())
         return result
 
     async def _get_sheet_data_async(self, sheet_name: str) -> List[Tuple[str, float]]:

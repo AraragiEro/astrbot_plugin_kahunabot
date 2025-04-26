@@ -11,7 +11,7 @@ from .src.service.asset_server.asset_manager import AssetManager
 from .src.service.market_server.market_manager import MarketManager
 from .src.service.industry_server.industry_manager import IndustryManager
 from .src.service.database_server.connect import DatabaseConectManager
-from .src.service.industry_server.providers import init_providers
+from .src.service.google_server.googlesheet_kahuna import kahuna_google_market_monitor
 
 from .src.event.character import CharacterEvent
 from .src.event.price import TypesPriceEvent
@@ -20,8 +20,6 @@ from .src.event.industry import AssetEvent, MarketEvent, IndsEvent, SdeEvent
 from .src.event import llm_tool as kahuna_llmt
 from .src.event.admin import AdminEvent
 from .filter import AdminFilter, VipMemberFilter, MemberFilter
-
-
 
 from .src.utils import refresh_per_min, run_func_delay_min
 from .src.utils import set_debug_qq, unset_debug_qq, DEBUG_QQ
@@ -48,18 +46,18 @@ class KahunaBot(Star):
     def __init__(self, context: Context):
         super().__init__(context)
         # 初始化
-        # asyncio.create_task(self.init_plugin())
         init_server()
-        asyncio.create_task(init_providers())
+        # asyncio.create_task(self.init_plugin())
 
         # 延时初始化
         asyncio.create_task(refresh_per_min(0, 10, DatabaseConectManager.perform_checkpoint))
-        asyncio.create_task(run_func_delay_min(1, CharacterManager.refresh_all_characters_at_init))
-        asyncio.create_task(refresh_per_min(1, 22, MarketManager.refresh_market))
-        asyncio.create_task(refresh_per_min(1, 15, AssetManager.refresh_all_asset))
-        asyncio.create_task(refresh_per_min(2, 11, IndustryManager.refresh_running_status))
-        asyncio.create_task(refresh_per_min(2, 60, IndustryManager.refresh_system_cost))
-        asyncio.create_task(refresh_per_min(2, 120, IndustryManager.refresh_market_price))
+        asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
+        asyncio.create_task(refresh_per_min(0, 1, MarketManager.refresh_market))
+        asyncio.create_task(refresh_per_min(0, 1, AssetManager.refresh_all_asset))
+        asyncio.create_task(refresh_per_min(0, 1, IndustryManager.refresh_running_status))
+        asyncio.create_task(refresh_per_min(0, 1, IndustryManager.refresh_system_cost))
+        asyncio.create_task(refresh_per_min(0, 1, IndustryManager.refresh_market_price))
+        asyncio.create_task(refresh_per_min(0, 1, kahuna_google_market_monitor.refresh_market_monitor_process))
 
 
     # @filter.custom_filter(SelfFilter1)

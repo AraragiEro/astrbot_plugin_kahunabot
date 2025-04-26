@@ -6,6 +6,7 @@ from datetime import datetime
 
 from ..database_server.model import MarketOrderCache
 from ..database_server.connect import DatabaseConectManager
+from ..database_server.utils import RefreshDateUtils
 from .marker import Market
 from ..character_server.character_manager import CharacterManager
 from ..config_server.config import config, update_config
@@ -63,6 +64,11 @@ class MarketManager():
     # 监视器，定时刷新
     @classmethod
     def refresh_market(cls):
+        if not RefreshDateUtils.out_of_min_interval('market_order', 20):
+            return cls.get_markets_detal()
+        else:
+            RefreshDateUtils.update_refresh_date('market_order')
+
         logger.info("开始刷新市场数据。")
         for market in cls.market_dict.values():
             market.get_market_order()

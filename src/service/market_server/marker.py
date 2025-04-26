@@ -5,7 +5,6 @@ import asyncio
 from cachetools import TTLCache, cached
 from datetime import datetime, timedelta
 
-
 from ..database_server.model import MarketOrder as M_MarketOrder, MarketOrderCache as M_MarketOrderCache
 from ..database_server import model
 from ..database_server.connect import DatabaseConectManager
@@ -13,6 +12,7 @@ from ..evesso_server.eveesi import markets_region_orders
 from ..evesso_server.eveesi import markets_structures
 from ..evesso_server import eveesi
 from ..evesso_server.eveutils import find_max_page, get_multipages_result
+from ..database_server.utils import RefreshDateUtils
 from ..sde_service import SdeUtils
 
 from ...utils import KahunaException
@@ -154,7 +154,7 @@ class Market:
                                  (M_MarketOrderCache.is_buy_order == False))
                           .scalar())
         if not max_price_buy or not min_price_sell:
-            logger.info(f'{type_id},{SdeUtils.get_name_by_id(type_id)}: order data not exist in cache.')
+            logger.info(f'{type_id},{SdeUtils.get_name_by_id(type_id)}: 没有市场订单.')
             return 0, 0
         return float(max_price_buy), float(min_price_sell)
 
@@ -169,17 +169,20 @@ class MarketHistory:
 
     @classmethod
     async def refresh_market_history(cls, type_id_list: list, region_id: int):
-        logger.info(f'刷新t2常规历史订单信息')
-        with ThreadPoolExecutor(max_workers=100) as executor:
-            with tqdm(total=len(type_id_list), desc="刷新市场历史", unit="page", ascii='=-') as pbar:
+        logger.info(f'刷新历史订单信息。id长度{len(type_id_list)}, region_id:{region_id}')
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            with tqdm(total=len(type_id_list), desc="创建刷新进程", unit="page", ascii='=-') as pbar:
                 futures = []
                 for type_id in type_id_list:
                     futures.append(executor.submit(cls.refresh_type_history_in_region, type_id, region_id))
                     await asyncio.sleep(0.05)
                     pbar.update()
+            with tqdm(total=len(type_id_list), desc="获取刷新结果", unit="page", ascii='=-') as pbar:
                 for future in futures:
                     try:
                         future.result()
+                        await asyncio.sleep(0.05)
+                        pbar.update()
                     except Exception as e:
                         logger.error(f"refresh_type_history_in_region error: "
                                      f"{type_id} {SdeUtils.get_name_by_id(type_id)} {e}")
@@ -192,8 +195,14 @@ class MarketHistory:
         [res.update({"type_id": type_id, 'region_id': region_id}) for res in result]
 
         model.MarketHistory.insert_many(result).on_conflict_ignore().execute()
+        RefreshDateUtils.update_refresh_date(cls.get_history_refreshdate_id(type_id, region_id))
 
-    type_region_histpry_data_cache = TTLCache(maxsize=3000, ttl=24 * 60 * 60)
+    @classmethod
+    def get_history_refreshdate_id(cls, type_id: int, region_id: int) -> str:
+        history_id =f'markey_history_{type_id}_{region_id}'
+        return history_id
+
+    type_region_histpry_data_cache = TTLCache(maxsize=3000, ttl=6 * 60 * 60)
     @classmethod
     @cached(type_region_histpry_data_cache)
     def get_type_region_histpry_data(cls, type_id: int, region_id: int) -> list:
@@ -202,6 +211,22 @@ class MarketHistory:
 
         return region_year_data_list
 
+    @classmethod
+    async def get_type_region_history_data_batch(cls, type_id_list: list, region_id: int) -> dict:
+        need_refresh_list = [
+            tid for tid in type_id_list if RefreshDateUtils.out_of_day_interval(
+                cls.get_history_refreshdate_id(tid, region_id), 1
+            )
+        ]
+        if need_refresh_list:
+            await cls.refresh_market_history(need_refresh_list, region_id)
+
+        type_region_history_data = {
+            tid: cls.get_type_region_histpry_data(tid, region_id) for tid in type_id_list
+        }
+
+        return type_region_history_data
+
     type_history_detale_cache = TTLCache(maxsize=3000, ttl=24 * 60 * 60)
     @classmethod
     @cached(type_history_detale_cache)
@@ -209,16 +234,21 @@ class MarketHistory:
         mkhist = model.MarketHistory
         week_ago = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=9)
         month_ago = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=32)
+        year_ago = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=366)
 
         vale_week_data = mkhist.select().where((mkhist.date >= week_ago) & (mkhist.region_id == REGION_VALE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
         vale_month_data = mkhist.select().where((mkhist.date >= month_ago) & (mkhist.region_id == REGION_VALE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
+        vale_year_data = mkhist.select().where((mkhist.date >= year_ago) & (mkhist.region_id == REGION_VALE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
         vale_week_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in vale_week_data]
         vale_month_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in vale_month_data]
+        vale_year_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in vale_year_data]
 
         forge_week_data = mkhist.select().where((mkhist.date >= week_ago) & (mkhist.region_id == REGION_FORGE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
         forge_month_data = mkhist.select().where((mkhist.date >= month_ago) & (mkhist.region_id == REGION_FORGE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
+        forge_year_data = mkhist.select().where((mkhist.date >= year_ago) & (mkhist.region_id == REGION_FORGE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
         forge_week_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in forge_week_data]
         forge_month_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in forge_month_data]
+        forge_year_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in forge_year_data]
 
         vale_res ={}
         forge_res = {}
@@ -264,6 +294,24 @@ class MarketHistory:
         highest_average = 0
         lowest_average = 0
         total_volume = 0
+        for data in vale_year_data_list:
+            flow += data[0] * data[4]
+            count += 1
+            total_volume += data[4]
+            highest_average += data[1]
+            lowest_average += data[2]
+        vale_res.update({
+            'yearflow': flow,
+            'year_highset_aver': highest_average / count if count else 0,
+            'year_lowest_aver': lowest_average / count if count else 0,
+            'year_volume': total_volume
+        })
+
+        count = 0
+        flow = 0
+        highest_average = 0
+        lowest_average = 0
+        total_volume = 0
         for data in forge_week_data_list:
             flow += data[0] * data[4]
             count += 1
@@ -293,6 +341,24 @@ class MarketHistory:
             'month_highset_aver': highest_average / count if count else 0,
             'month_lowest_aver': lowest_average / count if count else 0,
             'month_volume': total_volume
+        })
+
+        count = 0
+        flow = 0
+        highest_average = 0
+        lowest_average = 0
+        total_volume = 0
+        for data in forge_year_data_list:
+            flow += data[0] * data[4]
+            count += 1
+            total_volume += data[4]
+            highest_average += data[1]
+            lowest_average += data[2]
+        forge_res.update({
+            'yearflow': flow,
+            'year_highset_aver': highest_average / count if count else 0,
+            'year_lowest_aver': lowest_average / count if count else 0,
+            'year_volume': total_volume
         })
 
         return vale_res, forge_res

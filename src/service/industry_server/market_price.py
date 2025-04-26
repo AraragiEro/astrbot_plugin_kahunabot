@@ -25,5 +25,5 @@ class MarketPrice:
         with db.atomic():
             M_MarketPriceCache.delete().execute()
             db.execute_sql("INSERT INTO market_price_cache SELECT * FROM market_price")
-            logger.info("market_price copy data to cache complete")
+            logger.info("market_price 复制数据到缓存")
 

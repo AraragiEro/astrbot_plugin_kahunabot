@@ -1,4 +1,5 @@
 import sys
+import asyncio
 from .asset_server.asset_manager import AssetManager
 from .character_server.character_manager import CharacterManager
 from .database_server.connect import DatabaseConectManager
@@ -7,6 +8,7 @@ from .industry_server.structure import StructureManager
 from .market_server.market_manager import MarketManager
 from .user_server.user_manager import UserManager
 from .log_server import logger
+from .industry_server.providers import init_providers
 
 init_flag = False
 
@@ -20,4 +22,5 @@ def init_server(log=True):
     AssetManager.init()
     IndustryConfigManager.init()
     MarketManager.init()
+    asyncio.create_task(init_providers())
     init_flag = True

@@ -9,7 +9,7 @@ from .asset_owner import AssetOwner
 from ..character_server.character_manager import CharacterManager
 from ..sde_service.utils import SdeUtils
 from ..evesso_server.eveesi import universe_structures_structure
-
+from ..database_server.utils import RefreshDateUtils
 # kahuna KahunaException
 from ...utils import KahunaException
 
@@ -82,11 +82,11 @@ class AssetManager():
         with db.atomic():
             M_AssetCache.delete().execute()
             db.execute_sql(f"INSERT INTO {M_AssetCache._meta.table_name} SELECT * FROM {M_Asset._meta.table_name}")
-            logger.info("copy data to cache complete")
+            logger.info("asset 复制数据到缓存")
         with db.atomic():
             M_BlueprintAssetCache.delete().execute()
             db.execute_sql(f"INSERT INTO {M_BlueprintAssetCache._meta.table_name} SELECT * FROM {M_BlueprintAsset._meta.table_name}")
-            logger.info("copy data to cache complete")
+            logger.info("asset 复制数据到缓存")
 
     @classmethod
     def refresh_asset(cls, type, owner_id):
@@ -100,6 +100,11 @@ class AssetManager():
 
     @classmethod
     def refresh_all_asset(cls):
+        if not RefreshDateUtils.out_of_min_interval('asset', 15):
+            return
+        RefreshDateUtils.update_refresh_date('asset')
+
+        logger.info('开始刷新所有资产')
         for asset in cls.asset_dict.values():
             asset.get_asset()
         cls.copy_to_cache()

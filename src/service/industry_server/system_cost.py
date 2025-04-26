@@ -34,4 +34,4 @@ class SystemCost:
         with db.atomic():
             M_SystemCostCache.delete().execute()
             db.execute_sql("INSERT INTO system_cost_cache SELECT * FROM system_cost")
-            logger.info("system_cost copy data to cache complete")
+            logger.info("system cost 复制数据到缓存")

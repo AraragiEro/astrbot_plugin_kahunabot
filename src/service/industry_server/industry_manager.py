@@ -7,6 +7,7 @@ from ..character_server.character_manager import CharacterManager
 from ...utils import KahunaException
 from .industry_analyse import IndustryAnalyser
 from .industry_config import IndustryConfigManager
+from ..database_server.utils import RefreshDateUtils
 
 # kahuna logger
 from ..log_server import logger
@@ -14,7 +15,11 @@ from ..log_server import logger
 class IndustryManager:
     @classmethod
     def refresh_running_status(cls):
-        logger.info("refresh running status.")
+        if not RefreshDateUtils.out_of_min_interval('running_job', 10):
+            return
+        RefreshDateUtils.update_refresh_date('running_job')
+
+        logger.info("刷新运行中job.")
         character_list = [character for character in CharacterManager.character_dict.values()]
 
         corp_list_id_list = []
@@ -30,14 +35,22 @@ class IndustryManager:
             RunningJobOwner.refresh_corp_running_job(corp_id, character)
 
         RunningJobOwner.copy_to_cache()
-        logger.info("refresh running status complete.")
+        logger.info("job 刷新完成")
 
     @classmethod
     def refresh_system_cost(cls):
+        if not RefreshDateUtils.out_of_hour_interval('system_cost', 1):
+            return
+        RefreshDateUtils.update_refresh_date('system_cost')
+
+        logger.info('刷新星系系数')
         SystemCost.refresh_system_cost()
 
     @classmethod
     def refresh_market_price(cls):
+        if not RefreshDateUtils.out_of_hour_interval('market_price', 2):
+            return
+        RefreshDateUtils.update_refresh_date('market_price')
         logger.info("开始刷新eiv价格。")
         MarketPrice.refresh_market_price()
 

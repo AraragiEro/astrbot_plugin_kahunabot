@@ -313,3 +313,10 @@ class MarketHistory(CacheModel):
             (('region_id', 'type_id', 'date'), True),
         )
 DatabaseConectManager.add_model(MarketHistory)
+
+class RefreshDate(CacheModel):
+    id = CharField(primary_key=True)
+    date = DateTimeField()
+    class Meta:
+        table_name = "refresh_date"
+DatabaseConectManager.add_model(RefreshDate)

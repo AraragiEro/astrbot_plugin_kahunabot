@@ -3,6 +3,7 @@ import networkx as nx
 from thefuzz import fuzz, process
 from peewee import DoesNotExist
 from cachetools import TTLCache, cached
+from unicodedata import category
 
 from ..sde_service import database as en_model, database_cn as zh_model
 from ...service.sde_service.database import InvTypes, InvGroups, InvCategories
@@ -390,3 +391,26 @@ class SdeUtils:
         result = InvTypes.select(InvTypes.typeID).where(InvTypes.marketGroupID.is_null(False))
 
         return [res.typeID for res in result]
+
+    @staticmethod
+    def get_important_type_id_in_market():
+        category_list = [
+            'Charge',
+            'Deployable',
+            'Drone',
+            'Fighter',
+            'Implant',
+            'Module',
+            'Ship',
+            'Subsystem'
+        ]
+
+        res = (
+            InvTypes.select()
+            .join(InvGroups, on=(InvTypes.groupID == InvGroups.groupID))
+            .join(InvCategories, on=(InvGroups.categoryID == InvCategories.categoryID))
+            .where((InvCategories.categoryName << category_list) & (InvTypes.marketGroupID.is_null(False)))
+       )
+
+        return[r.typeID for r in res]
+
