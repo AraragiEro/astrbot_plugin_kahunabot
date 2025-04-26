@@ -15,7 +15,7 @@ from ..market_server.marker import MarketHistory
 from ..market_server.market_manager import MarketManager
 from ..asset_server.asset_manager import AssetManager
 from ..character_server.character_manager import CharacterManager
-from ..database_server.utils import UserAssetStatisticsUtils
+from ..database_server.utils import UserAssetStatisticsUtils, RefreshDateUtils
 from .blueprint import BPManager
 
 
@@ -374,3 +374,10 @@ class IndustryAdvice:
         }
 
         return output
+
+    @classmethod
+    def refresh_all_asset_statistics(cls):
+        if not RefreshDateUtils.out_of_day_interval('asset_statistics', 1):
+            return
+        for user_qq in UserManager.user_dict.keys():
+            cls.personal_asset_statistics(user_qq)

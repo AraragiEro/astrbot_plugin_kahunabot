@@ -10,6 +10,7 @@ from .src.service.character_server.character_manager import CharacterManager
 from .src.service.asset_server.asset_manager import AssetManager
 from .src.service.market_server.market_manager import MarketManager
 from .src.service.industry_server.industry_manager import IndustryManager
+from .src.service.industry_server.industry_advice import IndustryAdvice
 from .src.service.database_server.connect import DatabaseConectManager
 from .src.service.google_server.googlesheet_kahuna import kahuna_google_market_monitor
 
@@ -58,6 +59,7 @@ class KahunaBot(Star):
         asyncio.create_task(refresh_per_min(0, 5, IndustryManager.refresh_system_cost))
         asyncio.create_task(refresh_per_min(0, 5, IndustryManager.refresh_market_price))
         asyncio.create_task(refresh_per_min(0, 5, kahuna_google_market_monitor.refresh_market_monitor_process))
+        asyncio.create_task(refresh_per_min(0, 5, IndustryAdvice.refresh_all_asset_statistics))
 
 
     # @filter.custom_filter(SelfFilter1)
