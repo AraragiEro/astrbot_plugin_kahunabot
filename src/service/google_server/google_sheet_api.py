@@ -3,6 +3,9 @@ import google_auth_httplib2
 from googleapiclient import discovery
 from google.oauth2 import service_account
 
+from ..log_server import logger
+from ..config_server.config import config
+
 class GoogleSheetApi:
     def __init__(self):
         self._server = None
@@ -17,8 +20,9 @@ class GoogleSheetApi:
 
     def get_credentials(self):
         scopes = ['https://www.googleapis.com/auth/spreadsheets']
+        credentials_json = config['GOOGLE']['CREDENTIALS']
         credentials = service_account.Credentials.from_service_account_file(
-            'F:\\WorkSpace\\GIT\\kahuna_bot\\AstrBot\\data\\plugins\\kahuna_bot\\credentials.json',
+            credentials_json,
             scopes=scopes
         )
         return credentials
@@ -34,8 +38,13 @@ class GoogleSheetApi:
 
     @property
     def server(self):
-        if self._server is None:
-            self._server = self.get_service()
-        return self._server
+        try:
+            if self._server is None:
+                self._server = self.get_service()
+            return self._server
+        except Exception as e:
+            logger.error(f"get_server error: {e}")
+            raise
+
 
 google_sheet_api = GoogleSheetApi()
