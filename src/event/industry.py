@@ -55,7 +55,7 @@ def print_name_fuzz_list(event: AstrMessageEvent, type_name: str):
 
 def get_user(event: AstrMessageEvent):
     if get_debug_qq():
-        user_qq = get_debug_qq()
+        user_qq = int(get_debug_qq())
     else:
         user_qq = int(event.get_sender_id())
     

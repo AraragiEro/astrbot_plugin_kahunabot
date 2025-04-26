@@ -81,7 +81,7 @@ class CharacterManager():
             if character.character_name == character_name and character.QQ == qq:
                 return character
                 break
-        raise KahunaException('无法使用qq和角色名匹配角色对象。请先进行授权。')
+        raise KahunaException(f'无法使用qq{qq}和角色名{character_name}匹配角色对象。请先进行授权。')
 
     @classmethod
     def is_character_corp_directer(cls, character):
