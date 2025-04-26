@@ -26,8 +26,6 @@ class KahunaGoogleSheetManager:
         self.refresh_running = False
         self.sheet_api_test = False
 
-        self.test_google_sheet_api()
-
     def test_google_sheet_api(self):
         try:
             spreadsheet_id = config['GOOGLE']['MARKET_MONITOR_SPREADSHEET_ID']
@@ -41,7 +39,7 @@ class KahunaGoogleSheetManager:
                             'majorDimension': 'ROWS',
                             'range': '欢迎！先看这里!A18',
                             'values': [['链接测试', datetime.now().strftime('%Y-%m-%d %H:%M:%S')]]
-                        },
+                        }
                     ],
                     'valueInputOption': 'USER_ENTERED'
                 }
@@ -252,8 +250,10 @@ class KahunaGoogleSheetManager:
         if self.refresh_running:
             return
         if not self.sheet_api_test:
-            logger.error('google_sheet_api test not pass.')
-            return
+            self.test_google_sheet_api()
+            if not self.sheet_api_test:
+                logger.error('google_sheet_api test not pass.')
+                return
         try:
             self.refresh_running = True
             if not RefreshDateUtils.out_of_hour_interval('market_monitor', 1):
