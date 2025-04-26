@@ -235,7 +235,7 @@ class KahunaGoogleSheetManager:
                 ],
                 'valueInputOption': 'USER_ENTERED'
             }
-            google_sheet_api.write_data_to_monitor(spreadsheet_id, data)
+            self.write_data_to_monitor(spreadsheet_id, data)
         except Exception as e:
             logger.error(e)
             raise e
