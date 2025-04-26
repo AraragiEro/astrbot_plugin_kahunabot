@@ -194,7 +194,7 @@ class KahunaGoogleSheetManager:
             res = loop.run_until_complete(self.output_market_data())
 
             spreadsheet_id = config['GOOGLE']['MARKET_MONITOR_SPREADSHEET_ID']
-            range_name = '工作表27'
+            range_name = '市场'
             google_sheet_api.write_data_to_monitor(spreadsheet_id, range_name, res)
         finally:
             # 确保关闭事件循环
