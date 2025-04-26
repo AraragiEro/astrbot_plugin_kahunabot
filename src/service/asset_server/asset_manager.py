@@ -115,8 +115,12 @@ class AssetManager():
 
     @classmethod
     def add_container(cls, owner_qq: int, location_id: int, location_type: str, asset_name: str, operate_qq: int, ac_token: str):
+        if location_type == 'Hangar':
+            raise KahunaException("个人机库根目录暂不支持加入容器")
         # 权限校验
-        asset_data = M_AssetCache.get_or_none(M_AssetCache.location_id == location_id)
+        asset_data = M_AssetCache.get_or_none(
+            (M_AssetCache.location_id == location_id)
+        )
         if not asset_data or not AssetContainer.operater_has_container_permission(operate_qq, asset_data.owner_id):
             raise KahunaException("container permission denied.")
 
