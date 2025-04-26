@@ -3,12 +3,16 @@ from pickle import BINPUT
 import pulp
 
 from .industry_analyse import IndustryAnalyser
+from .running_job import RunningJobOwner
 from ..sde_service.utils import SdeUtils
 from ..user_server.user_manager import UserManager
 from ..user_server.user import User
 from ...utils import KahunaException
 from ..market_server.marker import MarketHistory
 from ..market_server.market_manager import MarketManager
+from ..asset_server.asset_manager import AssetManager
+from ..character_server.character_manager import CharacterManager
+
 
 class IndustryAdvice:
     @classmethod
@@ -246,3 +250,34 @@ class IndustryAdvice:
         res['total_product_price'] = total_product_price
 
         return res
+
+    @classmethod
+    def personal_asset_statistics(cls, user_qq: int):
+        # TODO 获取资产
+        container_list = AssetManager.get_user_container(user_qq)
+        target_container = set(container.asset_location_id for container in container_list)
+
+        asset_dict = {}
+        job_asset_check_dict = {}
+        result = AssetManager.get_asset_in_container_list(list(target_container))
+        for asset in result:
+            if asset.type_id not in asset_dict:
+                asset_dict[asset.type_id] = 0
+                job_asset_check_dict[asset.type_id] = 0
+            asset_dict[asset.type_id] += asset.quantity
+            job_asset_check_dict[asset.type_id] += asset.quantity
+
+        # TODO 获取运行中任务
+        user = UserManager.get_user(user_qq)
+        user_character = [c.character_id for c in CharacterManager.get_user_all_characters(user.user_qq)]
+        alias_character = [cid for cid in user.user_data.alias.keys()]
+        result = RunningJobOwner.get_job_with_starter(user_character + alias_character)
+
+        running_job = {}
+        for job in result:
+            if job.output_location_id in target_container:
+                if not job.product_type_id in running_job:
+                    running_job[job.product_type_id] = 0
+                running_job[job.product_type_id] += job.runs
+
+        # TODO 获取珍贵物品

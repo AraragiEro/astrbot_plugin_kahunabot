@@ -153,9 +153,10 @@ class Market:
                                  (M_MarketOrderCache.location_id == target_location) &
                                  (M_MarketOrderCache.is_buy_order == False))
                           .scalar())
-        if not max_price_buy or not min_price_sell:
-            logger.info(f'{type_id},{SdeUtils.get_name_by_id(type_id)}: 没有市场订单.')
-            return 0, 0
+        if not max_price_buy:
+            max_price_buy = 0
+        if not min_price_sell:
+            min_price_sell = 0
         return float(max_price_buy), float(min_price_sell)
 
 class MarketHistory:
