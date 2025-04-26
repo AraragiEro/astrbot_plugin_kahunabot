@@ -111,7 +111,7 @@ class AssetManager():
 
     @classmethod
     def get_asset_in_container_list(cls, container_list: list):
-        return M_Asset.select().where(M_Asset.location_id.in_(container_list))
+        return M_AssetCache.select().where(M_AssetCache.location_id.in_(container_list))
 
     @classmethod
     def add_container(cls, owner_qq: int, location_id: int, location_type: str, asset_name: str, operate_qq: int, ac_token: str):
