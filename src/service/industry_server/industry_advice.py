@@ -387,4 +387,5 @@ class IndustryAdvice:
         for user_qq in UserManager.user_dict.keys():
             logger.log(f'刷新{user_qq}的资产')
             cls.personal_asset_statistics(user_qq)
+        RefreshDateUtils.update_refresh_date('asset_statistics')
         logger.info('刷新资产统计完成')
