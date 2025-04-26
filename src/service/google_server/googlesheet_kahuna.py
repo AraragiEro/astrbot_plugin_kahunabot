@@ -15,6 +15,7 @@ from ..industry_server.third_provider import provider_manager as pm
 from ..config_server.config import config
 from ..log_server import logger
 from ..database_server.utils import RefreshDateUtils
+from ...utils import get_beijing_utctime
 
 REGION_FORGE_ID = 10000002
 REGION_VALE_ID = 10000003
@@ -37,7 +38,7 @@ class KahunaGoogleSheetManager:
                         {
                             'majorDimension': 'ROWS',
                             'range': '欢迎！先看这里!A18',
-                            'values': [['链接测试', datetime.now().strftime('%Y-%m-%d %H:%M:%S')]]
+                            'values': [['链接测试', get_beijing_utctime(datetime.now()).strftime('%Y-%m-%d %H:%M:%S')]]
                         }
                     ],
                     'valueInputOption': 'USER_ENTERED'
@@ -230,7 +231,7 @@ class KahunaGoogleSheetManager:
                     {
                         'majorDimension': 'ROWS',
                         'range': '欢迎！先看这里!A17',
-                        'values': [['最后更新:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')]]
+                        'values': [['最后更新:', get_beijing_utctime(datetime.now()).strftime('%Y-%m-%d %H:%M:%S')]]
                     },
                 ],
                 'valueInputOption': 'USER_ENTERED'
