@@ -285,17 +285,20 @@ class IndustryAdvice:
         alias_character = [cid for cid in user.user_data.alias.keys()]
         result = RunningJobOwner.get_job_with_starter(user_character + alias_character)
 
-        running_job = {}
-        running_asset = {}
         for job in result:
             if job.output_location_id in target_container:
-                if not job.product_type_id in running_job:
-                    running_job[job.product_type_id] = 0
-                running_job[job.product_type_id] += job.runs
+                product_count = BPManager.get_bp_product_quantity_typeid(job.type_id)
+                if job.type_id not in asset_dict:
+                    asset_dict[job.type_id] = 0
+                asset_dict[job.type_id] += job.runs * product_count
 
-        for tid, running_count in running_job.items():
-            product_count = BPManager.get_bp_product_quantity_typeid(tid)
-            running_asset[tid] = running_count * product_count
+                structure_id = SdeUtils.get_structure_id_from_location_id(job.output_location_id)
+                if structure_id not in structure_asset_dict:
+                    structure_asset_dict[structure_id] = {}
+                if job.type_id not in structure_asset_dict[structure_id]:
+                    structure_asset_dict[structure_id][job.type_id] = 0
+                structure_asset_dict[structure_id][job.type_id] += job.runs * product_count
+
 
         # TODO 获取珍贵物品
         # 暂时pass
