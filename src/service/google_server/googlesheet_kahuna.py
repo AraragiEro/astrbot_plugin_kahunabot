@@ -208,6 +208,9 @@ class KahunaGoogleSheetManager:
                 'valueInputOption': 'USER_ENTERED'
             }
             google_sheet_api.write_data_to_monitor(spreadsheet_id, data)
+        except Exception as e:
+            logger.error(e)
+            raise
         finally:
             # 确保关闭事件循环
             loop.close()
