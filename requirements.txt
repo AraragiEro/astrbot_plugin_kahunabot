@@ -13,3 +13,6 @@ pyppeteer==2.0.0
 pulp==3.1.1
 pandas==2.2.3
 aiohttp==3.9.5
+google-api-python-client==2.167.0
+google_auth_httplib2==0.2.0
+httplib2==0.22.0
