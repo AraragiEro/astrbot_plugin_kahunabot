@@ -800,7 +800,7 @@ class IndsEvent:
         return event.chain_result(chain)
 
     @staticmethod
-    async def rp_asset_statistic(event: AstrMessageEvent, plan_name: str):
+    async def rp_asset_statistic(event: AstrMessageEvent):
         user_qq = get_user(event)
 
         data = IndustryAdvice.personal_asset_statistics(user_qq)
