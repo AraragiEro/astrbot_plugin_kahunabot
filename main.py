@@ -383,8 +383,8 @@ class KahunaBot(Star):
         yield await IndsEvent.rp_buy_list(event, plan_name)
 
     @Inds_rp.command('资产统计', alias={"assetstat"})
-    async def Inds_rp_assetstat(self, event: AstrMessageEvent, plan_name: str):
-        yield await IndsEvent.rp_asset_statistic(event, plan_name)
+    async def Inds_rp_assetstat(self, event: AstrMessageEvent):
+        yield await IndsEvent.rp_asset_statistic(event)
 
     @Inds.command("refjobs")
     async def Inds_refjobs(self, event: AstrMessageEvent):

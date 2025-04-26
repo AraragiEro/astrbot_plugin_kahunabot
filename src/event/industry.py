@@ -802,12 +802,8 @@ class IndsEvent:
     @staticmethod
     async def rp_asset_statistic(event: AstrMessageEvent, plan_name: str):
         user_qq = get_user(event)
-        user = UserManager.get_user(user_qq)
-        if plan_name not in user.user_data.plan:
-            raise KahunaException(f"plan {plan_name} not exist")
 
         data = IndustryAdvice.personal_asset_statistics(user_qq)
-
         pic_output = await PriceResRender.render_asset_statistic_report(data)
 
         chain = [
