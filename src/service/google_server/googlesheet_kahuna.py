@@ -24,21 +24,17 @@ class KahunaGoogleSheetManager:
     def __init__(self):
         pass
 
-    def write_data_to_monitor(self, spreadsheet_id, range, data):
+    def write_data_to_monitor(self, spreadsheet_id, data):
         server = google_sheet_api.server
 
         server.spreadsheets().values().clear(
             spreadsheetId=spreadsheet_id,
-            range=range
+            range='市场'
         ).execute()
-        server.spreadsheets().values().update(
+        server.spreadsheets().values().batchUpdate(
             spreadsheetId=spreadsheet_id,
-            range=range,
             valueInputOption='USER_ENTERED',
-            body={
-                'range': range,
-                'values': data,
-            }
+            body=data
         ).execute()
 
     """
@@ -194,8 +190,23 @@ class KahunaGoogleSheetManager:
             res = loop.run_until_complete(self.output_market_data())
 
             spreadsheet_id = config['GOOGLE']['MARKET_MONITOR_SPREADSHEET_ID']
-            range_name = '市场'
-            google_sheet_api.write_data_to_monitor(spreadsheet_id, range_name, res)
+
+            data = {
+                'data': [
+                    {
+                        'majorDimension': 'ROWS',
+                        'range': '市场',
+                        'values': res
+                    },
+                    {
+                        'majorDimension': 'ROWS',
+                        'range': '欢迎！先看这里!A17',
+                        'values': [['最后更新:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')]]
+                    },
+                ],
+                'valueInputOption': 'USER_ENTERED'
+            }
+            google_sheet_api.write_data_to_monitor(spreadsheet_id, data)
         finally:
             # 确保关闭事件循环
             loop.close()
