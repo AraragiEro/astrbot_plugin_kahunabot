@@ -32,7 +32,6 @@ class KahunaGoogleSheetManager:
             server = google_sheet_api.server
             server.spreadsheets().values().batchUpdate(
                 spreadsheetId=spreadsheet_id,
-                valueInputOption='USER_ENTERED',
                 body={
                     'data': [
                         {
@@ -61,7 +60,6 @@ class KahunaGoogleSheetManager:
         ).execute()
         server.spreadsheets().values().batchUpdate(
             spreadsheetId=spreadsheet_id,
-            valueInputOption='USER_ENTERED',
             body=data
         ).execute()
 
