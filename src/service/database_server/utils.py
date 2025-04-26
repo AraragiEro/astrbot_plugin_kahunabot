@@ -46,7 +46,6 @@ class RefreshDateUtils():
     @classmethod
     def out_of_min_interval(cls, id: str, time_interval_min: int):
         try:
-            logger.info('进入 out_of_min_interval')
             time_interval = timedelta(minutes=time_interval_min)
             refresh_date = cls.model.get_or_none(cls.model.id == id)
             if not refresh_date:

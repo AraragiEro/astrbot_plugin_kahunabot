@@ -181,7 +181,6 @@ class MarketHistory:
                 for future in futures:
                     try:
                         future.result()
-                        await asyncio.sleep(0.05)
                         pbar.update()
                     except Exception as e:
                         logger.error(f"refresh_type_history_in_region error: "
