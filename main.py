@@ -52,12 +52,12 @@ class KahunaBot(Star):
         # 延时初始化
         asyncio.create_task(refresh_per_min(0, 10, DatabaseConectManager.perform_checkpoint))
         asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
-        asyncio.create_task(refresh_per_min(0, 1, MarketManager.refresh_market))
-        asyncio.create_task(refresh_per_min(0, 1, AssetManager.refresh_all_asset))
-        asyncio.create_task(refresh_per_min(0, 1, IndustryManager.refresh_running_status))
-        asyncio.create_task(refresh_per_min(0, 1, IndustryManager.refresh_system_cost))
-        asyncio.create_task(refresh_per_min(0, 1, IndustryManager.refresh_market_price))
-        asyncio.create_task(refresh_per_min(0, 1, kahuna_google_market_monitor.refresh_market_monitor_process))
+        asyncio.create_task(refresh_per_min(0, 5, MarketManager.refresh_market))
+        asyncio.create_task(refresh_per_min(0, 5, AssetManager.refresh_all_asset))
+        asyncio.create_task(refresh_per_min(0, 5, IndustryManager.refresh_running_status))
+        asyncio.create_task(refresh_per_min(0, 5, IndustryManager.refresh_system_cost))
+        asyncio.create_task(refresh_per_min(0, 5, IndustryManager.refresh_market_price))
+        asyncio.create_task(refresh_per_min(0, 5, kahuna_google_market_monitor.refresh_market_monitor_process))
 
 
     # @filter.custom_filter(SelfFilter1)
