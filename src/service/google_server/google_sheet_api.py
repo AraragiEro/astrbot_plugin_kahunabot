@@ -12,10 +12,11 @@ class GoogleSheetApi:
 
     def get_proxy_http(self):
         proxy = config['APP']['PROXY']
+        port = config['APP']['PORT']
         proxy_info = httplib2.ProxyInfo(
             httplib2.socks.PROXY_TYPE_HTTP,
-            proxy.split(':')[0],
-            int(proxy.split(':')[1])
+            proxy,
+            port
         )
         return httplib2.Http(proxy_info=proxy_info)
 

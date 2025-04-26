@@ -2,7 +2,7 @@ from .google_sheet_provider import GoogleSheetsProvider, YueseProvider
 from ..third_provider import provider_manager
 from ...config_server.config import config
 
-proxy = config['APP']['PROXY']
+proxy = f"http://{config['APP']['PROXY']}:{config['APP']['PORT']}"
 
 async def init_providers():
     pl_provider = GoogleSheetsProvider(
