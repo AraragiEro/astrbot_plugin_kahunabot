@@ -24,6 +24,35 @@ FRT_4H_STRUCTURE_ID = 1035466617946
 class KahunaGoogleSheetManager:
     def __init__(self):
         self.refresh_running = False
+        self.sheet_api_test = False
+
+        self.test_google_sheet_api()
+
+    def test_google_sheet_api(self):
+        try:
+            spreadsheet_id = config['GOOGLE']['MARKET_MONITOR_SPREADSHEET_ID']
+            server = google_sheet_api.server
+            server.spreadsheets().values().batchUpdate(
+                spreadsheetId=spreadsheet_id,
+                valueInputOption='USER_ENTERED',
+                body={
+                    'data': [
+                        {
+                            'majorDimension': 'ROWS',
+                            'range': '欢迎！先看这里!A18',
+                            'values': [['链接测试', datetime.now().strftime('%Y-%m-%d %H:%M:%S')]]
+                        },
+                    ],
+                    'valueInputOption': 'USER_ENTERED'
+                }
+            ).execute()
+
+            self.sheet_api_test = True
+        except Exception as e:
+            logger.error(e)
+            raise e
+        finally:
+            pass
 
     def write_data_to_monitor(self, spreadsheet_id, data):
         server = google_sheet_api.server
@@ -135,6 +164,9 @@ class KahunaGoogleSheetManager:
         low_price_index = 1 / max(1, min(100, -0.001 * data['jita_price'][1] + 101))
         sell_volume_index = 1 / max(1, min(2, -0.0000000025 * data['type_market_history']['month_volume'] + 2.25))
 
+        pl_asset_quantity = pl_asset.get('PL', 0)
+        if pl_asset_quantity:
+            pl_asset_quantity = pl_asset.get(tid, 0)
         def calculate_formula(q2, f2, j2, i2):
             """赚钱指数: Q2 * EXP(-ABS(F2)) * (1 / (1 + EXP(-(J2/I2))))"""
             if i2 == 0:
@@ -171,7 +203,7 @@ class KahunaGoogleSheetManager:
                 '', # 建制标记
                 low_price_index,
                 sell_volume_index,
-                pl_asset['PL'].get(tid, 0),
+                pl_asset_quantity,
                 SdeUtils.get_category_by_id(tid),
                 '' if not SdeUtils.get_metaname_by_typeid(tid) else SdeUtils.get_metaname_by_typeid(tid),
                 data['jita_price'][0],
@@ -210,7 +242,7 @@ class KahunaGoogleSheetManager:
             google_sheet_api.write_data_to_monitor(spreadsheet_id, data)
         except Exception as e:
             logger.error(e)
-            raise
+            raise e
         finally:
             # 确保关闭事件循环
             loop.close()
@@ -218,6 +250,9 @@ class KahunaGoogleSheetManager:
 
     def refresh_market_monitor_process(self):
         if self.refresh_running:
+            return
+        if not self.sheet_api_test:
+            logger.error('google_sheet_api test not pass.')
             return
         try:
             self.refresh_running = True
