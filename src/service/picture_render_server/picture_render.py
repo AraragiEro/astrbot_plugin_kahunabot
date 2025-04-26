@@ -320,7 +320,7 @@ class PriceResRender():
 
 
     @classmethod
-    async def rebder_buy_list(cls, lack_dict: dict, provider_data: dict):
+    async def render_buy_list(cls, lack_dict: dict, provider_data: dict):
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(template_path),
             autoescape=jinja2.select_autoescape(['html', 'xml'])
@@ -340,6 +340,31 @@ class PriceResRender():
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
         pic_path = await cls.render_pic(output_path, html_content, width=1200, height=720, wait_time=120)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
+    async def render_asset_statistic_report(cls, data):
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('asset_statistic_template.j2')
+        current = get_beijing_utctime(datetime.now())
+        html_content = template.render(
+            header_title='资产分析',
+            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
+            data=data
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "asset_statistic.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=1500, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -425,8 +450,6 @@ class PriceResRender():
             # 记录更详细的错误信息
             logger.error(f"详细错误: {str(e)}")
             logger.error(f"错误类型: {type(e).__name__}")
-            # 尝试使用备用渲染方法
-            return await cls.fallback_render(html_content, output_path)
         finally:
             try:
                 if 'browser' in locals() and browser:

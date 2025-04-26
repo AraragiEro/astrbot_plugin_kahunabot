@@ -130,7 +130,7 @@ class Market:
 
     order_rouge_cache = TTLCache(maxsize=3000, ttl=20*60)
     @cached(order_rouge_cache)
-    def get_type_order_rouge(self, type_id: int):
+    def get_type_order_rouge(self, type_id: int) -> tuple[float, float]:
         if self.market_type == "jita":
             target_location = JITA_TRADE_HUB_STRUCTURE_ID
         else:

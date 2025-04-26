@@ -1,17 +1,22 @@
 import asyncio
+import json
 from pickle import BINPUT
 import pulp
+from datetime import datetime
 
 from .industry_analyse import IndustryAnalyser
+from .structure import StructureManager
 from .running_job import RunningJobOwner
 from ..sde_service.utils import SdeUtils
 from ..user_server.user_manager import UserManager
 from ..user_server.user import User
-from ...utils import KahunaException
+from ...utils import KahunaException, get_beijing_utctime
 from ..market_server.marker import MarketHistory
 from ..market_server.market_manager import MarketManager
 from ..asset_server.asset_manager import AssetManager
 from ..character_server.character_manager import CharacterManager
+from ..database_server.utils import UserAssetStatisticsUtils
+from .blueprint import BPManager
 
 
 class IndustryAdvice:
@@ -255,29 +260,117 @@ class IndustryAdvice:
     def personal_asset_statistics(cls, user_qq: int):
         # TODO 获取资产
         container_list = AssetManager.get_user_container(user_qq)
-        target_container = set(container.asset_location_id for container in container_list)
+        target_container = set(container for container in container_list)
 
         asset_dict = {}
-        job_asset_check_dict = {}
-        result = AssetManager.get_asset_in_container_list(list(target_container))
-        for asset in result:
-            if asset.type_id not in asset_dict:
-                asset_dict[asset.type_id] = 0
-                job_asset_check_dict[asset.type_id] = 0
-            asset_dict[asset.type_id] += asset.quantity
-            job_asset_check_dict[asset.type_id] += asset.quantity
+        structure_asset_dict = {}
 
-        # TODO 获取运行中任务
+        for container in target_container:
+            result = AssetManager.get_asset_in_container_list([container.asset_location_id])
+            if container.structure_id not in structure_asset_dict:
+                structure_asset_dict[container.structure_id] = {}
+            for asset in result:
+                if asset.type_id not in asset_dict:
+                    asset_dict[asset.type_id] = 0
+                asset_dict[asset.type_id] += asset.quantity
+
+                if asset.type_id not in structure_asset_dict[container.structure_id]:
+                    structure_asset_dict[container.structure_id][asset.type_id] = 0
+                structure_asset_dict[container.structure_id][asset.type_id] += asset.quantity
+
+        # 获取运行中任务
         user = UserManager.get_user(user_qq)
         user_character = [c.character_id for c in CharacterManager.get_user_all_characters(user.user_qq)]
         alias_character = [cid for cid in user.user_data.alias.keys()]
         result = RunningJobOwner.get_job_with_starter(user_character + alias_character)
 
         running_job = {}
+        running_asset = {}
         for job in result:
             if job.output_location_id in target_container:
                 if not job.product_type_id in running_job:
                     running_job[job.product_type_id] = 0
                 running_job[job.product_type_id] += job.runs
 
+        for tid, running_count in running_job.items():
+            product_count = BPManager.get_bp_product_quantity_typeid(tid)
+            running_asset[tid] = running_count * product_count
+
         # TODO 获取珍贵物品
+        # 暂时pass
+
+        # 获取价格
+        jita_market = MarketManager.get_market_by_type('jita')
+        price_dict = {
+            tid: jita_market.get_type_order_rouge(tid)[0] for tid in asset_dict.keys()
+        }
+
+        # 整理数据
+        res = {
+            'classify_asset': {},
+            'structure_asset': {},
+            'wallet': 0,
+            'total': 0
+        }
+
+        # 按照物品种类
+        classify_asset = {'矿石': 0, '燃料块': 0, '元素': 0, '气云': 0, '行星工业': 0, '产品': 0, '杂货': 0}
+        for tid, quantity in asset_dict.items():
+            group = SdeUtils.get_groupname_by_id(tid)
+            category = SdeUtils.get_category_by_id(tid)
+            # 根据 group 或 category 进行判断和分类
+            if group == "Mineral":
+                classify_asset["矿石"] += quantity * price_dict.get(tid, 0)
+            elif group == "Fuel Block":
+                classify_asset['燃料块'] += quantity * price_dict.get(tid, 0)
+            elif group == "Moon Materials":
+                classify_asset['元素'] += quantity * price_dict.get(tid, 0)
+            elif group == "Harvestable Cloud":
+                classify_asset['气云'] += quantity * price_dict.get(tid, 0)
+            elif category == "Planetary Commodities":
+                classify_asset['行星工业'] += quantity * price_dict.get(tid, 0)
+            elif category in ['Ship', 'Drone', 'Fighter', 'Module', 'Charge']:
+                classify_asset['产品'] += quantity * price_dict.get(tid, 0)
+            else:
+                classify_asset["杂货"] += quantity * price_dict.get(tid, 0)
+        res['classify_asset'] = classify_asset
+        res['total'] += sum(classify_asset.values())
+
+        structure_asset = {}
+        count = 1
+        for structure_id, structure_asset_dict in structure_asset_dict.items():
+            structure = StructureManager.get_structure(structure_id)
+            if structure:
+                structure_name = structure.name
+            else:
+                structure_name = f'unknow_structure_{count}'
+                count += 1
+            if structure_name not in structure_asset:
+                structure_asset[structure_name] = 0
+            for tid, quantity in structure_asset_dict.items():
+                structure_asset[structure_name] += quantity * price_dict.get(tid, 0)
+        res['structure_asset'] = structure_asset
+
+        # 钱包余额
+        main_character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(user.user_qq))
+        res['wallet'] = main_character.wallet_balance
+        res['total'] += res['wallet']
+
+        upadte_date = get_beijing_utctime(datetime.now()).replace(hour=0, minute=0, second=0, microsecond=0)
+        UserAssetStatisticsUtils.update(user_qq, upadte_date, json.dumps(res))
+
+        # 拉取历史信息
+        history_data = {
+            data.date.strftime("%Y-%m-%d"): {
+                'date': data.date.strftime("%Y-%m-%d"),
+                'data': json.loads(data.asset_statistics)
+            }
+            for data in UserAssetStatisticsUtils.get_user_asset_statistics(user_qq)
+        }
+
+        output = {
+            'today': res,
+            'history': history_data
+        }
+
+        return output

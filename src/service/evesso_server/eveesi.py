@@ -33,7 +33,6 @@ def character_character_id_wallet(access_token, character_id):
         headers={"Authorization": f"Bearer {access_token}"}
     )
 
-
 def character_character_id_portrait(access_token, character_id):
     return get_request(
         f"https://esi.evetech.net/latest/characters/{character_id}/portrait/",

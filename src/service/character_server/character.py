@@ -9,6 +9,7 @@ import traceback
 
 from ..database_server.model import Character as M_Character
 from ..evesso_server.oauth import refresh_token
+from ..evesso_server import eveesi
 from ..log_server import logger
 from ...utils import KahunaException, get_beijing_utctime
 
@@ -23,6 +24,7 @@ class Character(BaseModel):
     expires_date: datetime
     corp_id: int
     director: bool = False
+    _wallet_balance: float = 0.0
 
     def model_post_init(self, __context: Any) -> None:
         self._refresh_token_lock = Lock()
@@ -73,6 +75,15 @@ class Character(BaseModel):
         return self.token
 
     @property
+    def wallet_balance(self):
+        if self._wallet_balance == 0.0:
+            self.refresh_wallet_balance()
+        return self._wallet_balance
+    @wallet_balance.setter
+    def wallet_balance(self, value):
+        self._wallet_balance = value
+
+    @property
     def token_avaliable(self):
         expire_time = self.expires_date.replace(tzinfo=None)
         # 获取当前时间
@@ -84,10 +95,14 @@ class Character(BaseModel):
         logger.debug(f"check if {expire_time} > {now} = {expire_time > now}")
         return expire_time > now
 
+    def refresh_wallet_balance(self):
+        self.wallet_balance = eveesi.character_character_id_wallet(self.ac_token, self.character_id)
+
     @property
     def info(self):
         return f"角色:{self.character_name}\n"\
                 f"所属用户:{self.QQ}\n"\
                 f"角色id:{self.character_id}\n"\
+                f"钱包:{self.wallet_balance:,.2f\n}" \
                 f"token过期时间:{self.expires_date}\n"
 

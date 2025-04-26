@@ -320,3 +320,14 @@ class RefreshDate(CacheModel):
     class Meta:
         table_name = "refresh_date"
 DatabaseConectManager.add_model(RefreshDate)
+
+class UserAssetStatistics(ConfigModel):
+    user_qq = IntegerField()
+    date = DateTimeField()
+    asset_statistics = TextField()
+    class Meta:
+        table_name = "user_asset_statistics"
+        indexes = (
+            (('user_qq', 'date'), True),
+        )
+DatabaseConectManager.add_model(UserAssetStatistics)

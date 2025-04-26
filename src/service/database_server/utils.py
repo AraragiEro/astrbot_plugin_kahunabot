@@ -113,3 +113,23 @@ class RefreshDateUtils():
     def update_refresh_date(cls, id: str):
         refresh_date = get_beijing_utctime(datetime.now())
         cls.model.update(date=refresh_date).where(cls.model.id == id).execute()
+
+class UserAssetStatisticsUtils():
+    model = model.UserAssetStatistics
+
+    @classmethod
+    def update(cls, user_qq, date, asset_data):
+        # 使用 replace 方法实现 upsert
+        cls.model.replace(
+            user_qq=user_qq,
+            date=date,
+            asset_statistics=asset_data
+        ).execute()
+
+    @classmethod
+    def get_user_asset_statistics(cls, user_qq):
+        try:
+            result = cls.model.select().where(cls.model.user_qq == user_qq)
+            return result
+        except cls.model.DoesNotExist:
+            return None

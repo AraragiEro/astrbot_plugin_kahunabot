@@ -606,7 +606,7 @@ class IndsEvent:
 
             buy_data[k] = new_data
 
-        output_path = await PriceResRender.rebder_buy_list(buy_data, new_asset)
+        output_path = await PriceResRender.render_buy_list(buy_data, new_asset)
         chain = [
             Image.fromFileSystem(output_path)
         ]
@@ -796,6 +796,22 @@ class IndsEvent:
 
         chain = [
             Image.fromFileSystem(pic_path)
+        ]
+        return event.chain_result(chain)
+
+    @staticmethod
+    async def rp_asset_statistic(event: AstrMessageEvent, plan_name: str):
+        user_qq = get_user(event)
+        user = UserManager.get_user(user_qq)
+        if plan_name not in user.user_data.plan:
+            raise KahunaException(f"plan {plan_name} not exist")
+
+        data = IndustryAdvice.personal_asset_statistics(user_qq)
+
+        pic_output = await PriceResRender.render_asset_statistic_report(data)
+
+        chain = [
+            Image.fromFileSystem(pic_output)
         ]
         return event.chain_result(chain)
 
