@@ -17,6 +17,7 @@ from ..asset_server.asset_manager import AssetManager
 from ..character_server.character_manager import CharacterManager
 from ..database_server.utils import UserAssetStatisticsUtils, RefreshDateUtils
 from .blueprint import BPManager
+from ..log_server import logger
 
 
 class IndustryAdvice:
@@ -379,5 +380,8 @@ class IndustryAdvice:
     def refresh_all_asset_statistics(cls):
         if not RefreshDateUtils.out_of_day_interval('asset_statistics', 1):
             return
+        logger.info('开始刷新资产统计')
         for user_qq in UserManager.user_dict.keys():
+            logger.log(f'刷新{user_qq}的资产')
             cls.personal_asset_statistics(user_qq)
+        logger.info('刷新资产统计完成')
