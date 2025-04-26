@@ -2,6 +2,7 @@ from tqdm import tqdm
 from typing import Dict, List
 import math
 import asyncio
+import time
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 
@@ -212,7 +213,7 @@ class KahunaGoogleSheetManager:
             loop.close()
             logger.info(f'向市场监视器插入 {len(res)}行, {len(res) * len(res[0])}行数据. 耗时{datetime.now() - start}')
 
-    async def refresh_market_monitor_process(self):
+    def refresh_market_monitor_process(self):
         if not RefreshDateUtils.out_of_hour_interval('market_monitor', 1):
             return
         if not config.has_option('GOOGLE', 'MARKET_MONITOR_SPREADSHEET_ID'):
@@ -223,7 +224,7 @@ class KahunaGoogleSheetManager:
             future1 = executor.submit(self.refresh_market_monitor)
             while not future1.done():
                 logger.info(f'等待市场监视器刷新线程完成 ......')
-                await asyncio.sleep(30)
+                time.sleep(30)
             future1.result()
 
 kahuna_google_market_monitor = KahunaGoogleSheetManager()
