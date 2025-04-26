@@ -236,13 +236,15 @@ class KahunaGoogleSheetManager:
                 'valueInputOption': 'USER_ENTERED'
             }
             self.write_data_to_monitor(spreadsheet_id, data)
+
+            logger.info(f'向市场监视器插入 {len(res)}行, {len(res) * len(res[0])}行数据. 耗时{datetime.now() - start}')
         except Exception as e:
             logger.error(e)
             raise e
         finally:
             # 确保关闭事件循环
             loop.close()
-            logger.info(f'向市场监视器插入 {len(res)}行, {len(res) * len(res[0])}行数据. 耗时{datetime.now() - start}')
+
 
     def refresh_market_monitor_process(self):
         if self.refresh_running:
