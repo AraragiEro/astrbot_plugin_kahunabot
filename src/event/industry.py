@@ -83,6 +83,7 @@ class AssetEvent():
     @staticmethod
     def owner_add(event: AstrMessageEvent, owner_type: str, character_name: str):
         user_qq = get_user(event)
+        character_name = " ".join(event.get_message_str().split(" ")[4:])
         character = CharacterManager.get_character_by_name_qq(character_name, user_qq)
 
         owner_id = AssetEvent.get_owner_id(owner_type, character_name, character)
