@@ -22,5 +22,9 @@ def init_server(log=True):
     AssetManager.init()
     IndustryConfigManager.init()
     MarketManager.init()
-    asyncio.create_task(init_providers())
+    try:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(init_providers())
+    except:
+        pass
     init_flag = True

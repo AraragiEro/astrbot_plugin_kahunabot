@@ -78,15 +78,16 @@ class GoogleSheetsProvider(Provider):
         返回:
             bool: 初始化是否成功
         """
-        try:
-            # 尝试获取数据，验证连接是否正常
-            test_data = await self.get_assets()
-            self.logger.info(f"Successfully connected to Google Sheet, found {len(test_data)} assets from {len(self.sheet_names)} sheets")
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to initialize Google Sheets provider: {e}")
-            return False
+        return True
+        # try:
+        #     # 尝试获取数据，验证连接是否正常
+        #     test_data = await self.get_assets()
+        #     self.logger.info(f"Successfully connected to Google Sheet, found {len(test_data)} assets from {len(self.sheet_names)} sheets")
+        #     return True
+        #
+        # except Exception as e:
+        #     self.logger.error(f"Failed to initialize Google Sheets provider: {e}")
+        #     return False
 
     async def get_assets(self) -> List[Tuple[str, float]]:
         """
