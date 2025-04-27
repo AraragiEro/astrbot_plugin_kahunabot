@@ -257,7 +257,7 @@ class KahunaGoogleSheetManager:
                 return
         try:
             self.refresh_running = True
-            if not RefreshDateUtils.out_of_hour_interval('market_monitor', 1):
+            if not RefreshDateUtils.out_of_hour_interval('market_monitor', 2):
                 return
             if not config.has_option('GOOGLE', 'MARKET_MONITOR_SPREADSHEET_ID'):
                 logger.info(f'未设置市场监视器googleid.')
