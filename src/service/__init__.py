@@ -22,9 +22,10 @@ def init_server(log=True):
     AssetManager.init()
     IndustryConfigManager.init()
     MarketManager.init()
+
     try:
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(init_providers())
+        loop.create_task(init_providers())
     except:
-        logger.error("获取事件循环失败")
+        logger.error("获取事件循环失败,运行异步初始化函数失败。")
     init_flag = True
