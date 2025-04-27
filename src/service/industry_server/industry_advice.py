@@ -3,6 +3,7 @@ import json
 from pickle import BINPUT
 import pulp
 from datetime import datetime
+from multiprocessing import Lock
 
 from .industry_analyse import IndustryAnalyser
 from .structure import StructureManager
@@ -21,6 +22,8 @@ from ..log_server import logger
 
 
 class IndustryAdvice:
+    personal_asset_statistics_lock = False
+
     @classmethod
     def advice_report(cls, user: User, plan_name: str, product_list: list):
         jita_mk = MarketManager.get_market_by_type('jita')
@@ -383,9 +386,14 @@ class IndustryAdvice:
     def refresh_all_asset_statistics(cls):
         if not RefreshDateUtils.out_of_day_interval('asset_statistics', 1):
             return
-        logger.info('开始刷新资产统计')
-        for user_qq in UserManager.user_dict.keys():
-            logger.log(f'刷新{user_qq}的资产')
-            cls.personal_asset_statistics(user_qq)
-        RefreshDateUtils.update_refresh_date('asset_statistics')
-        logger.info('刷新资产统计完成')
+        if not cls.personal_asset_statistics_lock:
+            try:
+                cls.personal_asset_statistics_lock = True
+                logger.info('开始刷新资产统计')
+                for user_qq in UserManager.user_dict.keys():
+                    logger.log(f'刷新{user_qq}的资产')
+                    cls.personal_asset_statistics(user_qq)
+                RefreshDateUtils.update_refresh_date('asset_statistics')
+                logger.info('刷新资产统计完成')
+            finally:
+                cls.personal_asset_statistics_lock = False
