@@ -26,5 +26,5 @@ def init_server(log=True):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(init_providers())
     except:
-        pass
+        logger.error("获取事件循环失败")
     init_flag = True
