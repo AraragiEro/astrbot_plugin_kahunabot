@@ -98,7 +98,6 @@ class KahunaGoogleSheetManager:
                 data1[order.type_id]['volume_remain'] += int(order.volume_remain)
                 data1[order.type_id]['4h_max_price'] = max(data1[order.type_id]['4h_max_price'], float(order.price))
                 data1[order.type_id]['4h_min_price'] = min(data1[order.type_id]['4h_min_price'], float(order.price))
-                pbar.update()
         with tqdm(total=len(important_list), desc="处理无订单但有流水的物品", unit="order", ascii='=-') as pbar:
             for tid in important_list:
                 pbar.update()
