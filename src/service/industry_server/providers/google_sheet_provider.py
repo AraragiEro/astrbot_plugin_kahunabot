@@ -98,9 +98,13 @@ class GoogleSheetsProvider(Provider):
         """
         # 对于同步调用，运行异步函数
         if 'cache' in self.cache and not RefreshDateUtils.out_of_hour_interval(self.get_refreshdate_id(), 2):
+            self.logger.info(
+                f"Successfully connected to Google Sheet, found {len(self.cache['cache'])} assets from cache of {len(self.sheet_names)} sheets")
             return self.cache['cache']
         res = await self.get_assets_async()
         self.cache['cache'] = res
+        self.logger.info(
+            f"Successfully connected to Google Sheet, found {len(res)} assets from {len(self.sheet_names)} sheets")
         return res
 
     async def get_assets_async(self) -> List[Tuple[str, float]]:
