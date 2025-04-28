@@ -365,7 +365,7 @@ class IndustryAnalyser():
         if not matcher_bp_name:
             default_bp_meter_eff, default_bp_time_eff = IndustryConfigManager.get_default_bp_mater_time_eff(source_id)
         else:
-            default_bp_meter_eff = self.bp_matcher.matcher_data['bp'][matcher_bp_name]['matger_eff']
+            default_bp_meter_eff = self.bp_matcher.matcher_data['bp'][matcher_bp_name]['mater_eff']
             default_bp_time_eff = self.bp_matcher.matcher_data['bp'][matcher_bp_name]['time_eff']
         time_eff = st_time_eff * st_time_rig_eff * (manu_skill_time_eff if active_id != 11 else reac_skill_time_eff)
         mater_eff = st_mater_eff * st_mater_rig_eff
