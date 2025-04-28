@@ -358,15 +358,15 @@ class IndustryAnalyser():
         # 材料系数包含 建筑[建筑+插件] 蓝图
         # 默认蓝图效率
         matcher_bp_name = None
-        if SdeUtils.get_name_by_id(bp_id) in self.bp_matcher['bp']:
+        if SdeUtils.get_name_by_id(bp_id) in self.bp_matcher.matcher_data['bp']:
             matcher_bp_name = SdeUtils.get_name_by_id(bp_id)
-        elif SdeUtils.get_cn_name_by_id(bp_id) in self.bp_matcher['bp']:
+        elif SdeUtils.get_cn_name_by_id(bp_id) in self.bp_matcher.matcher_data['bp']:
             matcher_bp_name = SdeUtils.get_cn_name_by_id(bp_id)
         if not matcher_bp_name:
             default_bp_meter_eff, default_bp_time_eff = IndustryConfigManager.get_default_bp_mater_time_eff(source_id)
         else:
-            default_bp_meter_eff = self.bp_matcher['bp'][matcher_bp_name]['matger_eff']
-            default_bp_time_eff = self.bp_matcher['bp'][matcher_bp_name]['time_eff']
+            default_bp_meter_eff = self.bp_matcher.matcher_data['bp'][matcher_bp_name]['matger_eff']
+            default_bp_time_eff = self.bp_matcher.matcher_data['bp'][matcher_bp_name]['time_eff']
         time_eff = st_time_eff * st_time_rig_eff * (manu_skill_time_eff if active_id != 11 else reac_skill_time_eff)
         mater_eff = st_mater_eff * st_mater_rig_eff
         production_time = BPManager.get_production_time(source_id)
