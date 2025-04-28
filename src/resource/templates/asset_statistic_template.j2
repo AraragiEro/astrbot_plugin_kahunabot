@@ -34,6 +34,9 @@
             height: 300px;
             margin-bottom: 1rem;
         }
+        .trend-chart-container {
+            height: 500px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -99,7 +102,7 @@
         <!-- 历史趋势图表 -->
         <div class="bg-white p-6 rounded-lg shadow-md mb-8">
             <h2 class="text-xl font-semibold mb-4">总资产历史趋势</h2>
-            <div class="chart-container">
+            <div class="chart-container trend-chart-container">
                 <canvas id="totalTrendChart"></canvas>
             </div>
         </div>
@@ -108,7 +111,7 @@
             <!-- 分类资产历史趋势 -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-xl font-semibold mb-4">分类资产历史趋势</h2>
-                <div class="chart-container">
+                <div class="chart-container trend-chart-container">
                     <canvas id="classifyTrendChart"></canvas>
                 </div>
             </div>
@@ -116,7 +119,7 @@
             <!-- 建筑资产历史趋势 -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-xl font-semibold mb-4">建筑资产历史趋势</h2>
-                <div class="chart-container">
+                <div class="chart-container trend-chart-containers">
                     <canvas id="structureTrendChart"></canvas>
                 </div>
             </div>
@@ -364,30 +367,29 @@
             sortedDates.forEach(date => {
                 try {
                     const dateObj = new Date(date);
-                    // 注意：这里直接使用history[date]而不是history[date].data
-                    const dateData = history[date];
+                    const dateData = history[date].data;
                     
                     // 总资产
                     totalTrend.push({
-                        date: dateObj,
-                        value: dateData.data.total
+                        x: dateObj,
+                        y: dateData.total
                     });
                     
                     // 分类资产
                     classifyTypes.forEach(type => {
-                        const value = dateData.data.classify_asset[type] || 0;
+                        const value = dateData.classify_asset[type] || 0;
                         classifyTrend[type].push({
-                            date: dateObj,
-                            value: value
+                            x: dateObj,
+                            y: value
                         });
                     });
                     
                     // 建筑资产
                     structureIds.forEach(id => {
-                        const value = dateData.data.structure_asset[id] || 0;
+                        const value = dateData.structure_asset[id] || 0;
                         structureTrend[id].push({
-                            date: dateObj,
-                            value: value
+                            x: dateObj,
+                            y: value
                         });
                     });
                 } catch (error) {
@@ -452,7 +454,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `总资产: ${formatNumber(context.raw.value)}`;
+                                    return `总资产: ${formatNumber(context.raw.y)}`;
                                 }
                             }
                         }
@@ -514,7 +516,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `${context.dataset.label}: ${formatNumber(context.raw.value)}`;
+                                    return `${context.dataset.label}: ${formatNumber(context.raw.y)}`;
                                 }
                             }
                         }
@@ -576,7 +578,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `${context.dataset.label}: ${formatNumber(context.raw.value)}`;
+                                    return `${context.dataset.label}: ${formatNumber(context.raw.y)}`;
                                 }
                             }
                         }
