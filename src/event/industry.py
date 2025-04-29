@@ -790,7 +790,7 @@ class IndsEvent:
 
     @staticmethod
     async def refjobs(event: AstrMessageEvent):
-        await IndustryManager.refresh_running_status()
+        await IndustryManager.refresh_running_status(force=True)
 
         return event.plain_result("执行完成")
 
