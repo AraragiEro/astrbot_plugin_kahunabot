@@ -16,3 +16,5 @@ aiohttp==3.9.5
 google-api-python-client==2.167.0
 google_auth_httplib2==0.2.0
 httplib2==0.22.0
+sqlalchemy==2.0.40
+aiosqlite==0.21.0

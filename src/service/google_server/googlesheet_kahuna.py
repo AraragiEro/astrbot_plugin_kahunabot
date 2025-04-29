@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 
-from ..database_server.utils import database_utils as dbutils
+# from ..database_server.utils import database_utils as dbutils
 from .google_sheet_api import google_sheet_api
 from ..sde_service import SdeUtils
 from ..market_server.market_manager import MarketManager
@@ -14,8 +14,10 @@ from ..market_server.marker import MarketHistory
 from ..industry_server.third_provider import provider_manager as pm
 from ..config_server.config import config
 from ..log_server import logger
-from ..database_server.utils import RefreshDateUtils
+# from ..database_server.utils import RefreshDateUtils
+from ..database_server.sqlalchemy.kahuna_database_utils import MarketOrderCacheDBUtils, RefreshDataDBUtils
 from ...utils import get_beijing_utctime
+
 
 REGION_FORGE_ID = 10000002
 REGION_VALE_ID = 10000003
@@ -55,20 +57,29 @@ class KahunaGoogleSheetManager:
     def write_data_to_monitor(self, spreadsheet_id, data):
         server = google_sheet_api.server
 
-        server.spreadsheets().values().clear(
-            spreadsheetId=spreadsheet_id,
-            range='市场'
-        ).execute()
-        server.spreadsheets().values().batchUpdate(
-            spreadsheetId=spreadsheet_id,
-            body=data
-        ).execute()
+        try:
+            server.spreadsheets().values().clear(
+                spreadsheetId=spreadsheet_id,
+                range='市场'
+            ).execute()
+        except Exception as e:
+            logger.error("清空 google sheet 市场 失败")
+            raise
+
+        try:
+            server.spreadsheets().values().batchUpdate(
+                spreadsheetId=spreadsheet_id,
+                body=data
+            ).execute()
+        except Exception as e:
+            logger.error('写入 googlesheet 市场 失败')
+            raise
 
     """
     表1： 市场
     """
     async def output_market_data(self):
-        frt_4h_order = dbutils.get_order_in_location(FRT_4H_STRUCTURE_ID)
+        frt_4h_order = await MarketOrderCacheDBUtils.select_order_by_location_id(FRT_4H_STRUCTURE_ID)
         jita_market = MarketManager.get_market_by_type('jita')
         pl_asset = await pm.get_all_assets()
 
@@ -90,8 +101,8 @@ class KahunaGoogleSheetManager:
                         'volume_remain': int(order.volume_remain),
                         '4h_max_price': float(order.price),
                         '4h_min_price': float(order.price),
-                        'jita_price': jita_market.get_type_order_rouge(int(order.type_id)),
-                        'type_market_history': MarketHistory.get_type_history_detale(int(order.type_id))[0]
+                        'jita_price': await jita_market.get_type_order_rouge(int(order.type_id)),
+                        'type_market_history': (await MarketHistory.get_type_history_detale(int(order.type_id)))[0]
                     }
                     continue
 
@@ -108,8 +119,8 @@ class KahunaGoogleSheetManager:
                     'volume_remain': 0,
                     '4h_max_price': 0,
                     '4h_min_price': 0,
-                    'jita_price': jita_market.get_type_order_rouge(tid),
-                    'type_market_history': MarketHistory.get_type_history_detale(tid)[0]
+                    'jita_price': await jita_market.get_type_order_rouge(tid),
+                    'type_market_history': (await MarketHistory.get_type_history_detale(tid))[0]
                 }
 
         head = [
@@ -208,15 +219,12 @@ class KahunaGoogleSheetManager:
 
         return res
 
-    def refresh_market_monitor(self):
+    async def refresh_market_monitor(self):
         start = datetime.now()
-        # 在线程中创建新的事件循环
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
         try:
             # 在事件循环中运行异步函数
-            res = loop.run_until_complete(self.output_market_data())
+            res = await self.output_market_data()
 
             spreadsheet_id = config['GOOGLE']['MARKET_MONITOR_SPREADSHEET_ID']
 
@@ -241,12 +249,9 @@ class KahunaGoogleSheetManager:
         except Exception as e:
             logger.error(e)
             raise e
-        finally:
-            # 确保关闭事件循环
-            loop.close()
 
 
-    def refresh_market_monitor_process(self):
+    async def refresh_market_monitor_process(self):
         if self.refresh_running:
             return
         if not self.sheet_api_test:
@@ -256,20 +261,16 @@ class KahunaGoogleSheetManager:
                 return
         try:
             self.refresh_running = True
-            if not RefreshDateUtils.out_of_hour_interval('market_monitor', 2):
+            if not await RefreshDataDBUtils.out_of_hour_interval('market_monitor', 2):
                 return
             if not config.has_option('GOOGLE', 'MARKET_MONITOR_SPREADSHEET_ID'):
                 logger.info(f'未设置市场监视器googleid.')
                 return
 
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future1 = executor.submit(self.refresh_market_monitor)
-                while not future1.done():
-                    logger.info(f'等待市场监视器刷新线程完成 ......')
-                    time.sleep(30)
-                future1.result()
+            await self.refresh_market_monitor()
 
-            RefreshDateUtils.update_refresh_date('market_monitor')
+
+            await RefreshDataDBUtils.update_refresh_date('market_monitor')
         finally:
             self.refresh_running = False
 

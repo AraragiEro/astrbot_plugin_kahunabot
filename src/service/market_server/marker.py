@@ -1,18 +1,20 @@
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
+import traceback
 from peewee import fn
 import asyncio
 from cachetools import TTLCache, cached
 from datetime import datetime, timedelta
 
-from ..database_server.model import MarketOrder as M_MarketOrder, MarketOrderCache as M_MarketOrderCache
-from ..database_server import model
-from ..database_server.connect import DatabaseConectManager
 from ..evesso_server.eveesi import markets_region_orders
 from ..evesso_server.eveesi import markets_structures
 from ..evesso_server import eveesi
 from ..evesso_server.eveutils import find_max_page, get_multipages_result
-from ..database_server.utils import RefreshDateUtils
+from ..database_server.sqlalchemy.kahuna_database_utils import (
+    MarkerOrderDBUtils, MarketOrderCacheDBUtils,
+    RefreshDataDBUtils,
+    MarketHistoryDBUtils
+)
 from ..sde_service import SdeUtils
 
 from ...utils import KahunaException
@@ -42,95 +44,97 @@ class Market:
     def set_access_character(self, access_character):
         self.access_character = access_character
 
-    def get_market_order(self):
+    async def get_market_order(self):
         if self.market_type == "jita":
-            self.get_jita_order()
+            await self.get_jita_order()
         if self.market_type == "frt":
-            self.get_frt_order()
+            await self.get_frt_order()
 
-    def check_structure_access(self):
-        res = eveesi.markets_structures(1, self.access_character.ac_token, FRT_4H_STRUCTURE_ID)
+    async def check_structure_access(self):
+        res = await eveesi.markets_structures(1, await self.access_character.ac_token, FRT_4H_STRUCTURE_ID, log=True)
         if not res:
             return False
         return True
 
-    def get_frt_order(self):
+    async def get_frt_order(self):
         if not self.access_character:
             return
-        ac_token = self.access_character.ac_token
-        max_page = find_max_page(markets_structures, ac_token, FRT_4H_STRUCTURE_ID, begin_page=20, interval=10)
+        ac_token = await self.access_character.ac_token
+        max_page = await find_max_page(eveesi.markets_structures, ac_token, FRT_4H_STRUCTURE_ID, begin_page=20, interval=10)
         # with db.atomic() as txn:
-        results = get_multipages_result(markets_structures, max_page, self.access_character.ac_token, FRT_4H_STRUCTURE_ID)
+        results = await get_multipages_result(eveesi.markets_structures, max_page, await self.access_character.ac_token, FRT_4H_STRUCTURE_ID)
 
-        db = DatabaseConectManager.cache_db()
-        with db.atomic():
-            M_MarketOrder.delete().where(M_MarketOrder.location_id == FRT_4H_STRUCTURE_ID).execute()
-            with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
-                for i, result in enumerate(results):
-                    # result = [order for order in result if order["location_id"] == JITA_TRADE_HUB_STRUCTURE_ID]
-                    M_MarketOrder.insert_many(result).execute()
-                    pbar.update()
+        await MarkerOrderDBUtils.delete_order_by_location_id(FRT_4H_STRUCTURE_ID)
+        with tqdm(total=len(results), desc=f"写入{MarkerOrderDBUtils.cls_model.__tablename__}数据", unit="page", ascii='=-') as pbar:
+            for i, result in enumerate(results):
+                await MarkerOrderDBUtils.insert_many(result)
+                pbar.update()
 
-    def get_jita_order(self):
-        max_page = find_max_page(markets_region_orders, REGION_FORGE_ID, begin_page=350, interval=50)
+    async def get_jita_order(self):
+        max_page = await find_max_page(eveesi.markets_region_orders, REGION_FORGE_ID, begin_page=350, interval=50)
         # with db.atomic() as txn:
-
         logger.info("请求市场。")
-        results = get_multipages_result(markets_region_orders, max_page, REGION_FORGE_ID)
-        # with ThreadPoolExecutor(max_workers=100) as executor:
-        #     futures = [executor.submit(markets_region_orders, page, REGION_FORGE_ID) for page in range(1, max_page+1)]
-        #     results = []
-        #     count = 1
-        #     for future in tqdm(futures, desc="请求市场数据", unit="page"):
-        #         result = future.result()
-        #         results.append(result)
-        #         count += 1
+        results = await get_multipages_result(eveesi.markets_region_orders, max_page, REGION_FORGE_ID)
 
-        db = DatabaseConectManager.cache_db()
-        with db.atomic():
-            M_MarketOrder.delete().where(M_MarketOrder.location_id == JITA_TRADE_HUB_STRUCTURE_ID).execute()
-            with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
-                for i, result in enumerate(results):
+        await MarkerOrderDBUtils.delete_order_by_location_id(JITA_TRADE_HUB_STRUCTURE_ID)
+        with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
+            for i, result in enumerate(results):
+                try:
                     result = [order for order in result if order["location_id"] == JITA_TRADE_HUB_STRUCTURE_ID]
-                    M_MarketOrder.insert_many(result).execute()
+                    await MarkerOrderDBUtils.insert_many(result)
+                    pbar.update()
+                except Exception as e:
+                    # 详细记录错误信息
+                    error_msg = [
+                        f"处理页面 {i + 1}/{len(results)} 时出错:",
+                        f"错误类型: {type(e).__name__}",
+                        f"错误信息: {str(e)}",
+                        "异常堆栈:"
+                    ]
+                    error_msg.append(traceback.format_exc())
+
+                    # 检查是否有内部异常
+                    inner_exc = e.__cause__ or e.__context__
+                    if inner_exc:
+                        error_msg.append("内部异常链:")
+                        current = inner_exc
+                        depth = 1
+                        while current:
+                            error_msg.append(f"内部异常 {depth}: {type(current).__name__}: {current}")
+                            inner_trace = traceback.format_tb(current.__traceback__)
+                            error_msg.append(f"内部异常 {depth} 堆栈: {''.join(inner_trace)}")
+                            current = current.__cause__ or current.__context__
+                            depth += 1
+                            if depth > 5:  # 防止过深的递归
+                                error_msg.append("异常嵌套过深，停止追踪")
+                                break
+
+                    logger.error("\n".join(error_msg))
+
+                    # 更新进度条但显示错误
                     pbar.update()
 
-    def get_market_detail(self) -> tuple[int, int, int, int]:
+
+    async def get_market_detail(self) -> tuple[int, int, int, int]:
         if self.market_type == "jita":
             target_location = JITA_TRADE_HUB_STRUCTURE_ID
         else:
             target_location = FRT_4H_STRUCTURE_ID
 
         # 统计总数据数量，并按照is_buy_order进行求和统计
-        total_count = (M_MarketOrder
-                       .select(fn.COUNT(M_MarketOrder.id))
-                       .where(M_MarketOrder.location_id == target_location)
-                       .scalar())
-
-        buy_count = (M_MarketOrder
-                     .select(fn.COUNT(M_MarketOrder.id))
-                     .where((M_MarketOrder.location_id == target_location) &
-                            (M_MarketOrder.is_buy_order == True))
-                     .scalar())
-
-        sell_count = (M_MarketOrder
-                      .select(fn.COUNT(M_MarketOrder.id))
-                      .where((M_MarketOrder.location_id == target_location) &
-                             (M_MarketOrder.is_buy_order == False))
-                      .scalar())
+        total_count = await MarketOrderCacheDBUtils.select_order_count_by_location_id(target_location)
+        buy_count = await MarketOrderCacheDBUtils.select_buy_order_count_by_location_id(target_location)
+        sell_count = await MarketOrderCacheDBUtils.select_sell_order_count_by_location_id(target_location)
 
         # 统计不同的类型数量
-        distinct_type_count = (M_MarketOrder
-                               .select(M_MarketOrder.type_id)
-                               .where(M_MarketOrder.location_id == target_location)
-                               .distinct()
-                               .count())
+        distinct_type_count = await MarketOrderCacheDBUtils.select_distinct_type_count_by_location_id(target_location)
 
         return total_count, buy_count, sell_count, distinct_type_count
 
     order_rouge_cache = TTLCache(maxsize=3000, ttl=20*60)
-    @cached(order_rouge_cache)
-    def get_type_order_rouge(self, type_id: int) -> tuple[float, float]:
+    async def get_type_order_rouge(self, type_id: int) -> tuple[float, float]:
+        if type_id in Market.order_rouge_cache:
+            return Market.order_rouge_cache[type_id]
         if self.market_type == "jita":
             target_location = JITA_TRADE_HUB_STRUCTURE_ID
         else:
@@ -139,25 +143,18 @@ class Market:
         target_id , target_location = type_id, target_location  # replace with actual values
         
         # 获取 is_buy_order=1 的最高价格
-        max_price_buy = (M_MarketOrderCache
-                         .select(fn.MAX(M_MarketOrderCache.price))
-                         .where((M_MarketOrderCache.type_id == target_id) &
-                                (M_MarketOrderCache.location_id == target_location) &
-                                (M_MarketOrderCache.is_buy_order == True))
-                         .scalar())
+        max_price_buy = await MarketOrderCacheDBUtils.select_max_buy_by_type_id_and_location_id(target_id, target_location)
         
         # 获取 is_buy_order=0 的最低价格
-        min_price_sell = (M_MarketOrderCache
-                          .select(fn.MIN(M_MarketOrderCache.price))
-                          .where((M_MarketOrderCache.type_id == target_id) &
-                                 (M_MarketOrderCache.location_id == target_location) &
-                                 (M_MarketOrderCache.is_buy_order == False))
-                          .scalar())
+        min_price_sell = await MarketOrderCacheDBUtils.select_min_sell_by_type_id_and_location_id(target_id, target_location)
+
         if not max_price_buy:
             max_price_buy = 0
         if not min_price_sell:
             min_price_sell = 0
-        return float(max_price_buy), float(min_price_sell)
+        res = [float(max_price_buy), float(min_price_sell)]
+        Market.order_rouge_cache[type_id] = res
+        return res
 
 class MarketHistory:
     @classmethod
@@ -171,31 +168,36 @@ class MarketHistory:
     @classmethod
     async def refresh_market_history(cls, type_id_list: list, region_id: int):
         logger.info(f'刷新历史订单信息。id长度{len(type_id_list)}, region_id:{region_id}')
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            with tqdm(total=len(type_id_list), desc="创建刷新进程", unit="page", ascii='=-') as pbar:
-                futures = []
-                for type_id in type_id_list:
-                    futures.append(executor.submit(cls.refresh_type_history_in_region, type_id, region_id))
-                    await asyncio.sleep(0.05)
-                    pbar.update()
-            with tqdm(total=len(type_id_list), desc="获取刷新结果", unit="page", ascii='=-') as pbar:
-                for future in futures:
-                    try:
-                        future.result()
-                        pbar.update()
-                    except Exception as e:
-                        logger.error(f"refresh_type_history_in_region error: "
-                                     f"{type_id} {SdeUtils.get_name_by_id(type_id)} {e}")
+
+        # 控制总体并发数
+        max_concurrent = 100
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        async def process_with_limit(type_id):
+            async with semaphore:
+                try:
+                    return await cls.refresh_type_history_in_region(type_id, region_id)
+                except Exception as e:
+                    logger.error(f"处理 type_id {type_id} 时出错: {e}")
+                    return None
+
+        with tqdm(total=len(type_id_list), desc="刷新历史订单", unit="item", ascii='=-') as pbar:
+            # 创建所有任务但控制并发
+            tasks = [process_with_limit(type_id) for type_id in type_id_list]
+            # 使用as_completed可以让进度条更平滑地更新
+            for future in asyncio.as_completed(tasks):
+                await future
+                pbar.update(1)
 
     @classmethod
-    def refresh_type_history_in_region(cls, type_id: int, region_id: int):
-        result = eveesi.markets_region_history(region_id, type_id)
+    async def refresh_type_history_in_region(cls, type_id: int, region_id: int):
+        result = await eveesi.markets_region_history(region_id, type_id, log=True)
         if not result:
             return
         [res.update({"type_id": type_id, 'region_id': region_id}) for res in result]
 
-        model.MarketHistory.insert_many(result).on_conflict_ignore().execute()
-        RefreshDateUtils.update_refresh_date(cls.get_history_refreshdate_id(type_id, region_id))
+        await MarketHistoryDBUtils.insert_many_ignore_conflict(result)
+        await RefreshDataDBUtils.update_refresh_date(cls.get_history_refreshdate_id(type_id, region_id), log=False)
 
     @classmethod
     def get_history_refreshdate_id(cls, type_id: int, region_id: int) -> str:
@@ -204,17 +206,19 @@ class MarketHistory:
 
     type_region_histpry_data_cache = TTLCache(maxsize=3000, ttl=6 * 60 * 60)
     @classmethod
-    @cached(type_region_histpry_data_cache)
-    def get_type_region_histpry_data(cls, type_id: int, region_id: int) -> list:
-        region_year_data = model.MarketHistory.select().where((model.MarketHistory.type_id == type_id) & (model.MarketHistory.region_id == region_id)).order_by(model.MarketHistory.date.desc())
+    async def get_type_region_histpry_data(cls, type_id: int, region_id: int) -> list:
+        if (type_id, region_id) in cls.type_region_histpry_data_cache:
+            return cls.type_region_histpry_data_cache[(type_id, region_id)]
+        region_year_data = await MarketHistoryDBUtils.select_order_history_by_type_id_and_region_id(type_id, region_id)
         region_year_data_list = [[res.date, res.average] for res in region_year_data]
 
+        cls.type_region_histpry_data_cache[(type_id, region_id)] = region_year_data_list
         return region_year_data_list
 
     @classmethod
     async def get_type_region_history_data_batch(cls, type_id_list: list, region_id: int) -> dict:
         need_refresh_list = [
-            tid for tid in type_id_list if RefreshDateUtils.out_of_day_interval(
+            tid for tid in type_id_list if await RefreshDataDBUtils.out_of_day_interval(
                 cls.get_history_refreshdate_id(tid, region_id), 1
             )
         ]
@@ -222,7 +226,7 @@ class MarketHistory:
             await cls.refresh_market_history(need_refresh_list, region_id)
 
         type_region_history_data = {
-            tid: cls.get_type_region_histpry_data(tid, region_id) for tid in type_id_list
+            tid: await cls.get_type_region_histpry_data(tid, region_id) for tid in type_id_list
         }
 
         return type_region_history_data
@@ -230,22 +234,24 @@ class MarketHistory:
     type_history_detale_cache = TTLCache(maxsize=3000, ttl=24 * 60 * 60)
     @classmethod
     @cached(type_history_detale_cache)
-    def get_type_history_detale(cls, type_id: int):
-        mkhist = model.MarketHistory
+    async def get_type_history_detale(cls, type_id: int):
+        if type_id in cls.type_history_detale_cache:
+            return cls.type_history_detale_cache[type_id]
+        # mkhist = model.MarketHistory
         week_ago = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=9)
         month_ago = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=32)
         year_ago = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=366)
 
-        vale_week_data = mkhist.select().where((mkhist.date >= week_ago) & (mkhist.region_id == REGION_VALE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
-        vale_month_data = mkhist.select().where((mkhist.date >= month_ago) & (mkhist.region_id == REGION_VALE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
-        vale_year_data = mkhist.select().where((mkhist.date >= year_ago) & (mkhist.region_id == REGION_VALE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
+        vale_week_data = await MarketHistoryDBUtils.select_order_history_before_date_by_type_id_and_region_id(week_ago, type_id, REGION_VALE_ID)
+        vale_month_data = await MarketHistoryDBUtils.select_order_history_before_date_by_type_id_and_region_id(month_ago, type_id, REGION_VALE_ID)
+        vale_year_data = await MarketHistoryDBUtils.select_order_history_before_date_by_type_id_and_region_id(year_ago, type_id, REGION_VALE_ID)
         vale_week_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in vale_week_data]
         vale_month_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in vale_month_data]
         vale_year_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in vale_year_data]
 
-        forge_week_data = mkhist.select().where((mkhist.date >= week_ago) & (mkhist.region_id == REGION_FORGE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
-        forge_month_data = mkhist.select().where((mkhist.date >= month_ago) & (mkhist.region_id == REGION_FORGE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
-        forge_year_data = mkhist.select().where((mkhist.date >= year_ago) & (mkhist.region_id == REGION_FORGE_ID) & (mkhist.type_id == type_id)).order_by(mkhist.date.desc())
+        forge_week_data = await MarketHistoryDBUtils.select_order_history_before_date_by_type_id_and_region_id(week_ago, type_id, REGION_FORGE_ID)
+        forge_month_data = await MarketHistoryDBUtils.select_order_history_before_date_by_type_id_and_region_id(month_ago, type_id, REGION_FORGE_ID)
+        forge_year_data = await MarketHistoryDBUtils.select_order_history_before_date_by_type_id_and_region_id(year_ago, type_id, REGION_FORGE_ID)
         forge_week_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in forge_week_data]
         forge_month_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in forge_month_data]
         forge_year_data_list = [[res.average, res.highest, res.lowest, res.order_count, res.volume] for res in forge_year_data]
@@ -361,6 +367,8 @@ class MarketHistory:
             'year_volume': total_volume
         })
 
-        return vale_res, forge_res
+        res = [vale_res, forge_res]
+        cls.type_history_detale_cache[type_id] = res
+        return res
 
 

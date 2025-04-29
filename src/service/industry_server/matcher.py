@@ -1,6 +1,10 @@
 import json
 
-from ..database_server.model import Matcher as M_Matcher
+# from ..database_server.model import Matcher as M_Matcher
+from ..database_server.sqlalchemy.kahuna_database_utils import (
+    # Matcher,
+    MatcherDBUtils
+)
 
 MATCHER_KEY = ["bp", "market_group", "group", "meta", "category"]
 
@@ -17,26 +21,27 @@ class Matcher:
         self.matcher_data = {matcher_k: dict() for matcher_k in MATCHER_KEY}
 
     @classmethod
-    def init_from_db_data(cls, data: M_Matcher):
+    def init_from_db_data(cls, data):
         matcher = Matcher(data.matcher_name, data.user_qq, data.matcher_type)
         matcher.matcher_data = json.loads(data.matcher_data)
 
         return matcher
 
-    def get_from_db(self):
-        return M_Matcher.get_or_none(M_Matcher.matcher_name == self.matcher_name)
+    async def get_from_db(self):
+        return await MatcherDBUtils.select_matcher_by_name(self.matcher_name)
 
-    def insert_to_db(self):
-        obj = self.get_from_db()
+
+    async def insert_to_db(self):
+        obj = await self.get_from_db()
         if not obj:
-            obj = M_Matcher()
+            obj = MatcherDBUtils.get_obj()
 
         obj.matcher_name = self.matcher_name
         obj.user_qq = self.user_qq
         obj.matcher_type = self.matcher_type
         obj.matcher_data = json.dumps(self.matcher_data)
 
-        obj.save()
+        await MatcherDBUtils.save_obj(obj)
 
-    def delete_from_db(self):
-        M_Matcher.delete().where(M_Matcher.matcher_name == self.matcher_name).execute()
+    async def delete_from_db(self):
+        await MatcherDBUtils.delete_matcher_by_name(self.matcher_name)

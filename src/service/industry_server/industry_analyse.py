@@ -1,3 +1,4 @@
+import asyncio
 import multiprocessing
 import queue
 from asyncio import gather
@@ -11,23 +12,23 @@ from tqdm import tqdm
 from queue import Queue
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-from .running_job import RunningJobOwner
-from .structure import StructureManager
+from ...utils import roundup, KahunaException
 from ..asset_server.asset_container import AssetContainer
 from ..asset_server.asset_manager import AssetManager
 from ..character_server.character_manager import CharacterManager
-from ..database_server.model import BlueprintAssetCache
-from .industry_config import IndustryConfigManager, MANU_SKILL_TIME_EFF, REAC_SKILL_TIME_EFF
 from ..user_server.user_manager import UserManager
 from ..market_server.market_manager import MarketManager
-from ..market_server.price import PriceService
 from ..log_server import logger
-
-from .industry_utils import IdsUtils as IdsU
-
-from .blueprint import BPManager
 from ..sde_service.utils import SdeUtils
-from ...utils import roundup, KahunaException
+from ..database_server.sqlalchemy.kahuna_database_utils import (
+    BluerprintAssetCacheDBUtils
+)
+from .industry_config import IndustryConfigManager, MANU_SKILL_TIME_EFF, REAC_SKILL_TIME_EFF
+from .running_job import RunningJobOwner
+from .industry_utils import IdsUtils as IdsU
+from .blueprint import BPManager
+from .structure import StructureManager
+
 
 HOUR_SECONDS = 3600
 DAY_SECONDS = 24 * HOUR_SECONDS
@@ -166,17 +167,17 @@ class IndustryAnalyser():
         return False
         raise KahunaException(f"typeid: {type_id} 无建筑分配，请配置匹配器。")
 
-    def get_running_job(self):
+    async def get_running_job(self):
         if not self.target_container:
             raise KahunaException("target_structure must be set.")
 
         self.running_job = dict()
-        self.using_bp = RunningJobOwner.get_using_bp_set()
+        self.using_bp = await RunningJobOwner.get_using_bp_set()
 
         user = UserManager.get_user(self.owner_qq)
         user_character = [c.character_id for c in CharacterManager.get_user_all_characters(user.user_qq)]
         alias_character = [cid for cid in user.user_data.alias.keys()]
-        result = RunningJobOwner.get_job_with_starter(user_character + alias_character)
+        result = await RunningJobOwner.get_job_with_starter(user_character + alias_character)
 
         for job in result:
             if job.output_location_id in self.target_container:
@@ -190,11 +191,11 @@ class IndustryAnalyser():
                                     if (container.tag in {"manu", "reac"} and
                                         container.asset_location_id not in self.hide_container))
 
-    def get_asset_in_container(self):
+    async def get_asset_in_container(self):
         if not self.target_container:
             raise KahunaException("target_structure must be set.")
 
-        result = AssetManager.get_asset_in_container_list(list(self.target_container))
+        result = await AssetManager.get_asset_in_container_list(list(self.target_container))
         for asset in result:
             if asset.type_id not in self.asset_dict:
                 self.asset_dict[asset.type_id] = 0
@@ -279,7 +280,7 @@ class IndustryAnalyser():
                                      if (index, child_id) not in self.anaed_set]
             self.anaed_set.update([(index, child) for child in bp_materials.keys()])
 
-    def get_runs_list_by_bpasset(self, total_runs_needed: int, source_id: int, user_qq: int, work_cache: dict) -> list:
+    async def get_runs_list_by_bpasset(self, total_runs_needed: int, source_id: int, user_qq: int, work_cache: dict) -> list:
         # 缓存
         if source_id in work_cache:
             return work_cache[source_id]
@@ -298,18 +299,17 @@ class IndustryAnalyser():
 
         # 1. 分配建筑
         structure_id = IndustryConfigManager.allocate_structure(source_id, self.st_matcher)
-        structure = StructureManager.get_structure(structure_id)
+        structure = await StructureManager.get_structure(structure_id)
         st_mater_eff, st_time_eff = IndustryConfigManager.get_structure_mater_time_eff(structure.type_id)
         st_mater_rig_eff, st_time_rig_eff = IndustryConfigManager.get_structure_rig_mater_time_eff(structure)
 
         # 2. 蓝图统计
         # owner_qq可用的蓝图仓库，即container_tag为bp的仓库，需要存在于目标建筑?
-        bp_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, "bp")
-        manu_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, "manu")
-        reac_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, "reac")
-        bp_container_list += manu_container_list
-        bp_container_list += reac_container_list
-        bp_container_list = [container for container in bp_container_list]
+        bp_container_list = []
+        bp_container_list += await AssetContainer.get_contain_id_by_qq_tag(user_qq, "bp")
+        bp_container_list += await AssetContainer.get_contain_id_by_qq_tag(user_qq, "manu")
+        bp_container_list += await AssetContainer.get_contain_id_by_qq_tag(user_qq, "reac")
+        bp_container_list = [container.asset_location_id for container in bp_container_list]
 
         # 根据source_id获得user_qq所属的所有蓝图
         owner_id_set = set(character.character_id for character in CharacterManager.get_user_all_characters(user_qq))
@@ -317,16 +317,12 @@ class IndustryAnalyser():
             if character.director:
                 owner_id_set.add(character.corp_id)
         bp_id = BPManager.get_bp_id_by_prod_typeid(source_id)
-        avalable_bpc_asset = BlueprintAssetCache.select().where((BlueprintAssetCache.location_id << bp_container_list) &
-                                                                (BlueprintAssetCache.type_id == bp_id) &
-                                                                (BlueprintAssetCache.runs > 0))
-        avaliable_bpo_asset = BlueprintAssetCache.select().where((BlueprintAssetCache.location_id << bp_container_list) &
-                                                                 (BlueprintAssetCache.type_id == bp_id) &
-                                                                 (BlueprintAssetCache.runs < 0))
+        avaliable_bpc_asset = await BluerprintAssetCacheDBUtils.select_bpc_by_type_id_and_location_id(bp_id, bp_container_list)
+        avaliable_bpo_asset = await BluerprintAssetCacheDBUtils.select_bpo_by_type_id_and_location_id(bp_id, bp_container_list)
 
         # 可用的拷贝序列 [(runs, material_efficiency, time_efficiency, item_id, structure_id, location_id)]
         avaliable_bpc_list = [(bp.runs, bp.material_efficiency, bp.time_efficiency, bp.item_id, bp.location_id, structure_id)\
-                              for bp in avalable_bpc_asset if bp.item_id not in self.using_bp]
+                              for bp in avaliable_bpc_asset if bp.item_id not in self.using_bp]
         avaliable_bpc_list.sort(key=lambda x: (x[1], x[0]), reverse=True)
 
         # 可用的原图序列 [(quantity, material_efficiency, time_efficiency, structure_id, location_id)]
@@ -449,7 +445,7 @@ class IndustryAnalyser():
         work_cache[source_id] = work_list
         return work_list
 
-    def calculate_work_bpnode_quantity(self, child_id: int, cache_dict: dict):
+    async def calculate_work_bpnode_quantity(self, child_id: int, cache_dict: dict):
         """
         计算工作蓝图节点数量（实际执行模式）
         
@@ -506,7 +502,7 @@ class IndustryAnalyser():
             bp_need_quantity = edge[3]
             # index = edge[2]["index"]
 
-            father_work_node, father_global_node = self.calculate_work_bpnode_quantity(father_id, cache_dict)
+            father_work_node, father_global_node = await self.calculate_work_bpnode_quantity(father_id, cache_dict)
 
             # root节点特殊处理
             if father_id == "root":
@@ -644,8 +640,8 @@ class IndustryAnalyser():
             child_actually_total_runs = math.ceil(child_actually_total_quantity / child_product_quantity)
             child_total_runs = math.ceil(child_total_quantity / child_product_quantity)
 
-            child_actually_worklist = self.get_runs_list_by_bpasset(child_actually_total_runs, child_id, self.owner_qq, self.actually_need_work_list_dict)
-            child_total_worklist = self.get_runs_list_by_bpasset(child_total_runs, child_id, self.owner_qq, self.total_need_work_list_dict)
+            child_actually_worklist = await self.get_runs_list_by_bpasset(child_actually_total_runs, child_id, self.owner_qq, self.actually_need_work_list_dict)
+            child_total_worklist = await self.get_runs_list_by_bpasset(child_total_runs, child_id, self.owner_qq, self.total_need_work_list_dict)
         else:
             child_actually_worklist = []
             child_total_worklist = []
@@ -662,8 +658,8 @@ class IndustryAnalyser():
                 need_to_minus -= actually_index_quantity[index][1]
                 actually_index_quantity[index][1] = 0
 
-        child_eiv_cost = IdsU.get_eiv_cost(child_id, child_total_quantity, self.owner_qq, self.st_matcher)
-        logistic_data = IdsU.get_logistic_need_data(self.owner_qq, child_id, self.st_matcher, child_actually_total_quantity)
+        child_eiv_cost = await IdsU.get_eiv_cost(child_id, child_total_quantity, self.owner_qq, self.st_matcher)
+        logistic_data = await IdsU.get_logistic_need_data(self.owner_qq, child_id, self.st_matcher, child_actually_total_quantity)
         self.work_graph.nodes[child_id].update({
             'quantity': child_actually_total_quantity,
             'work_list': child_actually_worklist,
@@ -678,7 +674,7 @@ class IndustryAnalyser():
             'is_material': is_material
         })
         if self.global_graph.nodes[child_id]['is_material']:
-            self.global_graph.nodes[child_id].update({'buy_cost': child_total_quantity * self.market.get_type_order_rouge(child_id)[0]})
+            self.global_graph.nodes[child_id].update({'buy_cost': child_total_quantity * (await self.market.get_type_order_rouge(child_id))[0]})
         else:
             self.global_graph.nodes[child_id].update({'eiv_cost': child_eiv_cost})
 
@@ -704,14 +700,14 @@ class IndustryAnalyser():
 
 
     """ 计算核心入口函数 """
-    def analyse_progress_work_type(self, work_list: list[list[str, int]]) -> dict:
+    async def analyse_progress_work_type(self, work_list: list[list[str, int]]) -> dict:
         if not self.bp_matcher or not self.st_matcher or not self.pd_block_matcher:
             raise KahunaException("matcher must be set in BpAnalyser.")
 
         # 获取目标库存、正在运行的工作、库存内的资产
         self.get_target_container()
-        self.get_running_job()
-        self.get_asset_in_container()
+        await self.get_running_job()
+        await self.get_asset_in_container()
 
         accept_worklist = []
         for work in work_list:
@@ -724,7 +720,7 @@ class IndustryAnalyser():
         res_dict = {}
         cache_dict = dict()
         for node in nodes_without_outgoing_edges:
-            res_dict[node] = self.calculate_work_bpnode_quantity(node, cache_dict)
+            res_dict[node] = await self.calculate_work_bpnode_quantity(node, cache_dict)
 
         ''' 更新工作流的材料是否满足 '''
         self.update_work_avaliable()
@@ -777,10 +773,10 @@ class IndustryAnalyser():
     def get_analyser_by_plan(cls, user, plan_name):
         return cls.create_analyser_by_plan(user, plan_name)
 
-    def get_work_tree_data(self):
+    async def get_work_tree_data(self):
         self.clean_analyser()
         if not self.analysed_status:
-            self.analyse_progress_work_type(self.plan_list)
+            await self.analyse_progress_work_type(self.plan_list)
 
         result_dict = {
             'work': dict(),
@@ -795,18 +791,18 @@ class IndustryAnalyser():
             'logistic': dict()
         }
 
-        res = self.get_work_node_data(result_dict)
+        res = await self.get_work_node_data(result_dict)
 
         return res
 
-    def get_work_node_data(self, result_dict):
+    async def get_work_node_data(self, result_dict):
         for node in self.bp_graph.nodes():
             if node == 'root':
                  continue
             layer = self.bp_graph.nodes[node]['depth']
 
             if layer == 1:
-                self.add_material_data(node, result_dict['material'])
+                await self.add_material_data(node, result_dict['material'])
             else:
                 self.add_work_data(node, result_dict['work'])
 
@@ -821,79 +817,9 @@ class IndustryAnalyser():
         result_dict['work'] = res
 
         self.get_workflow_data(result_dict['work_flow'])
-        self.get_transport_data(result_dict['logistic'])
+        await self.get_transport_data(result_dict['logistic'])
 
         return result_dict
-
-    def get_logistic_data(self, logistic_dict):
-        asset_container_list = list(self.target_container)
-
-        # 获取需求
-        structure_need_dict = dict()
-        for node in self.work_graph.nodes():
-            if node == 'root':
-                continue
-            # [child_id, structure, quantity]
-            logistic_data = self.work_graph.nodes[node]['logistic']
-            if logistic_data[2] <= 0:
-                continue
-            if logistic_data[1] not in structure_need_dict:
-                structure_need_dict[logistic_data[1]] = dict()
-            if logistic_data[0] not in structure_need_dict[logistic_data[1]]:
-                structure_need_dict[logistic_data[1]][logistic_data[0]] = 0
-            structure_need_dict[logistic_data[1]][logistic_data[0]] += logistic_data[2]
-        logistic_dict['need'] = structure_need_dict
-
-        structure_provide_dict = dict()
-        asset_res = AssetManager.get_asset_in_container_list(list(self.target_container))
-        for asset in asset_res:
-            if asset.type_id not in self.work_graph.nodes():
-                continue
-            if asset.location_id not in self.target_container:
-                continue
-            structure_id = SdeUtils.get_structure_id_from_location_id(asset.location_id)[0]
-            structure_name = StructureManager.get_structure(structure_id)
-            if structure_name not in structure_provide_dict:
-                structure_provide_dict[structure_name] = dict()
-            if asset.type_id not in structure_provide_dict[structure_name]:
-                structure_provide_dict[structure_name][asset.type_id] = 0
-            structure_provide_dict[structure_name][asset.type_id] += asset.quantity
-        logistic_dict['provide'] = structure_provide_dict
-
-        # 处理自供给
-        for struct, struct_need in structure_need_dict.items():
-            for type_id, quantity in struct_need.items():
-                if (struct not in structure_provide_dict or
-                    type_id not in structure_provide_dict[struct]):
-                    continue
-                if structure_provide_dict[struct][type_id] >= quantity:
-                    structure_provide_dict[struct][type_id] -= quantity
-                    struct_need[type_id] = 0
-                else:
-                    struct_need[type_id] -= structure_provide_dict[struct][type_id]
-                    structure_provide_dict[struct].pop(type_id)
-
-        transport_dict = dict()
-        # 处理异地供给
-        for need_struct, struct_need in structure_need_dict.items():
-            for type_id, quantity in struct_need.items():
-                for prov_struct, struct_provide in structure_provide_dict.items():
-                    if (type_id not in struct_provide or
-                        struct_provide[type_id] == 0 or
-                        struct_need[type_id] == 0 or
-                        need_struct == prov_struct):
-                        continue
-                    if (prov_struct.name, need_struct.name, type_id) not in transport_dict:
-                        transport_dict[(prov_struct.name, need_struct.name, type_id)] = 0
-                    if struct_provide[type_id] >= quantity:
-                        transport_dict[(prov_struct.name, need_struct.name, type_id)] += quantity
-                        struct_provide[type_id] -= quantity
-                        struct_need[type_id] = 0
-                    else:
-                        transport_dict[(prov_struct.name, need_struct.name, type_id)] += struct_provide[type_id]
-                        struct_need[type_id] -= struct_provide[type_id]
-                        struct_provide[type_id] = 0
-        logistic_dict['transport'] = transport_dict
 
     def get_workflow_data(self, res_dict: dict):
         top_layer = self.bp_graph.nodes['root']['depth'] - 1
@@ -934,10 +860,10 @@ class IndustryAnalyser():
         res_dict['manu_flow'] = manu_list
         res_dict['reac_flow'] = reac_list
 
-    def get_transport_data(self, logistic_dict: dict):
+    async def get_transport_data(self, logistic_dict: dict):
         node_list = [node for node in self.work_graph.nodes() if node != 'root']
         main_chara = CharacterManager.get_character_by_id(UserManager.get_main_character_id(self.owner_qq))
-        ac_token = main_chara.ac_token
+        ac_token = await main_chara.ac_token
         # 获取需求
         structure_need_dict = dict()
         for node in node_list:
@@ -947,7 +873,7 @@ class IndustryAnalyser():
                 if not work.avaliable:
                     continue
                 material_need = work.get_material_need()
-                structure = StructureManager.get_structure(work.structure_id, ac_token)
+                structure = await StructureManager.get_structure(work.structure_id, ac_token)
                 if structure not in structure_need_dict:
                     structure_need_dict[structure] = dict()
                 struc_need_dict = structure_need_dict[structure]
@@ -959,14 +885,14 @@ class IndustryAnalyser():
 
         # 获取供给
         structure_provide_dict = dict()
-        asset_res = AssetManager.get_asset_in_container_list(list(self.target_container))
+        asset_res = await AssetManager.get_asset_in_container_list(list(self.target_container))
         for asset in asset_res:
             if asset.type_id not in self.work_graph.nodes():
                 continue
             if asset.location_id not in self.target_container:
                 continue
-            structure_id = SdeUtils.get_structure_id_from_location_id(asset.location_id)[0]
-            structure = StructureManager.get_structure(structure_id, ac_token)
+            structure_id = (await StructureManager.get_structure_id_from_location_id(asset.location_id))[0]
+            structure = await StructureManager.get_structure(structure_id, ac_token)
             if not structure:
                 logger.error(f'type {SdeUtils.get_name_by_id(asset.type_id)} '
                              f'location structure[{structure_id}] access error. location_id is {asset.location_id}')
@@ -1013,7 +939,7 @@ class IndustryAnalyser():
                         struct_provide[type_id] = 0
         logistic_dict['transport'] = transport_dict
 
-    def add_material_data(self, type_id, result_dict):
+    async def add_material_data(self, type_id, result_dict):
         # 获取 Group 和 Category 信息
         group = SdeUtils.get_groupname_by_id(type_id)
         category = SdeUtils.get_category_by_id(type_id)
@@ -1021,7 +947,7 @@ class IndustryAnalyser():
         work_node = self.work_graph.nodes[type_id]
         global_node = self.global_graph.nodes[type_id]
         market = MarketManager.get_market_by_type('jita')
-        max_buy, min_sell = market.get_type_order_rouge(type_id)
+        max_buy, min_sell = await market.get_type_order_rouge(type_id)
 
         missing = work_node['quantity'] if work_node['quantity'] >= 0 else 0
         redundant = - work_node['quantity'] if work_node['quantity'] < 0 else 0
@@ -1115,13 +1041,13 @@ class IndustryAnalyser():
         return res
 
     @classmethod
-    def signal_async_progress_work_type(cls, user, plan_name, plan_list):
-        from .. import init_server, init_flag
-        if not init_flag:
-            init_server(log=False)
-        analyser = cls.create_analyser_by_plan(user, plan_name)
+    async def async_progress_work_type(cls, user, plan_name, plan_list):
+        from ..server_init import init_server_service
+        await init_server_service(log=False)
+
+        analyser: IndustryAnalyser = cls.create_analyser_by_plan(user, plan_name)
         analyser.bp_block_level = 1
-        material_dict = analyser.analyse_progress_work_type(plan_list)
+        await analyser.analyse_progress_work_type(plan_list)
         material_cost = 0
         for node in [node for node, degree in analyser.global_graph.out_degree() if degree == 0]:
             if node == 'root':
@@ -1136,6 +1062,10 @@ class IndustryAnalyser():
 
         return [plan_list[0][0], material_cost, eiv_cost, material_cost + eiv_cost]
         # return analyser, plan_list
+
+    @classmethod
+    def progress_work_type(cls, user, plan_name, plan_list):
+        return asyncio.run(cls.async_progress_work_type(user, plan_name, plan_list))
 
     cost_data_cache = TTLCache(maxsize=1000, ttl=60 * 60)
     @classmethod
@@ -1161,7 +1091,7 @@ class IndustryAnalyser():
             for batch in chunks(plan_list, batch_size):
                 with ProcessPoolExecutor(max_workers=min(6, cpu_count)) as executor:
                     futures = [
-                        executor.submit(cls.signal_async_progress_work_type, user, plan_name, [plan])
+                        executor.submit(cls.progress_work_type, user, plan_name, [plan])
                         for plan in batch
                     ]
 
@@ -1174,10 +1104,10 @@ class IndustryAnalyser():
         return cost_dict
 
     @classmethod
-    def get_cost_detail(cls, user, plan_name: str, product: str):
+    async def get_cost_detail(cls, user, plan_name: str, product: str):
         analyser = cls.create_analyser_by_plan(user, plan_name)
         analyser.bp_block_level = 1
-        analyser.analyse_progress_work_type([[product, 1]])
+        await analyser.analyse_progress_work_type([[product, 1]])
 
         res = {'material': dict(), 'group_detail': dict()}
 
@@ -1199,7 +1129,7 @@ class IndustryAnalyser():
         res['eiv'] = [eiv_cost, eiv_cost / total_cost]
         res['type_id'] = SdeUtils.get_id_by_name(product)
         res['total_cost'] = total_cost
-        res['jita_price'] = analyser.market.get_type_order_rouge(res['type_id'])
+        res['jita_price'] = await analyser.market.get_type_order_rouge(res['type_id'])
         for node, data in material_dict.items():
             data.append(data[0] / total_cost)
 

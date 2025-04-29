@@ -1,7 +1,9 @@
 import math
 import asyncio
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from math import trunc
 
 from ..service.log_server import logger
 
@@ -30,22 +32,27 @@ class PluginMeta(type):  # 定义元类
 
 async def run_func_delay_min(start_delay, func, *args, **kwargs):
     await asyncio.sleep(start_delay * 60)
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(func, *args, **kwargs)
-        while not future.done():
-            await asyncio.sleep(1)
+    await func(*args, **kwargs)
 
-async def refresh_per_min(start_delay, interval, func):
-    logger.info(f'注册定时轮询任务: {func.__name__}, 延迟{start_delay}分钟, 循环间隔{interval}分钟')
+async def async_refresh_per_min(start_delay: int, interval: int, func):
+    logger.info(f'注册异步定时轮询任务: {func.__name__}, 延迟{start_delay}分钟, 循环间隔{interval}分钟')
     await asyncio.sleep(start_delay * 60)
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        while True:
+    while True:
+        try:
             logger.debug(f'轮询任务{func.__name__} 激活')
-            future = executor.submit(func)
-            while not future.done():
-                await asyncio.sleep(5)
+            await func()
+            await asyncio.sleep(5)
             logger.debug(f'轮询任务{func.__name__} 完成，睡眠{interval}分钟')
             await asyncio.sleep(interval * 60)
+        except Exception as e:
+            # 打印完整的异常堆栈信息
+            error_msg = f"轮询任务 {func.__name__} 执行出错: {str(e)}\n"
+            error_msg += traceback.format_exc()
+            logger.error(error_msg)
+
+            # 添加短暂休眠，防止在发生错误时过于频繁地重试
+            await asyncio.sleep(60)  # 错误后等待1分钟再继续
+
 
 def get_user_tmp_cache_prefix(user_qq: int):
     return f"cache_{user_qq}_"

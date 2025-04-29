@@ -9,7 +9,10 @@ import io
 
 from ..third_provider import Provider
 from ...sde_service import SdeUtils
-from ...database_server.utils import RefreshDateUtils
+# from ...database_server.utils import RefreshDateUtils
+from ...database_server.sqlalchemy.kahuna_database_utils import (
+    RefreshDataDBUtils
+)
 
 class GoogleSheetsProvider(Provider):
     """
@@ -97,7 +100,7 @@ class GoogleSheetsProvider(Provider):
             List[Tuple[str, float]]: 资产列表，每项为(资产ID, 数量)元组
         """
         # 对于同步调用，运行异步函数
-        if 'cache' in self.cache and not RefreshDateUtils.out_of_hour_interval(self.get_refreshdate_id(), 2):
+        if 'cache' in self.cache and not await RefreshDataDBUtils.out_of_hour_interval(self.get_refreshdate_id(), 2):
             self.logger.info(
                 f"Successfully connected to Google Sheet, found {len(self.cache['cache'])} assets from cache of {len(self.sheet_names)} sheets")
             return self.cache['cache']
@@ -144,9 +147,9 @@ class GoogleSheetsProvider(Provider):
         # 转换回元组列表
         merged_assets = [(asset_id, quantity) for asset_id, quantity in assets_dict.items()]
         
-        return self.validate_assets(merged_assets)
+        return await self.validate_assets(merged_assets)
 
-    def validate_assets(self, assets: List[Tuple[str, str]]) -> List[Tuple[int, int]]:
+    async def validate_assets(self, assets: List[Tuple[str, str]]) -> List[Tuple[int, int]]:
         """
         验证资产列表的格式和内容
 
@@ -182,7 +185,7 @@ class GoogleSheetsProvider(Provider):
 
             result.append((tid, quantity))
 
-        RefreshDateUtils.update_refresh_date(self.get_refreshdate_id())
+        await RefreshDataDBUtils.update_refresh_date(self.get_refreshdate_id())
         return result
 
     async def _get_sheet_data_async(self, sheet_name: str) -> List[Tuple[str, float]]:
@@ -328,7 +331,7 @@ class GoogleSheetsProvider(Provider):
         self.shutdown()  # 当前清理操作不需要异步
 
 class YueseProvider(GoogleSheetsProvider):
-    def validate_assets(self, assets: List[Tuple[str, str]]) -> List[Tuple[int, int]]:
+    async def validate_assets(self, assets: List[Tuple[str, str]]) -> List[Tuple[int, int]]:
         result = []
         for asset in assets:
             if not isinstance(asset, tuple) or len(asset) != 2:

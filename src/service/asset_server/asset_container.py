@@ -1,13 +1,14 @@
+import asyncio
 from enum import Enum
-from cachetools import cached, TTLCache
 
 # Kahuna model
 from ..sde_service.utils import SdeUtils
-from ..database_server.model import AssetCache
-from ..database_server.model import AssetContainer as M_AssetContainer
 from ..character_server.character_manager import CharacterManager
 from ..industry_server.structure import StructureManager
 from ..log_server import logger
+from ..database_server.sqlalchemy.kahuna_database_utils import (
+    AssetCacheDBUtils, AssetContainerDBUtils
+)
 
 class ContainerTag(Enum):
     bp = 'blueprint'
@@ -33,8 +34,8 @@ class AssetContainer:
         self.asset_owner_qq = asset_owner_qq
 
     @classmethod
-    def get_all_asset_container(cls):
-        return M_AssetContainer.select()
+    async def get_all_asset_container(cls):
+        return await AssetContainerDBUtils.select_all()
 
     @classmethod
     def operater_has_container_permission(cls, operate_qq: int, owner_id: int):
@@ -43,25 +44,23 @@ class AssetContainer:
             if (owner_id == character.character_id and operate_qq == character.QQ) or \
                (owner_id == character.corp_id and operate_qq == character.QQ):
                 return True
-        logger.error(f'鉴权失败. QQ:{operate_qq} 角色:{character.character_name}')
+        logger.error(f'鉴权失败. QQ:{operate_qq}')
         return False
 
     @classmethod
-    def find_secret_data(cls, secret_type: str) -> list:
+    async def find_secret_data(cls, secret_type: str) -> list:
         item_id = SdeUtils.get_id_by_name(secret_type)
         if not item_id:
             return []
+        find_list = await AssetCacheDBUtils.select_asset_by_type_id(item_id)
 
-        result = AssetCache.select().where(
-            (AssetCache.type_id == item_id))
-        find_list = [data for data in result]
         return find_list
 
     @classmethod
-    def find_container(cls, secret_type: str, user_qq: int, character):
+    async def find_container(cls, secret_type: str, user_qq: int, character):
         # 1. 获取数据
         # 在asset_cache找到type_id==get_id_by_name(secret_type) and quantity==secret_quantity的条目
-        secret_data_list = cls.find_secret_data(secret_type)
+        secret_data_list = await cls.find_secret_data(secret_type)
 
         count_dict = {}
         for data in secret_data_list:
@@ -86,7 +85,7 @@ class AssetContainer:
 
         container_info = []
         for data in container_data:
-            structure = StructureManager.get_structure(data[2], ac_token=character.ac_token)
+            structure = await StructureManager.get_structure(data[2], ac_token= await character.ac_token)
             if not structure:
                 continue
             info = dict(structure)
@@ -102,15 +101,12 @@ class AssetContainer:
 
         return container_info
 
-    def get_from_db(self):
-        return M_AssetContainer.get_or_none(
-            (M_AssetContainer.asset_location_id == self.asset_location_id) &
-            (M_AssetContainer.asset_owner_qq == self.asset_owner_qq))
-
-    def insert_to_db(self):
-        obj = self.get_from_db()
+    async def insert_to_db(self):
+        obj = await AssetContainerDBUtils.select_container_by_location_id_and_owner_qq(
+                self.asset_location_id, self.asset_owner_qq
+        )
         if not obj:
-            obj = M_AssetContainer()
+            obj = AssetContainerDBUtils.get_obj()
 
         """
         asset_location_id = IntegerField()
@@ -131,12 +127,11 @@ class AssetContainer:
         obj.asset_owner_qq = self.asset_owner_qq
         obj.tag = self.tag
 
-        obj.save()
+        await AssetContainerDBUtils.save_obj(obj)
 
     @classmethod
-    def get_contain_id_by_qq_tag(cls, qq: int, tag: str) -> list[int]:
-        return [container.asset_location_id for container in
-                M_AssetContainer.select().where(M_AssetContainer.asset_owner_qq == qq, M_AssetContainer.tag == tag)]
+    async def get_contain_id_by_qq_tag(cls, qq: int, tag: str) -> list:
+        return await AssetContainerDBUtils.select_container_by_owner_qq_and_tag(qq, tag)
 
     def __str__(self):
         return (f"id: {self.asset_location_id}\n"

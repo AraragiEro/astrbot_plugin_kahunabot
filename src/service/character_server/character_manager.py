@@ -20,13 +20,13 @@ class CharacterManager():
     character_dict: dict = dict()
 
     @classmethod
-    def init(cls):
-        cls.init_character_dict()
+    async def init(cls):
+        await cls.init_character_dict()
 
     @classmethod
-    def init_character_dict(cls):
+    async def init_character_dict(cls):
         if not cls.init_status:
-            character_list = Character.get_all_characters()
+            character_list = await Character.get_all_characters()
             for character in character_list:
                 character_obj = Character(
                     character_id=character.character_id,
@@ -44,29 +44,25 @@ class CharacterManager():
         logger.info(f"init character dict complete. {id(cls)}")
 
     @classmethod
-    def refresh_all_characters_at_init(cls):
-        cls.refresh_all_characters_token()
-        cls.refresh_all_character_directer()
+    async def refresh_all_characters_at_init(cls):
+        await cls.refresh_all_characters_token()
+        await cls.refresh_all_character_directer()
         for character_obj in cls.character_dict.values():
-            character_obj.insert_to_db()
+            await character_obj.insert_to_db()
 
         cls.init_status = True
 
     @classmethod
-    def refresh_all_characters_token(cls):
+    async def refresh_all_characters_token(cls):
         logger.info("refresh all characters token at beginning")
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            futures = [executor.submit(character.refresh_character_token) for character in cls.character_dict.values()]
-            for future in futures:
-                future.result()
+        for character in cls.character_dict.values():
+            await character.refresh_character_token()
         logger.info("refresh all characters complete")
 
     @classmethod
-    def refresh_all_character_directer(cls):
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            futures = [(character, executor.submit(cls.is_character_corp_directer, character)) for character in cls.character_dict.values()]
-            for character, future in futures:
-                character.director = future.result()
+    async def refresh_all_character_directer(cls):
+        for character in cls.character_dict.values():
+            character.director = await cls.is_character_corp_directer(character)
 
     @classmethod
     def get_character_by_id(cls, character_id):
@@ -80,12 +76,11 @@ class CharacterManager():
         for character in cls.character_dict.values():
             if character.character_name == character_name and character.QQ == qq:
                 return character
-                break
         raise KahunaException(f'无法使用qq{qq}和角色名{character_name}匹配角色对象。请先进行授权。')
 
     @classmethod
-    def is_character_corp_directer(cls, character):
-        role_info = corporations_corporation_id_roles(character.ac_token, character.corp_id)
+    async def is_character_corp_directer(cls, character):
+        role_info = await corporations_corporation_id_roles(await character.ac_token, character.corp_id)
         if not role_info:
             return False
 
@@ -107,13 +102,13 @@ class CharacterManager():
             raise ValueError(f"无法解析时间字符串 '{dt_string}': {str(e)}")
 
     @classmethod
-    def create_new_character(cls, token_data, user_qq):
-        character_verify_data = verify_token(token_data[0])
+    async def create_new_character(cls, token_data, user_qq):
+        character_verify_data = await verify_token(token_data[0])
         if not character_verify_data:
             logger.error('No character info found')
 
         character_id = character_verify_data['CharacterID']
-        character_data = characters_character(character_id)
+        character_data = await characters_character(character_id)
         corp_id = character_data['corporation_id']
         character_name = character_verify_data['CharacterName']
         expires_time = cls.parse_iso_datetime(character_verify_data["ExpiresOn"])
@@ -144,7 +139,7 @@ class CharacterManager():
             character.refresh_token = token_data[1]
             character.expires_date = expires_time
             character.corp_id = corp_id
-        character.director = cls.is_character_corp_directer(character)
+        character.director = await cls.is_character_corp_directer(character)
 
         character.insert_to_db()
         cls.character_dict[character_id] = character

@@ -9,8 +9,6 @@ from ..sde_service import database as en_model, database_cn as zh_model
 from ...service.sde_service.database import InvTypes, InvGroups, InvCategories
 from ...service.sde_service.database import MetaGroups, MarketGroups
 from ..log_server import logger
-from ..database_server.model import InvTypeMap, AssetCache
-from ..database_server.model import MarketPriceCache, SystemCostCache
 
 from .database_cn import InvTypes as InvTypes_zh
 
@@ -18,24 +16,9 @@ en_invtype_name_list = [res.typeName for res in InvTypes.select(InvTypes.typeNam
 zh_invtype_name_list = [res.typeName for res in InvTypes_zh.select(InvTypes_zh.typeName).where(InvTypes_zh.marketGroupID != 0)]
 
 
-
 class SdeUtils:
     _market_tree = None
     item_map_dict = dict()
-
-    @classmethod
-    def init_type_map(cls):
-        cls.item_map_dict = {res.maped_type: res.target_type for res in InvTypeMap.select()}
-
-    @classmethod
-    def add_type_map(cls, maped_item: str, target_item: str) -> tuple:
-        if maped_item in cls.item_map_dict:
-            return False, None
-        if not SdeUtils.get_id_by_name(target_item):
-            return False, SdeUtils.fuzz_type(target_item)
-        new_map = InvTypeMap(maped_item, target_item)
-        new_map.save()
-        cls.item_map_dict[maped_item] = new_map
 
     @staticmethod
     @lru_cache(maxsize=2)
@@ -333,58 +316,6 @@ class SdeUtils:
             return SdeUtils.fuzz_zh_type(item_name, list_len)
         else:
             return SdeUtils.fuzz_en_type(item_name, list_len)
-
-    type_stucture_cache = TTLCache(maxsize=1000, ttl=60 * 60 * 24)
-    @staticmethod
-    def get_structure_id_from_location_id(location_id, location_flag = None):
-        if location_id in SdeUtils.type_stucture_cache:
-            return SdeUtils.type_stucture_cache[location_id]
-        else:
-            structure_id, structure_flag = SdeUtils.find_type_structure(location_id, location_flag)
-            SdeUtils.type_stucture_cache[location_id] = (structure_id, structure_flag)
-            return structure_id, structure_flag
-
-    @staticmethod
-    def find_type_structure(location_id, location_flag = None):
-        """
-        根据提供的location_id在AssetCache中进行查询，目标是找到一个顶层的location。
-        顶层的location符合如下特征之一：
-        1. location_type=="station", 则该条数据的location_id是顶层location
-        2. location_type=="solar_system", 则该条数据的item_id是顶层location
-        """
-        if_station_data = AssetCache.get_or_none(AssetCache.location_id == location_id, AssetCache.location_type == "station")
-        if if_station_data:
-            return if_station_data.location_id, if_station_data.location_flag
-
-        if_structure_data = AssetCache.get_or_none(AssetCache.item_id == location_id, AssetCache.location_type == "solar_system")
-        if if_structure_data:
-            return if_structure_data.item_id, if_structure_data.location_flag
-
-        father_data = AssetCache.get_or_none(AssetCache.item_id == location_id)
-        if father_data:
-            return SdeUtils.get_structure_id_from_location_id(father_data.location_id, father_data.location_type)
-        return location_id, location_flag
-
-    adjusted_price_cache = TTLCache(maxsize=1000, ttl=20 * 60)
-    @cached(adjusted_price_cache)
-    @staticmethod
-    def get_adjusted_price_of_typeid(type_id: int):
-        adjusted_price = MarketPriceCache.select(MarketPriceCache.adjusted_price).where(MarketPriceCache.type_id == type_id).scalar()
-
-        if not adjusted_price:
-            return 0
-        return adjusted_price
-
-    system_cos_cache = TTLCache(maxsize=1000, ttl=20 * 60)
-    @cached(system_cos_cache)
-    @staticmethod
-    def get_system_cost(solar_system_id: int):
-        res = SystemCostCache.get_or_none(SystemCostCache.solar_system_id == solar_system_id)
-
-        if res:
-            return res.manufacturing, res.reaction
-        else:
-            return 0.14, 0.14
 
     @staticmethod
     def get_all_type_id_in_market():

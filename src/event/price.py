@@ -49,7 +49,7 @@ class TypesPriceEvent():
         # 准备历史价格数据
         item_id = SdeUtils.get_id_by_name(item_name)
         await MarketHistory.refresh_forge_market_history([item_id])
-        history_data = MarketHistory.get_type_region_histpry_data(item_id, REGION_FORGE_ID)
+        history_data = await MarketHistory.get_type_region_histpry_data(item_id, REGION_FORGE_ID)
         chart_history_data = [[data[0].strftime("%Y-%m-%d"), data[1]] for data in history_data[:365]]
 
         quantity_str = ''

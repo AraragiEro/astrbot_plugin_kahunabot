@@ -5,7 +5,7 @@ from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import llm_tool
 
-from .src.service import init_server
+from .src.service.server_init import init_server
 from .src.service.character_server.character_manager import CharacterManager
 from .src.service.asset_server.asset_manager import AssetManager
 from .src.service.market_server.market_manager import MarketManager
@@ -22,7 +22,7 @@ from .src.event import llm_tool as kahuna_llmt
 from .src.event.admin import AdminEvent
 from .filter import AdminFilter, VipMemberFilter, MemberFilter
 
-from .src.utils import refresh_per_min, run_func_delay_min
+
 from .src.utils import set_debug_qq, unset_debug_qq, DEBUG_QQ
 
 # 环境变量
@@ -47,20 +47,7 @@ class KahunaBot(Star):
     def __init__(self, context: Context):
         super().__init__(context)
         # 初始化
-        init_server()
-        # asyncio.create_task(self.init_plugin())
-
-        # 延时初始化
-        asyncio.create_task(refresh_per_min(0, 10, DatabaseConectManager.perform_checkpoint))
-        asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
-        asyncio.create_task(refresh_per_min(0, 5, MarketManager.refresh_market))
-        asyncio.create_task(refresh_per_min(0, 5, AssetManager.refresh_all_asset))
-        asyncio.create_task(refresh_per_min(0, 5, IndustryManager.refresh_running_status))
-        asyncio.create_task(refresh_per_min(0, 5, IndustryManager.refresh_system_cost))
-        asyncio.create_task(refresh_per_min(0, 5, IndustryManager.refresh_market_price))
-        asyncio.create_task(refresh_per_min(0, 5, kahuna_google_market_monitor.refresh_market_monitor_process))
-        asyncio.create_task(refresh_per_min(0, 5, IndustryAdvice.refresh_all_asset_statistics))
-
+        asyncio.create_task(init_server())
 
     # @filter.custom_filter(SelfFilter1)
     @filter.command("helloworld")
@@ -123,11 +110,11 @@ class KahunaBot(Star):
     @character.command('添加', alias={"add"})
     async def character_add(self, event: AstrMessageEvent, back_url: str):
         ''' 这是一个添加角色认证的指令，参数为认证完成后浏览器内的链接 '''
-        yield CharacterEvent.add(event, back_url)
+        yield await CharacterEvent.add(event, back_url)
 
     @character.command('子角色', alias= {"addalias"})
     async def character_addalias(self, event: AstrMessageEvent, character_id_list: str):
-        yield UserEvent.addalias(event)
+        yield await UserEvent.addalias(event)
 
     @filter.custom_filter(AdminFilter)
     @filter.command_group("user")
@@ -136,19 +123,19 @@ class KahunaBot(Star):
 
     @user.command("create")
     async def user_create(self, event: AstrMessageEvent, user_qq: int):
-        yield UserEvent.add(event, user_qq)
+        yield await UserEvent.create(event, user_qq)
 
     @user.command("addvip")
     async def user_addvip(self, event: AstrMessageEvent, user_qq: int, time_day: int):
-        yield UserEvent.addMemberTime(event, user_qq, time_day)
+        yield await UserEvent.addMemberTime(event, user_qq, time_day)
 
     @user.command("del")
     async def user_del(self, event: AstrMessageEvent, user_qq: int):
-        yield UserEvent.deleteUser(event, user_qq)
+        yield await UserEvent.deleteUser(event, user_qq)
 
     @user.command("clearvip")
     async def user_clearvip(self, event: AstrMessageEvent, user_qq: int):
-        yield UserEvent.clearMemberTime(event, user_qq)
+        yield await UserEvent.clearMemberTime(event, user_qq)
 
     @filter.command_group("我的", alias={"my"})
     async def my(self, event: AstrMessageEvent):
@@ -162,11 +149,11 @@ class KahunaBot(Star):
     @my.custom_filter(MemberFilter)
     @my.command('主角色', alias={"setmain"})
     async def my_setmain(self, event: AstrMessageEvent):
-        yield UserEvent.setMainCharacter(event)
+        yield await UserEvent.setMainCharacter(event)
 
     @filter.command('注册', alias={"sign"})
     async def my_sign(self, event: AstrMessageEvent):
-        yield UserEvent.sign(event)
+        yield await UserEvent.sign(event)
 
     @my.command("sheet")
     async def my_sheet(self, event: AstrMessageEvent, plan_name: str):
@@ -185,7 +172,7 @@ class KahunaBot(Star):
     @asset.custom_filter(AdminFilter)
     @asset.command("refall")
     async def asset_refall(self, event: AstrMessageEvent):
-        yield AssetEvent.refall(event)
+        yield await AssetEvent.refall(event)
 
     @asset.group("owner")
     async def asset_owner(self, event: AstrMessageEvent):
@@ -193,11 +180,11 @@ class KahunaBot(Star):
 
     @asset_owner.command("add")
     async def asset_owner_add(self, event: AstrMessageEvent, owner_type: str, character_name: str):
-        yield AssetEvent.owner_add(event, owner_type, character_name)
+        yield await AssetEvent.owner_add(event, owner_type, character_name)
 
     @asset_owner.command("ref")
     async def asset_owner_ref(self, event: AstrMessageEvent, owner_type: str, character_name: str):
-        yield AssetEvent.owner_refresh(event, owner_type, character_name)
+        yield await AssetEvent.owner_refresh(event, owner_type, character_name)
 
     @asset.group('库存', alias={"container"})
     async def asset_container(self, event: AstrMessageEvent):
@@ -205,7 +192,7 @@ class KahunaBot(Star):
 
     @asset_container.command('添加', alias={"add"})
     async def asset_container_add(self, event: AstrMessageEvent, location_id: int, location_flag: str, target_qq: int, container_name: str):
-        yield AssetEvent.container_add(event, location_id, location_flag, target_qq, container_name)
+        yield await AssetEvent.container_add(event, location_id, location_flag, target_qq, container_name)
 
     @asset_container.command('列表', alias= {"ls"})
     async def asset_container_ls(self, event: AstrMessageEvent):
@@ -213,7 +200,7 @@ class KahunaBot(Star):
 
     @asset_container.command('查找', alias={"find"})
     async def asset_container_find(self, event: AstrMessageEvent, secret_type: str):
-        yield AssetEvent.container_find(event, secret_type)
+        yield await AssetEvent.container_find(event, secret_type)
 
     @asset_container.command('设置标签', alias={"settag"})
     async def asset_container_settag(self, event: AstrMessageEvent, location_id_list: str, tag: str):
@@ -251,11 +238,11 @@ class KahunaBot(Star):
 
     @Inds_matcher.command('创建', alias={"create"})
     async def Inds_matcher_create(self, event: AstrMessageEvent, matcher_name: str, matcher_type:str):
-        yield IndsEvent.matcher_create(event, matcher_name, matcher_type)
+        yield await IndsEvent.matcher_create(event, matcher_name, matcher_type)
 
     @Inds_matcher.command('删除', alias={"del"})
     async def Inds_matcher_del(self, event: AstrMessageEvent, matcher_name: str):
-        yield IndsEvent.matcher_del(event, matcher_name)
+        yield await IndsEvent.matcher_del(event, matcher_name)
 
     @Inds_matcher.command('列表', alias={"ls"})
     async def Inds_matcher_ls(self, event: AstrMessageEvent):
@@ -265,13 +252,13 @@ class KahunaBot(Star):
     @Inds_matcher.command('详情', alias={"info"})
     async def Inds_matcher_info(self, event: AstrMessageEvent, matcher_name: str):
         """ 获取匹配器详情 """
-        yield IndsEvent.matcher_info(event, matcher_name)
+        yield await IndsEvent.matcher_info(event, matcher_name)
 
     @Inds_matcher.command('设置', alias={"set"})
     async def Inds_matcher_set(self, event: AstrMessageEvent, matcher_name: str, matcher_key_type: str):
         """ 配置匹配器 set {matcher_name[bp_matcher]} {matcher_key_type} {mater_eff} {time_eff}"""
         """ 配置匹配器 set {matcher_name[st_matcher]} {matcher_key_type} {mater_eff} {bp_name} {structure_id} """
-        yield IndsEvent.matcher_set(event, matcher_name, matcher_key_type)
+        yield await IndsEvent.matcher_set(event, matcher_name, matcher_key_type)
 
     @Inds_matcher.command('取消', alias= {"unset"})
     async def Inds_matcher_unset(self, event: AstrMessageEvent, matcher_name: str, matcher_key_type: str):
@@ -290,11 +277,11 @@ class KahunaBot(Star):
     @Inds_structure.command('信息', alias={"info"})
     async def Inds_structure_info(self, event: AstrMessageEvent, structure_id: int):
         ''' 打印指定id的建筑信息 '''
-        yield IndsEvent.structure_info(event, structure_id)
+        yield await IndsEvent.structure_info(event, structure_id)
 
     @Inds_structure.command('设置', alias={"set"})
     async def Inds_structure_set(self, event: AstrMessageEvent, structure_id: int, mater_rig_level: int, time_rig_level: int):
-        yield IndsEvent.structure_set(event, structure_id, mater_rig_level, time_rig_level)
+        yield await IndsEvent.structure_set(event, structure_id, mater_rig_level, time_rig_level)
 
     @Inds.group('计划', alias={"plan"})
     async def Inds_plan(self, event: AstrMessageEvent):
@@ -304,15 +291,11 @@ class KahunaBot(Star):
     async def Inds_plan_create(self, event: AstrMessageEvent, plan_name: str,
                                bp_matcher: str, st_matcher: str, prod_block_matcher: str
                                ):
-        yield IndsEvent.plan_create(event, plan_name, bp_matcher, st_matcher, prod_block_matcher)
+        yield await IndsEvent.plan_create(event, plan_name, bp_matcher, st_matcher, prod_block_matcher)
 
     @Inds_plan.command('设置时间', alias={"setcycletime"})
     async def Inds_plan_setcycletime(self, event: AstrMessageEvent, plan_name: str, tpye: str, cycle_time: int):
-        yield IndsEvent.plan_setcycletime(event, plan_name, tpye, cycle_time)
-
-    # @Inds_plan.command({"setline"})
-    # async def Inds_plan_setline(self, event: AstrMessageEvent, plan_name: str, tpye: str, line: int):
-    #     yield IndsEvent.plan_set_line(event, plan_name, tpye, line)
+        yield await IndsEvent.plan_setcycletime(event, plan_name, tpye, cycle_time)
 
     @Inds_plan.command('列表', alias= {"ls"})
     async def Inds_plan_ls(self, event: AstrMessageEvent, plan_name: str):
@@ -320,27 +303,27 @@ class KahunaBot(Star):
 
     @Inds_plan.command('增加产品', alias={"setprod"})
     async def Inds_plan_setprod(self, event: AstrMessageEvent, plan_name: str):
-        yield IndsEvent.plan_setprod(event, plan_name)
+        yield await IndsEvent.plan_setprod(event, plan_name)
 
     @Inds_plan.command('删除产品', alias={"delprod"})
     async def Inds_plan_delprod(self, event: AstrMessageEvent, plan_name: str, index: str):
-        yield IndsEvent.plan_delprod(event, plan_name, index)
+        yield await IndsEvent.plan_delprod(event, plan_name, index)
 
     @Inds_plan.command('删除计划', alias={"delplan"})
     async def Inds_plan_delplan(self, event: AstrMessageEvent, plan_name: str):
-        yield IndsEvent.plan_delplan(event, plan_name)
+        yield await IndsEvent.plan_delplan(event, plan_name)
 
     @Inds_plan.command('顺序交换', alias={"changeindex"})
     async def Inds_plan_changeindex(self, event: AstrMessageEvent, plan_name: str, index: int, new_index: int):
-        yield IndsEvent.plan_changeindex(event, plan_name, index, new_index)
+        yield await IndsEvent.plan_changeindex(event, plan_name, index, new_index)
 
     @Inds_plan.command('屏蔽库存', alias={"hidecontainer"})
     async def Inds_plan_hidecontainer(self, event: AstrMessageEvent, plan_name: str, container_id: int):
-        yield IndsEvent.plan_hidecontainer(event, plan_name, container_id)
+        yield await IndsEvent.plan_hidecontainer(event, plan_name, container_id)
 
     @Inds_plan.command('取消屏蔽库存', alias={"unhidecontainer"})
     async def Inds_plan_unhidecontainer(self, event: AstrMessageEvent, plan_name: str, container_id: int):
-        yield IndsEvent.plan_unhidecontainer(event, plan_name, container_id)
+        yield await IndsEvent.plan_unhidecontainer(event, plan_name, container_id)
 
     @Inds.group('报表', alias={"rp"})
     async def Inds_rp(self, event: AstrMessageEvent):
@@ -391,7 +374,7 @@ class KahunaBot(Star):
     @Inds.command("refjobs")
     async def Inds_refjobs(self, event: AstrMessageEvent):
         """ 刷新进行中的工作 """
-        yield IndsEvent.refjobs(event)
+        yield await IndsEvent.refjobs(event)
 
     @Inds.command('指南', alias={'help'})
     async def Inds_help(self, event: AstrMessageEvent):

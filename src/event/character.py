@@ -36,10 +36,10 @@ class CharacterEvent():
         return event.plain_result(f'{get_auth_url()}\n 请点击链接认证后，等待浏览器变为空白后，将链接使用.角色 添加 [链接] 指令私聊给机器人。')
 
     @staticmethod
-    def add(event: AstrMessageEvent, back_url):
+    async def add(event: AstrMessageEvent, back_url):
         user_qq = get_user(event)
         at, rt, et = get_token(back_url)
-        character_info = CharacterManager.create_new_character([at, rt, et], user_qq)
+        character_info = await CharacterManager.create_new_character([at, rt, et], user_qq)
         print_info = (f"绑定成功，信息已写入。\n"
                       f"角色名：{character_info['character_name']}\n"
                       f"QQ: {character_info['QQ']}\n"

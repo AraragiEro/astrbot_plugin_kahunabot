@@ -1,5 +1,6 @@
 
 import requests
+import aiohttp
 from cachetools import TTLCache, cached
 
 # kahuna logger
@@ -22,6 +23,18 @@ def get_request(url, **kwargs):
     else:
         logger.error(response.text)
         return None
+
+async def get_request_async(url, log=True, **kwargs):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, **kwargs) as response:
+            if response.status == 200:
+                data = await response.json()
+                return data
+            else:
+                response_text = await response.text()
+                if log:
+                    logger.warning(response_text)
+                return None
 
 def patch_request(url, **kwargs):
     response = requests.patch(url, **kwargs)

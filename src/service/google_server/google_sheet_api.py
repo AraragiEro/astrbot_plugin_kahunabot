@@ -41,9 +41,10 @@ class GoogleSheetApi:
     @property
     def server(self):
         try:
-            if self._server is None:
-                self._server = self.get_service()
-            return self._server
+            # if self._server is None:
+            #     self._server = self.get_service()
+            # return self._server
+            return self.get_service()
         except Exception as e:
             logger.error(f"get_server error: {e}")
             raise

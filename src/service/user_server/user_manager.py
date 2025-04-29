@@ -1,13 +1,10 @@
 from datetime import datetime
 from cachetools import TTLCache
-import asyncio
 from asyncio import Lock
-import threading
-import json
-
 
 from .user import User
-from ..database_server.model import User as M_User
+# from ..database_server.model import User as M_User
+from ..database_server.sqlalchemy.kahuna_database_utils import UserDBUtils
 from ..character_server.character_manager import CharacterManager
 from ..log_server import logger
 
@@ -23,19 +20,21 @@ class UserManager():
     user_dict = dict() # {qq_id: User()}
 
     @classmethod
-    def init(cls):
-        cls.init_user_dict()
+    async def init(cls):
+        await cls.init_user_dict()
 
     @classmethod
-    def init_user_dict(cls):
+    async def init_user_dict(cls):
         if not cls.init_status:
-            user_list = M_User.select()
+
+            user_list = await UserDBUtils.select_all()
             for user in user_list:
                 usr_obj = User(
                     qq=user.user_qq,
                     create_date=user.create_date,
                     expire_date=user.expire_date
                 )
+                await usr_obj.user_data.load_self_data()
                 if user.main_character_id:
                     usr_obj.main_character_id = user.main_character_id
                 cls.user_dict[usr_obj.user_qq] = usr_obj
@@ -51,19 +50,20 @@ class UserManager():
         return user.main_character_id
 
     @classmethod
-    def set_main_character(cls, qq: int, main_character: str):
+    async def set_main_character(cls, qq: int, main_character: str):
         user = cls.get_user(qq)
         main_character = CharacterManager.get_character_by_name_qq(main_character, qq)
         user.main_character_id = main_character.character_id
 
-        user.insert_to_db()
+        await user.insert_to_db()
 
     @classmethod
-    def create_user(cls, qq: int) -> User:
+    async def create_user(cls, qq: int) -> User:
         if (user := cls.user_dict.get(qq, None)) is None:
             user = User(qq=qq, create_date=datetime.now(), expire_date=datetime.now())
+            await user.user_data.load_self_data()
         user.init_time()
-        user.insert_to_db()
+        await user.insert_to_db()
         cls.user_dict[user.user_qq] = user
 
         return user
@@ -85,16 +85,16 @@ class UserManager():
         return user.add_member_time(days)
 
     @classmethod
-    def delete_user(cls, qq: int):
+    async def delete_user(cls, qq: int):
         if (user := cls.user_dict.get(qq, None)) is None:
             return
-        user.delete()
+        await user.delete()
         cls.user_dict.pop(qq)
 
     @classmethod
-    def clean_member_time(cls, qq: int) -> User:
+    async def clean_member_time(cls, qq: int) -> User:
         if (user := cls.user_dict.get(qq, None)) is None:
             raise KahunaException("用户不存在。")
-        user.clean_member_time()
+        await user.clean_member_time()
 
         return user

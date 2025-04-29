@@ -1,8 +1,12 @@
 import asyncio
-
+from cachetools import TTLCache, cached
 from playhouse.shortcuts import model_to_dict
 
-from ..database_server.model import Structure as M_Structure
+# from ..database_server.model import Structure as M_Structure
+from ..database_server.sqlalchemy.kahuna_database_utils import (
+    StructureDBUtils,
+    AssetDBUtils, AssetCacheDBUtils
+)
 from ..log_server import logger
 from ...service.sde_service.database import MapSolarSystems
 from ..evesso_server.eveesi import universe_stations_station, universe_structures_structure
@@ -25,13 +29,13 @@ class Structure:
         self.time_rig_level = time_rig_level
         self.mater_rig_level = mater_rig_level
 
-    def get_from_db(self):
-        return M_Structure.get_or_none(M_Structure.structure_id == self.structure_id)
+    async def get_from_db(self):
+        return await StructureDBUtils.select_structure_by_structure_id(self.structure_id)
 
-    def insert_to_db(self):
-        obj = self.get_from_db()
+    async def insert_to_db(self):
+        obj = await self.get_from_db()
         if not obj:
-            obj = M_Structure()
+            obj = StructureDBUtils.get_obj()
 
         obj.structure_id = self.structure_id
         obj.name = self.name
@@ -42,7 +46,7 @@ class Structure:
         obj.mater_rig_level = self.mater_rig_level
         obj.time_rig_level = self.time_rig_level
 
-        obj.save()
+        await StructureDBUtils.save_obj(obj)
 
     def __iter__(self):
         yield 'structure_id', self.structure_id
@@ -60,15 +64,15 @@ class StructureManager():
     init_status = False
 
     @classmethod
-    def init(cls):
-        cls.init_structure_dict()
+    async def init(cls):
+        await cls.init_structure_dict()
 
     @classmethod
-    def init_structure_dict(cls):
+    async def init_structure_dict(cls):
         if not cls.init_status:
-            for structure_data in M_Structure.select():
-                data = model_to_dict(structure_data)
-                data.pop('id')
+            for structure_data in await StructureDBUtils.select_all():
+                data = {k: v for k, v in structure_data.__dict__.items() if not k.startswith('_')}
+                # data.pop('id')
                 structure = Structure(**data)
                 cls.structure_dict[structure.structure_id] = structure
 
@@ -82,14 +86,14 @@ class StructureManager():
         return [structure for structure in cls.structure_dict.values()]
 
     @classmethod
-    def get_structure(cls, structure_id: int, ac_token=None) -> Structure | None:
+    async def get_structure(cls, structure_id: int, ac_token=None) -> Structure | None:
         structure = cls.structure_dict.get(structure_id, None)
         if not structure and ac_token:
-            structure = cls.get_new_structure_info(structure_id, ac_token=ac_token)
+            structure = await cls.get_new_structure_info(structure_id, ac_token=ac_token)
         return structure
 
     @classmethod
-    def get_new_structure_info(cls, structure_id: int, ac_token: str = None) -> dict:
+    async def get_new_structure_info(cls, structure_id: int, ac_token: str = None) -> dict|None:
         """
         "name": "4-HWWF - WinterCo. Central Station",
         "owner_id": 98599770,
@@ -105,9 +109,9 @@ class StructureManager():
         """
         info = None
         if len(str(structure_id)) <= 8:
-            info = universe_stations_station(structure_id)
+            info = await universe_stations_station(structure_id)
         elif ac_token:
-            info = universe_structures_structure(ac_token, structure_id)
+            info = await universe_structures_structure(ac_token, structure_id)
         else:
             raise ValueError("universe_structures_structure need ac_token.")
         if not info:
@@ -129,6 +133,38 @@ class StructureManager():
 
         new_structure = Structure(**structure_info)
         cls.structure_dict[structure_id] = new_structure
-        new_structure.insert_to_db()
+        await new_structure.insert_to_db()
 
         return new_structure
+
+    @staticmethod
+    async def find_type_structure(location_id, location_flag = None):
+        """
+        根据提供的location_id在AssetCache中进行查询，目标是找到一个顶层的location。
+        顶层的location符合如下特征之一：
+        1. location_type=="station", 则该条数据的location_id是顶层location
+        2. location_type=="solar_system", 则该条数据的item_id是顶层location
+        """
+        if_station_data = await AssetCacheDBUtils.select_one_asset_by_location_id_and_location_type(location_id, "station")
+        if if_station_data:
+            return if_station_data.location_id, if_station_data.location_flag
+
+        if_structure_data = await AssetCacheDBUtils.select_one_asset_by_location_id_and_location_type(location_id, "solar_system")
+        if if_structure_data:
+            return if_structure_data.item_id, if_structure_data.location_flag
+
+        father_data = await AssetCacheDBUtils.select_father_location_by_location_id(location_id)
+        if father_data:
+            return await StructureManager.get_structure_id_from_location_id(father_data.location_id, father_data.location_type)
+        return location_id, location_flag
+
+    type_stucture_cache = TTLCache(maxsize=1000, ttl=60 * 60 * 24)
+    @staticmethod
+    async def get_structure_id_from_location_id(location_id, location_flag = None):
+        if location_id in StructureManager.type_stucture_cache:
+            return StructureManager.type_stucture_cache[location_id]
+        else:
+            structure_id, structure_flag = await StructureManager.find_type_structure(location_id, location_flag)
+            StructureManager.type_stucture_cache[location_id] = (structure_id, structure_flag)
+            return structure_id, structure_flag
+

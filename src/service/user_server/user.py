@@ -1,13 +1,12 @@
-from pydantic import BaseModel
 from datetime import datetime, timedelta
 import json
-from functools import lru_cache
 
-from ..database_server.model import User as M_User, UserData as M_UserData
+from ..database_server.sqlalchemy.kahuna_database_utils import (
+    UserDataDBUtils,
+    UserDBUtils
+)
 from ..character_server.character_manager import CharacterManager
 from ...utils import KahunaException
-from ..feishu_server.feishu_kahuna import FeiShuKahuna
-
 
 class UserData():
     user_qq: int = 0
@@ -44,20 +43,20 @@ class UserData():
             "category": []
         }
 
-        self.load_self_data()
+        # await self.load_self_data()
 
-    def get_from_db(self) -> M_UserData:
-        return M_UserData.get_or_none(M_UserData.user_qq == self.user_qq)
+    async def get_from_db(self):
+        return await UserDataDBUtils.select_user_data_by_user_qq(self.user_qq)
 
-    def insert_to_db(self) -> None:
-        obj = M_UserData.get_or_none(M_UserData.user_qq == self.user_qq)
+    async def insert_to_db(self) -> None:
+        obj = await self.get_from_db()
         if not obj:
-            obj = M_UserData()
+            obj = UserDataDBUtils.get_obj()
 
         obj.user_qq = self.user_qq
         obj.user_data = self.dums_self_data()
 
-        obj.save()
+        UserDataDBUtils.save_obj(obj)
 
     def dums_self_data(self) -> str:
         data = {
@@ -66,8 +65,8 @@ class UserData():
 
         return json.dumps(data, indent=4)
 
-    def load_self_data(self) -> None:
-        data = self.get_from_db()
+    async def load_self_data(self) -> None:
+        data = await self.get_from_db()
         if not data:
             data_dict = {}
         else:
@@ -100,40 +99,36 @@ class UserData():
         self.feishu_sheet_token = token
 
 class User():
-    user_qq: int
-    create_date: datetime
-    expire_date: datetime
-    main_character_id: int = 0
-    plan_max: int = 5
-    user_data: UserData = None
-
     def __init__(self, qq: int, create_date: datetime, expire_date: datetime):
         self.user_qq = qq
         self.create_date = create_date
         self.expire_date = expire_date
 
         self.user_data = UserData(qq)
-        self.user_data.load_self_data()
+        self.main_character_id = None
+        self.plan_max = 5
+        self.user_data = UserData(qq)
+        # self.user_data.load_self_data()
 
-    def get_from_db(self):
-        return M_User.get_or_none(M_User.user_qq == self.user_qq)
+    async def get_from_db(self):
+        return await UserDBUtils.select_user_by_user_qq(self.user_qq)
 
     def init_time(self):
         self.create_date = datetime.now()
         self.expire_date = datetime.now()
 
-    def insert_to_db(self):
-        user_obj = M_User.get_or_none(M_User.user_qq == self.user_qq)
+    async def insert_to_db(self):
+        user_obj = await self.get_from_db()
         if not user_obj:
-            user_obj = M_User()
+            user_obj = UserDBUtils.get_obj()
 
         user_obj.user_qq = self.user_qq
         user_obj.create_date = self.create_date
         user_obj.expire_date = self.expire_date
         user_obj.main_character_id = self.main_character_id
 
-        user_obj.save()
-        self.user_data.insert_to_db()
+        await UserDBUtils.save_obj(user_obj)
+        await self.user_data.insert_to_db()
 
     @property
     def info(self):
@@ -150,32 +145,32 @@ class User():
     def member_status(self):
         return self.expire_date > datetime.now()
 
-    def add_member_time(self, day: int):
+    async def add_member_time(self, day: int):
         add_time = timedelta(days=day)
 
         self.expire_date = max(self.expire_date, datetime.now()) + add_time
-        self.insert_to_db()
+        await self.insert_to_db()
         return self.expire_date
 
-    def clean_member_time(self):
+    async def clean_member_time(self):
         self.expire_date = datetime.now()
-        self.insert_to_db()
+        await self.insert_to_db()
 
-    def delete(self):
-        user_obj = M_User.get_or_none(self.user_qq)
+    async def delete(self):
+        user_obj = await UserDBUtils.select_user_by_user_qq(self.user_qq)
         if not user_obj:
             return
 
-        user_obj.delete().execute()
+        await UserDBUtils.delete_user_by_user_qq(self.user_qq)
 
-    def set_plan_product(self, plan_name: str, product: str, quantity: int):
+    async def set_plan_product(self, plan_name: str, product: str, quantity: int):
         if plan_name not in self.user_data.plan:
             raise KahunaException(
                 "计划不存在，请使用 .Inds plan create [plan_name] [bp_matcher] [st_matcher] [prod_block_matcher] 创建")
         self.user_data.plan[plan_name]["plan"].append([product, quantity])
-        self.user_data.insert_to_db()
+        await self.user_data.insert_to_db()
 
-    def create_plan(self, plan_name: str,
+    async def create_plan(self, plan_name: str,
                     bp_matcher, st_matcher, prod_block_matcher
                     ):
         if len(self.user_data.plan) - 3 >= self.plan_max:
@@ -190,67 +185,55 @@ class User():
         self.user_data.plan[plan_name]['reaccycletime'] = 24
         self.user_data.plan[plan_name]['container_block'] = []
         self.user_data.plan[plan_name]["plan"] = []
-        self.user_data.insert_to_db()
+        await self.user_data.insert_to_db()
 
-    def delete_plan_prod(self, plan_name: str, index: int):
+    async def delete_plan_prod(self, plan_name: str, index: int):
         if plan_name not in self.user_data.plan:
             raise KahunaException("plan not found.")
         if 0 <= index < len(self.user_data.plan[plan_name]["plan"]):
             self.user_data.plan[plan_name]["plan"].pop(index)
-        self.user_data.insert_to_db()
+        await self.user_data.insert_to_db()
 
-    def set_manu_cycle_time(self, plan_name: str, cycle_time: int):
+    async def set_manu_cycle_time(self, plan_name: str, cycle_time: int):
         if plan_name not in self.user_data.plan:
             raise KahunaException("plan not found.")
         self.user_data.plan[plan_name]["manucycletime"] = cycle_time
-        self.user_data.insert_to_db()
+        await self.user_data.insert_to_db()
 
-    def set_reac_cycle_time(self, plan_name: str, cycle_time: int):
+    async def set_reac_cycle_time(self, plan_name: str, cycle_time: int):
         if plan_name not in self.user_data.plan:
             raise KahunaException("plan not found.")
         self.user_data.plan[plan_name]["reaccycletime"] = cycle_time
-        self.user_data.insert_to_db()
+        await self.user_data.insert_to_db()
 
-    def set_reac_line_num(self, plan_name: str, line_num: int):
-        if plan_name not in self.user_data.plan:
-            raise KahunaException("plan not found.")
-        self.user_data.plan[plan_name]["reaclinenum"] = line_num
-        self.user_data.insert_to_db()
-
-    def set_manu_line_num(self, plan_name: str, line_num: int):
-        if plan_name not in self.user_data.plan:
-            raise KahunaException("plan not found.")
-        self.user_data.plan[plan_name]["manulinenum"] = line_num
-        self.user_data.insert_to_db()
-
-    def delete_plan(self, plan_name: str):
+    async def delete_plan(self, plan_name: str):
         if plan_name not in self.user_data.plan:
             raise KahunaException("plan not found.")
         self.user_data.plan.pop(plan_name)
-        self.insert_to_db()
+        await self.insert_to_db()
 
-    def add_alias_character(self, character_id_list):
+    async def add_alias_character(self, character_id_list):
         for character_data in character_id_list:
             if character_data[0] not in self.user_data.alias:
                 self.user_data.alias[character_data[0]] = character_data[1]
-        self.user_data.insert_to_db()
+        await self.user_data.insert_to_db()
 
-    def add_container_block(self, plan_name: str, container_id: int):
+    async def add_container_block(self, plan_name: str, container_id: int):
         if plan_name not in self.user_data.plan:
             raise KahunaException("plan not found.")
         if "container_block" not in self.user_data.plan[plan_name]:
             self.user_data.plan[plan_name]["container_block"] = []
         if container_id not in self.user_data.plan[plan_name]["container_block"]:
             self.user_data.plan[plan_name]["container_block"].append(container_id)
-        self.user_data.insert_to_db()
+        await self.user_data.insert_to_db()
 
-    def del_container_block(self, plan_name: str, container_id: int):
+    async def del_container_block(self, plan_name: str, container_id: int):
         if plan_name not in self.user_data.plan:
             raise KahunaException("plan not found.")
         if "container_block" not in self.user_data.plan[plan_name]:
             self.user_data.plan[plan_name]["container_block"] = []
         if container_id in self.user_data.plan[plan_name]["container_block"]:
             self.user_data.plan[plan_name]["container_block"].remove(container_id)
-        self.user_data.insert_to_db()
+        await self.user_data.insert_to_db()
 
 

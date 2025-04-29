@@ -1,17 +1,15 @@
+from cachetools import TTLCache, cached
 
-from ..database_server.model import SystemCost as M_SystemCost, SystemCostCache as M_SystemCostCache
-from ..evesso_server.eveesi import industry_systems
-from ..database_server.connect import DatabaseConectManager
+from ..database_server.sqlalchemy.kahuna_database_utils import (
+    SystemCostCacheDBUtils, SystemCostDBUtils
+)
+from ..evesso_server import eveesi
 from ...utils import chunks
-
-# kahuna logger
-from ..log_server import logger
-
 
 class SystemCost:
     @classmethod
-    def refresh_system_cost(cls):
-        result = industry_systems()
+    async def refresh_system_cost(cls):
+        result = await eveesi.industry_systems(log=True)
 
         insert_data = []
         for item in result:
@@ -20,18 +18,26 @@ class SystemCost:
                 data[cost["activity"]] = cost["cost_index"]
             insert_data.append(data)
 
-        db = DatabaseConectManager.cache_db()
-        with db.atomic():
-            M_SystemCost.delete().execute()
-            for chunk in chunks(insert_data, 1000):
-                M_SystemCost.insert_many(chunk).execute()
+        await SystemCostDBUtils.delete_all()
+        for chunk in chunks(insert_data, 1000):
+            await SystemCostDBUtils.insert_many(chunk)
 
-        cls.copy_to_cache()
+        await cls.copy_to_cache()
 
     @classmethod
-    def copy_to_cache(cls):
-        db = DatabaseConectManager.cache_db()
-        with db.atomic():
-            M_SystemCostCache.delete().execute()
-            db.execute_sql("INSERT INTO system_cost_cache SELECT * FROM system_cost")
-            logger.info("system cost 复制数据到缓存")
+    async def copy_to_cache(cls):
+        await SystemCostCacheDBUtils.copy_base_to_cache()
+
+    system_cos_cache = TTLCache(maxsize=1000, ttl=20 * 60)
+    @staticmethod
+    async def get_system_cost(solar_system_id: int):
+        if solar_system_id in SystemCost.system_cos_cache:
+            return SystemCost.system_cos_cache[solar_system_id]
+        res = await SystemCostCacheDBUtils.select_system_cost_by_id(solar_system_id)
+
+        if res:
+            res = [res.manufacturing, res.reaction]
+            SystemCost.system_cos_cache[solar_system_id] = res
+            return res
+        else:
+            return 0.14, 0.14

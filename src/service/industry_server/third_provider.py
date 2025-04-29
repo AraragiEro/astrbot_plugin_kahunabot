@@ -1,7 +1,6 @@
 # third_provider.py
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict, Any, Optional, Type
-import logging
 import uuid
 import os
 from cachetools import TTLCache, cached
@@ -48,7 +47,7 @@ class Provider(ABC):
         pass
 
     @abstractmethod
-    def validate_assets(self, assets: List[Tuple[str, float]]) -> List[Tuple[str, float]]:
+    async def validate_assets(self, assets: List[Tuple[str, float]]) -> List[Tuple[str, float]]:
         """
         验证资产列表的格式和内容
 

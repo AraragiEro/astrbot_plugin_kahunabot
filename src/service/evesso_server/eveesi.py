@@ -1,83 +1,71 @@
 import requests
 from cachetools import TTLCache, cached
 import traceback
+import aiohttp
 
 # kahuna logger
+from ..log_server import logger
 
 permission_set = set()
 
-def get_request(url, headers=dict(), params=dict()):
-    response = requests.get(url, params=params, headers=headers)
-    if response.status_code == 200:
-        data = response.json()
-        return data  # 注意：实际的键可能不同，请参考 ESI 文档
-    else:
-        print(response.text)
-        return None
+async def get_request_async(url, headers=None, params=None, log=True):
+    if headers is None:
+        headers = {}
+    if params is None:
+        params = {}
 
-def verify_token(access_token):
-    return get_request(
-        "https://esi.evetech.net/verify/",
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params, headers=headers) as response:
+            if response.status == 200:
+                data = await response.json()
+                return data
+            else:
+                response_text = await response.text()
+                if log:
+                    logger.warning(response_text)
+                return None
 
-def character_character_id_skills(access_token, character_id):
-    return get_request(
-        f"https://esi.evetech.net/latest/characters/{character_id}/skills/",
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
 
-def character_character_id_wallet(access_token, character_id):
-    return get_request(
-        f"https://esi.evetech.net/latest/characters/{character_id}/wallet/",
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
+async def verify_token(access_token, log=True):
+    return await get_request_async("https://esi.evetech.net/verify/", headers={"Authorization": f"Bearer {access_token}"}, log=log)
 
-def character_character_id_portrait(access_token, character_id):
-    return get_request(
-        f"https://esi.evetech.net/latest/characters/{character_id}/portrait/",
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
+async def character_character_id_skills(access_token, character_id, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/skills/",
+                       headers={"Authorization": f"Bearer {access_token}"}, log=log)
 
-def characters_character_id_blueprints(page:int, access_token: str, character_id: int):
-    return get_request(
-        f"https://esi.evetech.net/latest/characters/{character_id}/blueprints/",
-        headers={"Authorization": f"Bearer {access_token}"},
-        params={"page": page}
-    )
+async def character_character_id_wallet(access_token, character_id, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/wallet/",
+                       headers={"Authorization": f"Bearer {access_token}"}, log=log)
 
-def industry_systems():
-    return get_request(
-        f"https://esi.evetech.net/latest/industry/systems/"
-    )
+async def character_character_id_portrait(access_token, character_id, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/portrait/",
+                       headers={"Authorization": f"Bearer {access_token}"}, log=log)
 
-def markets_structures(page: int, access_token: str, structure_id: int) -> dict:
-    return get_request(
-        f"https://esi.evetech.net/latest/markets/structures/{structure_id}/",
-        headers={"Authorization": f"Bearer {access_token}"},
-        params={"page": page}
-    )
+async def characters_character_id_blueprints(page:int, access_token: str, character_id: int, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/blueprints/",
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
 
-def markets_region_orders(page: int, region_id: int, type_id: int =None):
-    return get_request(
-        f"https://esi.evetech.net/latest/markets/{region_id}/orders/",
-        headers={},
-        params={"page": page, "type_id": type_id}
-    )
+async def industry_systems(log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/industry/systems/", log=log)
 
-def characters_character_assets(page: int, access_token: str, character_id: int):
+async def markets_structures(page: int, access_token: str, structure_id: int, log=True) -> dict:
+    return await get_request_async(f"https://esi.evetech.net/latest/markets/structures/{structure_id}/",
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
+
+async def markets_region_orders(page: int, region_id: int, type_id: int = None, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/markets/{region_id}/orders/", headers={},
+                       params={"page": page, "type_id": type_id}, log=log)
+
+async def characters_character_assets(page: int, access_token: str, character_id: int, log=True):
     """
 
     """
-    return get_request(
-        f"https://esi.evetech.net/latest/characters/{character_id}/assets/",
-        headers={"Authorization": f"Bearer {access_token}"},
-        params={"page": page}
-    )
+    return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/assets/",
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
 
 CHARACRER_INFO_CACHE = TTLCache(maxsize=10, ttl=1200)
 @cached(CHARACRER_INFO_CACHE)
-def characters_character(character_id):
+async def characters_character(character_id, log=True):
     """
 # alliance_id - Integer
 # birthday -  String (date-time)
@@ -91,11 +79,9 @@ def characters_character(character_id):
 # security_status - Float (min: -10, max: 10)
 # title - String
     """
-    return get_request(
-        f"https://esi.evetech.net/latest/characters/{character_id}/"
-    )
+    return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/", log=log)
 
-def corporations_corporation_assets(page: int, access_token: str, corporation_id: int):
+async def corporations_corporation_assets(page: int, access_token: str, corporation_id: int, log=True):
     """
     # is_blueprint_copy - Boolean
     # is_singleton - Boolean
@@ -106,36 +92,25 @@ def corporations_corporation_assets(page: int, access_token: str, corporation_id
     # quantity - Integer
     # type_id - Integer
     """
-    return get_request(
-        f"https://esi.evetech.net/latest/corporations/{corporation_id}/assets/",
-        headers={"Authorization": f"Bearer {access_token}"},
-        params={"page": page}
-    )
+    return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/assets/",
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
 
-def corporations_corporation_id_roles(access_token: str, corporation_id: int):
-    return get_request(
-        f"https://esi.evetech.net/latest/corporations/{corporation_id}/roles/",
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
+async def corporations_corporation_id_roles(access_token: str, corporation_id: int, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/roles/",
+                       headers={"Authorization": f"Bearer {access_token}"}, log=log)
 
-def corporations_corporation_id_industry_jobs(page: int, access_token: str, corporation_id: int, include_completed: bool = False):
-    return get_request(
-        f"https://esi.evetech.net/latest/corporations/{corporation_id}/industry/jobs/",
-        headers={"Authorization": f"Bearer {access_token}"},
-        params={
+async def corporations_corporation_id_industry_jobs(page: int, access_token: str, corporation_id: int, include_completed: bool = False, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/industry/jobs/",
+                       headers={"Authorization": f"Bearer {access_token}"}, params={
             "page": page,
             "include_completed": include_completed
-        }
-    )
+        }, log=log)
 
-def corporations_corporation_id_blueprints(page: int, access_token: str, corporation_id: int):
-    return get_request(
-        f"https://esi.evetech.net/latest/corporations/{corporation_id}/blueprints/",
-        headers={"Authorization": f"Bearer {access_token}"},
-        params={"page": page}
-    )
+async def corporations_corporation_id_blueprints(page: int, access_token: str, corporation_id: int, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/blueprints/",
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
 
-def universe_structures_structure(access_token: str, structure_id: int):
+async def universe_structures_structure(access_token: str, structure_id: int, log=True):
     """
     name*	string
     owner_id    int32
@@ -146,17 +121,13 @@ def universe_structures_structure(access_token: str, structure_id: int):
     solar_system_id
     type_id
     """
-    return get_request(
-        f"https://esi.evetech.net/latest/universe/structures/{structure_id}/",
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
+    return await get_request_async(f"https://esi.evetech.net/latest/universe/structures/{structure_id}/",
+                       headers={"Authorization": f"Bearer {access_token}"}, log=log)
 
-def universe_stations_station(station_id):
-    return get_request(
-        f"https://esi.evetech.net/latest/universe/stations/{station_id}/"
-    )
+async def universe_stations_station(station_id, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/universe/stations/{station_id}/", log=log)
 
-def characters_character_id_industry_jobs(access_token: str, character_id: int, include_completed: bool = False):
+async def characters_character_id_industry_jobs(access_token: str, character_id: int, include_completed: bool = False, log=True):
     """
     List character industry jobs
     Args:
@@ -167,27 +138,18 @@ def characters_character_id_industry_jobs(access_token: str, character_id: int, 
     Returns:
         Industry jobs placed by a character
     """
-    return get_request(
-        f"https://esi.evetech.net/latest/characters/{character_id}/industry/jobs/",
-        headers={
-            "Authorization": f"Bearer {access_token}"
-        },
-        params={
-            "include_completed": include_completed
-        }
-    )
+    return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/industry/jobs/", headers={
+        "Authorization": f"Bearer {access_token}"
+    }, params={
+        "include_completed": include_completed
+    }, log=log)
 
 
-def markets_prices():
-    return get_request(
-        f'https://esi.evetech.net/latest/markets/prices/'
-    )
+async def markets_prices(log=True):
+    return await get_request_async(f'https://esi.evetech.net/latest/markets/prices/', log=log)
 
 # /markets/{region_id}/history/
-def markets_region_history(region_id: int, type_id: int):
-    return get_request(
-        f"https://esi.evetech.net/latest/markets/{region_id}/history/",
-        headers={},
-        params={"type_id": type_id, "region_id": region_id}
-    )
+async def markets_region_history(region_id: int, type_id: int, log=True):
+    return await get_request_async(f"https://esi.evetech.net/latest/markets/{region_id}/history/", headers={},
+                       params={"type_id": type_id, "region_id": region_id}, log=log)
 

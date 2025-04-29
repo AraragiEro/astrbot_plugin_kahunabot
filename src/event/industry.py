@@ -63,9 +63,9 @@ def get_user(event: AstrMessageEvent):
 
 class AssetEvent():
     @staticmethod
-    def get_owner_id(owner_type: str, character_name: str, character) -> int:
+    async def get_owner_id(owner_type: str, character_name: str, character) -> int:
         if owner_type == "corp":
-            character_info = characters_character(character.character_id)
+            character_info = await characters_character(character.character_id)
             owner_id = int(character_info["corporation_id"])
         elif owner_type == "character":
             owner_id = character.character_id
@@ -75,41 +75,41 @@ class AssetEvent():
         return owner_id
 
     @classmethod
-    def refall(cls, event: AstrMessageEvent):
-        AssetManager.refresh_all_asset()
+    async def refall(cls, event: AstrMessageEvent):
+        await AssetManager.refresh_all_asset()
 
         return event.plain_result("执行完成")
 
     @staticmethod
-    def owner_add(event: AstrMessageEvent, owner_type: str, character_name: str):
+    async def owner_add(event: AstrMessageEvent, owner_type: str, character_name: str):
         user_qq = get_user(event)
         character_name = " ".join(event.get_message_str().split(" ")[4:])
         character = CharacterManager.get_character_by_name_qq(character_name, user_qq)
 
-        owner_id = AssetEvent.get_owner_id(owner_type, character_name, character)
+        owner_id = await AssetEvent.get_owner_id(owner_type, character_name, character)
 
-        asset = AssetManager.create_asset(user_qq, owner_type, owner_id, character)
+        asset = await AssetManager.create_asset(user_qq, owner_type, owner_id, character)
         return event.plain_result(f"库存已成功创建。\n"
-                                  f"库存条目 {asset.asset_item_count}")
+                                  f"库存条目 {await asset.asset_item_count()}")
 
     @staticmethod
-    def owner_refresh(event: AstrMessageEvent, owner_type: str, character_name: str):
+    async def owner_refresh(event: AstrMessageEvent, owner_type: str, character_name: str):
         user_qq = get_user(event)
         character_name = " ".join(event.get_message_str().split(" ")[4:])
         character = CharacterManager.get_character_by_name_qq(character_name, user_qq)
 
-        owner_id = AssetEvent.get_owner_id(owner_type, character_name, character)
+        owner_id = await AssetEvent.get_owner_id(owner_type, character_name, character)
 
-        asset = AssetManager.refresh_asset(owner_type, owner_id)
+        set = await AssetManager.refresh_asset(owner_type, owner_id)
         return event.plain_result("刷新完成")
 
     @staticmethod
-    def container_add(event: AstrMessageEvent, location_id: int, location_flag: str, target_qq: int, container_name: str):
+    async def container_add(event: AstrMessageEvent, location_id: int, location_flag: str, target_qq: int, container_name: str):
         user_qq = get_user(event)
 
         main_character_id = UserManager.get_main_character_id(user_qq)
         main_character = CharacterManager.get_character_by_id(main_character_id)
-        container = AssetManager.add_container(target_qq, location_id, location_flag, container_name, user_qq, main_character.ac_token)
+        container = await AssetManager.add_container(target_qq, location_id, location_flag, container_name, user_qq, await main_character.ac_token)
         print_info = (f"已授权 {target_qq} 使用属于 {user_qq} 的库存: {location_id}。\n")
         return event.plain_result(print_info)
 
@@ -125,7 +125,7 @@ class AssetEvent():
         return event.plain_result(print_str)
 
     @staticmethod
-    def container_find(event: AstrMessageEvent, secret_type: str):
+    async def container_find(event: AstrMessageEvent, secret_type: str):
         user_qq = get_user(event)
         secret_type = " ".join(event.get_message_str().split(" ")[3:])
         if SdeUtils.maybe_chinese(secret_type):
@@ -137,7 +137,7 @@ class AssetEvent():
 
         main_character_id = UserManager.get_main_character_id(user_qq)
         main_character = CharacterManager.get_character_by_id(main_character_id)
-        container_info = AssetContainer.find_container(secret_type, user_qq, main_character)
+        container_info = await AssetContainer.find_container(secret_type, user_qq, main_character)
 
         print_info = f"找到{len(container_info)}个符合条件的库存空间。\n"
         for container in container_info:
@@ -164,18 +164,18 @@ class AssetEvent():
 
 class IndsEvent:
     @staticmethod
-    def matcher_create(event: AstrMessageEvent, matcher_name: str, matcher_type: str):
+    async def matcher_create(event: AstrMessageEvent, matcher_name: str, matcher_type: str):
         user_qq = get_user(event)
         if matcher_type not in IndustryConfigManager.matcher_type_set:
             raise KahunaException(f"matcher_type {matcher_type} must be {IndustryConfigManager.matcher_type_set}")
-        matcher = IndustryConfigManager.add_matcher(matcher_name, user_qq, matcher_type)
+        matcher = await IndustryConfigManager.add_matcher(matcher_name, user_qq, matcher_type)
 
         return event.plain_result(f"已为用户 {user_qq} 添加适配器 {matcher.matcher_name}")
 
     @staticmethod
-    def matcher_del(event: AstrMessageEvent, matcher_name: str):
+    async def matcher_del(event: AstrMessageEvent, matcher_name: str):
         user_qq = get_user(event)
-        delete_matcher = IndustryConfigManager.delete_matcher(matcher_name, user_qq)
+        delete_matcher = await IndustryConfigManager.delete_matcher(matcher_name, user_qq)
         return event.plain_result(f"已删除工业系数匹配器： {delete_matcher.matcher_name}")
 
     @staticmethod
@@ -190,7 +190,7 @@ class IndsEvent:
         return event.plain_result(res_str)
 
     @staticmethod
-    def matcher_info(event: AstrMessageEvent, matcher_name: str):
+    async def matcher_info(event: AstrMessageEvent, matcher_name: str):
         user_qq = get_user(event)
         matcher = IndustryConfigManager.matcher_dict.get(matcher_name, None)
         if not matcher or matcher.user_qq != user_qq:
@@ -204,13 +204,13 @@ class IndsEvent:
             for matcher_key, matcher_data in matcher_datas.items():
                 prefix = "├── "
                 if matcher.matcher_type == "structure":
-                    matcher_data = StructureManager.get_structure(matcher_data).name
+                    matcher_data = await StructureManager.get_structure(matcher_data).name
                 res += f"{prefix}├── {matcher_key}: {matcher_data}\n"
 
         return event.plain_result(res)
 
     @staticmethod
-    def matcher_set(event: AstrMessageEvent, matcher_name:str, matcher_key_type: str):
+    async def matcher_set(event: AstrMessageEvent, matcher_name:str, matcher_key_type: str):
         config_data = event.get_message_str().split(" ")[5:]
         user_qq = get_user(event)
 
@@ -262,7 +262,7 @@ class IndsEvent:
                 matcher_key = SdeUtils.get_name_by_id(SdeUtils.get_id_by_name(matcher_key))
 
             character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(user_qq))
-            structure = StructureManager.get_structure(structure_id, character.ac_token)
+            structure = await StructureManager.get_structure(structure_id, await character.ac_token)
             if not structure:
                 return event.plain_result("获取建筑信息失败")
 
@@ -321,10 +321,10 @@ class IndsEvent:
         return event.plain_result("\n".join(print_list))
 
     @staticmethod
-    def structure_info(event: AstrMessageEvent, structure_id: int):
+    async def structure_info(event: AstrMessageEvent, structure_id: int):
         user_qq = get_user(event)
         character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(user_qq))
-        structure = StructureManager.get_structure(structure_id, character.ac_token)
+        structure = await StructureManager.get_structure(structure_id, await character.ac_token)
         return event.plain_result(
             f"name: {structure.name}\n"
             f"id: {structure.structure_id}\n"
@@ -335,16 +335,16 @@ class IndsEvent:
         )
 
     @staticmethod
-    def structure_set(event: AstrMessageEvent, structure_id: int, mater_rig_level: int, time_rig_level: int):
+    async def structure_set(event: AstrMessageEvent, structure_id: int, mater_rig_level: int, time_rig_level: int):
         if mater_rig_level < 0 or mater_rig_level > 2 \
             or time_rig_level < 0 or time_rig_level > 2:
             return event.plain_result("rig_level must be 0, 1 or 2")
         user_qq = get_user(event)
         character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(user_qq))
-        structrue = StructureManager.get_structure(structure_id, character.ac_token)
+        structrue = await StructureManager.get_structure(structure_id, await character.ac_token)
         structrue.mater_rig_level = mater_rig_level
         structrue.time_rig_level = time_rig_level
-        structrue.insert_to_db()
+        await structrue.insert_to_db()
 
         return event.plain_result(
             f"{structrue.name} {SdeUtils.get_name_by_id(structrue.type_id)} 已配置 "
@@ -352,7 +352,7 @@ class IndsEvent:
         )
 
     @staticmethod
-    def plan_setprod(event: AstrMessageEvent, plan_name: str):
+    async def plan_setprod(event: AstrMessageEvent, plan_name: str):
         user_qq = get_user(event)
         config_data = event.get_message_str().split(" ")[4:]
         prod_name = " ".join(config_data[:-1])
@@ -364,7 +364,7 @@ class IndsEvent:
         if not SdeUtils.get_id_by_name(prod_name):
             return print_name_fuzz_list(event, prod_name)
         user = UserManager.get_user(user_qq)
-        user.set_plan_product(plan_name, prod_name, quantity)
+        await user.set_plan_product(plan_name, prod_name, quantity)
         res_str = (f"计划已添加，当前计划：\n"
                    f"{plan_name}:\n")
         for index, plan in enumerate(user.user_data.plan[plan_name]["plan"]):
@@ -373,40 +373,27 @@ class IndsEvent:
         return event.plain_result(res_str)
 
     @staticmethod
-    def plan_setcycletime(event: AstrMessageEvent, plan_name:str, time_type: str, hour: int):
+    async def plan_setcycletime(event: AstrMessageEvent, plan_name:str, time_type: str, hour: int):
         user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if time_type == 'reac':
-            user.set_reac_cycle_time(plan_name, hour)
+            await user.set_reac_cycle_time(plan_name, hour)
         elif time_type == 'manu':
-            user.set_manu_cycle_time(plan_name, hour)
+            await user.set_manu_cycle_time(plan_name, hour)
         else:
             return event.plain_result(f"args: [plan name] [reac/manu] [hour]")
 
         return event.plain_result(f"执行完成。计划{plan_name}的{time_type}最长流程时间已设置为{hour}小时")
 
     @staticmethod
-    def plan_set_line(event:AstrMessageEvent, plan_name:str, line_type: str, line_num:int):
-        user_qq = get_user(event)
-        user = UserManager.get_user(user_qq)
-        if line_type == 'reac':
-            user.set_reac_line_num(plan_name, line_num)
-        elif line_type == 'manu':
-            user.set_manu_line_num(plan_name, line_num)
-        else:
-            return event.plain_result(f"args: [plan name] [read/manu] [line num]")
-
-        return event.plain_result(f"执行完成。计划{plan_name}的{line_type}反应线设为{line_num}")
-
-    @staticmethod
-    def plan_create(event: AstrMessageEvent, plan_name: str,
+    async def plan_create(event: AstrMessageEvent, plan_name: str,
                     bp_matcher_name: str, st_matcher_name: str, prod_block_matcher_name: str):
         user_qq = get_user(event)
         bp_matcher = IndustryConfigManager.get_matcher_of_user_by_name(bp_matcher_name, user_qq)
         st_matcher = IndustryConfigManager.get_matcher_of_user_by_name(st_matcher_name, user_qq)
         prod_block_matcher = IndustryConfigManager.get_matcher_of_user_by_name(prod_block_matcher_name, user_qq)
         user = UserManager.get_user(user_qq)
-        user.create_plan(plan_name, bp_matcher, st_matcher, prod_block_matcher)
+        await user.create_plan(plan_name, bp_matcher, st_matcher, prod_block_matcher)
 
         return event.plain_result("计划已创建")
 
@@ -420,7 +407,7 @@ class IndsEvent:
         return event.plain_result(plan_detail)
 
     @staticmethod
-    def plan_delprod(event: AstrMessageEvent, plan_name: str, index_list: str):
+    async def plan_delprod(event: AstrMessageEvent, plan_name: str, index_list: str):
         user_qq = get_user(event)
         index_list = index_list.split(",")
         index_list = [int(index) for index in index_list]
@@ -428,12 +415,12 @@ class IndsEvent:
 
         user = UserManager.get_user(user_qq)
         for index in index_list:
-            user.delete_plan_prod(plan_name, index - 1)
+            await user.delete_plan_prod(plan_name, index - 1)
 
         return event.plain_result("执行完成")
 
     @staticmethod
-    def plan_changeindex(event: AstrMessageEvent, plan_name: str, index: int, target_index: int):
+    async def plan_changeindex(event: AstrMessageEvent, plan_name: str, index: int, target_index: int):
         user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
 
@@ -448,36 +435,36 @@ class IndsEvent:
 
         plan = user.user_data.plan[plan_name]["plan"].pop(index - 1)
         user.user_data.plan[plan_name]["plan"].insert(target_index - 1, plan)
-        user.insert_to_db()
+        await user.insert_to_db()
 
         return event.plain_result("执行完成。")
 
     @staticmethod
-    def plan_delplan(event: AstrMessageEvent, plan_name: str):
+    async def plan_delplan(event: AstrMessageEvent, plan_name: str):
         user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
-        user.delete_plan(plan_name)
+        await user.delete_plan(plan_name)
 
         return event.plain_result("执行完成")
 
     @staticmethod
-    def plan_hidecontainer(event: AstrMessageEvent, plan_name: str, container_id: int):
+    async def plan_hidecontainer(event: AstrMessageEvent, plan_name: str, container_id: int):
         user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
 
-        user.add_container_block(plan_name, container_id)
+        await user.add_container_block(plan_name, container_id)
         return event.plain_result("执行完成")
 
     @staticmethod
-    def plan_unhidecontainer(event: AstrMessageEvent, plan_name: str, container_id: int):
+    async def plan_unhidecontainer(event: AstrMessageEvent, plan_name: str, container_id: int):
         user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
 
-        user.del_container_block(plan_name, container_id)
+        await user.del_container_block(plan_name, container_id)
         return event.plain_result("执行完成")
 
     @staticmethod
@@ -490,13 +477,9 @@ class IndsEvent:
                 if plan_name not in user.user_data.plan:
                     raise KahunaException(f"plan {plan_name} not exist")
 
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    analyser = IndustryAnalyser.get_analyser_by_plan(user, plan_name)
-                    analyser.bp_block_level = 2
-                    future = executor.submit(analyser.get_work_tree_data)
-                    while not future.done():
-                        await asyncio.sleep(1)
-                    report = future.result()
+                analyser = IndustryAnalyser.get_analyser_by_plan(user, plan_name)
+                analyser.bp_block_level = 2
+                report = await analyser.get_work_tree_data()
 
                 spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
                 FeiShuKahuna.create_default_spreadsheet(spreadsheet)
@@ -600,7 +583,7 @@ class IndsEvent:
                 continue
             new_data = [
                 {'id': d[0],
-                 'icon': PriceResRender.get_eve_item_icon_base64(d[0]),
+                 'icon': await PriceResRender.get_eve_item_icon_base64(d[0]),
                  'name': d[1],
                  'cn_name': d[2],
                  'lack': d[3]} for d in data if d[3] > 0
@@ -623,26 +606,20 @@ class IndsEvent:
                 user = UserManager.get_user(user_qq)
                 if plan_name not in user.user_data.plan:
                     raise KahunaException(f"plan {plan_name} not exist")
-                #
-                # t2_ship_list = SdeUtils.get_t2_ship()
-                # t2_plan = [[ship, 1] for ship in t2_ship_list]
-                #
-                # t2_cost_data = IndustryAnalyser.get_cost_data(user, plan_name, t2_plan)
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    t2_ship_list = SdeUtils.get_t2_ship()
-                    t2_ship_id_list = [SdeUtils.get_id_by_name(name) for name in t2_ship_list]
-                    await MarketHistory.refresh_vale_market_history(t2_ship_id_list)
 
-                    # t2mk_data = IndustryAdvice.t2_ship_advice_report(user, plan_name)
-                    future = executor.submit(IndustryAdvice.advice_report, user, plan_name, t2_ship_list)
-                    while not future.done():
-                        await asyncio.sleep(1)
-                    t2mk_dict = future.result()
-                    t2mk_data = [list(data.values()) for data in t2mk_dict.values()]
+                t2_ship_list = SdeUtils.get_t2_ship()
+                t2_ship_id_list = [SdeUtils.get_id_by_name(name) for name in t2_ship_list]
+                await MarketHistory.refresh_vale_market_history(t2_ship_id_list)
+
+                # t2mk_data = IndustryAdvice.t2_ship_advice_report(user, plan_name)
+                t2mk_dict = await IndustryAdvice.advice_report(user, plan_name, t2_ship_list)
+                t2mk_data = [list(data.values()) for data in t2mk_dict.values()]
 
                 asset_dict = {}
-                sell_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, 'sell')
-                sell_asset_result = AssetManager.get_asset_in_container_list(sell_container_list)
+                sell_container_list = await AssetContainer.get_contain_id_by_qq_tag(user_qq, 'sell')
+                sell_asset_result = await AssetManager.get_asset_in_container_list(
+                    [container.asset_location_id for container in sell_container_list]
+                )
                 for asset in sell_asset_result:
                     if asset.type_id not in asset_dict:
                         asset_dict[asset.type_id] = asset.quantity
@@ -682,15 +659,11 @@ class IndsEvent:
         if plan_name not in user.user_data.plan:
             raise KahunaException(f"plan {plan_name} not exist")
 
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            battleship_list = SdeUtils.get_battleship()
-            battalship_ship_id_list = [SdeUtils.get_id_by_name(name) for name in battleship_list]
-            await MarketHistory.refresh_vale_market_history(battalship_ship_id_list)
-            future = executor.submit(IndustryAdvice.advice_report, user, plan_name, battleship_list)
-            while not future.done():
-                await asyncio.sleep(1)
-            battalship_mk_dict = future.result()
-            battalship_mk_data = [list(data.values()) for data in battalship_mk_dict.values()]
+        battleship_list = SdeUtils.get_battleship()
+        battalship_ship_id_list = [SdeUtils.get_id_by_name(name) for name in battleship_list]
+        await MarketHistory.refresh_vale_market_history(battalship_ship_id_list)
+        battalship_mk_dict = await IndustryAdvice.advice_report(user, plan_name, battleship_list)
+        battalship_mk_data = [list(data.values()) for data in battalship_mk_dict.values()]
 
         for data in battalship_mk_data:
             if data[-1] == 'Faction':
@@ -757,7 +730,7 @@ class IndsEvent:
                 if (type_id := SdeUtils.get_id_by_name(product)) is None:
                     return print_name_fuzz_list(event, product)
 
-                detail_dict = IndustryAnalyser.get_cost_detail(user, plan_name, product)
+                detail_dict = await IndustryAnalyser.get_cost_detail(user, plan_name, product)
                 detail_dict.update({'name': SdeUtils.get_name_by_id(type_id), 'cn_name': SdeUtils.get_cn_name_by_id(type_id)})
                 spreadsheet = FeiShuKahuna.create_user_plan_spreadsheet(user_qq, plan_name)
                 cost_sheet = FeiShuKahuna.get_detail_cost_sheet(spreadsheet)
@@ -785,8 +758,10 @@ class IndsEvent:
         else:
             user_qq = int(config['APP']['CORP_ASSET_USER'])
 
-        sell_container_list = AssetContainer.get_contain_id_by_qq_tag(user_qq, 'sell')
-        sell_asset_result = AssetManager.get_asset_in_container_list(sell_container_list)
+        sell_container_list = await AssetContainer.get_contain_id_by_qq_tag(user_qq, 'sell')
+        sell_asset_result = await AssetManager.get_asset_in_container_list(
+            [container.asset_location_id for container in sell_container_list]
+        )
         sell_asset_list = list(sell_asset_result)
 
         sell_asset_list2 = [
@@ -805,7 +780,7 @@ class IndsEvent:
     async def rp_asset_statistic(event: AstrMessageEvent):
         user_qq = get_user(event)
 
-        data = IndustryAdvice.personal_asset_statistics(user_qq)
+        data = await IndustryAdvice.personal_asset_statistics(user_qq)
         pic_output = await PriceResRender.render_asset_statistic_report(data)
 
         chain = [
@@ -814,8 +789,8 @@ class IndsEvent:
         return event.chain_result(chain)
 
     @staticmethod
-    def refjobs(event: AstrMessageEvent):
-        IndustryManager.refresh_running_status()
+    async def refjobs(event: AstrMessageEvent):
+        await IndustryManager.refresh_running_status()
 
         return event.plain_result("执行完成")
 
@@ -823,21 +798,16 @@ class IndsEvent:
 class MarketEvent:
     @staticmethod
     async def market_reforder(event: AstrMessageEvent):
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(MarketManager.refresh_market)
+        res_log = await MarketManager.refresh_market()
 
-            while not future.done():
-                await asyncio.sleep(1)
-
-            res_log = future.result()
-            return event.plain_result(res_log)
+        return event.plain_result(res_log)
 
     @staticmethod
     async def market_set_ac(event: AstrMessageEvent):
         user_qq = get_user(event)
         character_name = ' '.join(event.get_message_str().split(" ")[2:])
         character = CharacterManager.get_character_by_name_qq(character_name, user_qq)
-        MarketManager.set_ac_character(character.character_id)
+        await MarketManager.set_ac_character(character.character_id)
         return event.plain_result(f"设置市场访问角色为 {character_name}")
 
     @staticmethod

@@ -5,6 +5,7 @@ from peewee import DoesNotExist
 from ..sde_service import SdeUtils
 from ..sde_service.database import IndustryActivityMaterials, IndustryActivityProducts, IndustryBlueprints
 
+
 class BPManager:
     @classmethod
     @lru_cache(maxsize=1000)

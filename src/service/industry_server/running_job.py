@@ -1,18 +1,21 @@
 from tqdm import tqdm
 
-from ..database_server.model import IndustryJobs as M_IndustryJobs, IndustryJobsCache as M_IndustryJobsCache
+# from ..database_server.model import IndustryJobs as M_IndustryJobs, IndustryJobsCache as M_IndustryJobsCache
+from ..database_server.sqlalchemy.kahuna_database_utils import (
+    IndustryJobsDBUtils, IndustryJobsCacheDBUtils
+)
 from ..character_server.character import Character
 from ..evesso_server.eveesi import characters_character_id_industry_jobs, corporations_corporation_id_industry_jobs
 from ..evesso_server.eveutils import find_max_page, get_multipages_result
-from ..database_server.connect import DatabaseConectManager
+# from ..database_server.connect import DatabaseConectManager
 
 # kahuna logger
 from ..log_server import logger
 
 class RunningJobOwner:
     @classmethod
-    def refresh_character_running_job(cls, character: Character):
-        character_running_job = characters_character_id_industry_jobs(character.ac_token, character.character_id)
+    async def refresh_character_running_job(cls, character: Character):
+        character_running_job = await characters_character_id_industry_jobs(await character.ac_token, character.character_id)
         if not character_running_job:
             return
 
@@ -20,45 +23,28 @@ class RunningJobOwner:
             data['location_id'] = data['station_id']
             data.pop('station_id')
             data.update({'owner_id': character.character_id})
-        db = DatabaseConectManager.cache_db()
-        with db.atomic():
-            M_IndustryJobs.delete().where(M_IndustryJobs.owner_id == character.character_id).execute()
-            M_IndustryJobs.insert_many(character_running_job).execute()
+        await IndustryJobsDBUtils.delete_jobs_by_owner_id(character.character_id)
+        await IndustryJobsDBUtils.insert_many(character_running_job)
 
     @classmethod
-    def refresh_corp_running_job(cls, corp_id, character: Character):
-        max_page = find_max_page(corporations_corporation_id_industry_jobs, character.ac_token, corp_id,
+    async def refresh_corp_running_job(cls, corp_id, character: Character):
+        max_page = await find_max_page(corporations_corporation_id_industry_jobs, await character.ac_token, corp_id,
                                  begin_page=1, interval=2)
         logger.info("请求刷新进行中job。")
-        results = get_multipages_result(corporations_corporation_id_industry_jobs, max_page, character.ac_token, corp_id)
-        db = DatabaseConectManager.cache_db()
-        with db.atomic():
-            M_IndustryJobs.delete().where(M_IndustryJobs.owner_id == corp_id).execute()
-            with tqdm(total=len(results), desc="写入数据库", unit="page", ascii='=-') as pbar:
-                for result in results:
-                    for jobs in result:
-                        jobs.update({'owner_id': corp_id})
-                    M_IndustryJobs.insert_many(result).execute()
+        results = await get_multipages_result(corporations_corporation_id_industry_jobs, max_page, await character.ac_token, corp_id)
+        await IndustryJobsDBUtils.delete_jobs_by_owner_id(corp_id)
+        await IndustryJobsDBUtils.insert_many(results)
 
     @classmethod
-    def copy_to_cache(cls):
-        M_IndustryJobsCache.delete().execute()
-        db = DatabaseConectManager.cache_db()
-        db.execute_sql(
-            f"INSERT INTO {M_IndustryJobsCache._meta.table_name} SELECT * FROM {M_IndustryJobs._meta.table_name}")
-        logger.info("job 复制数据到缓存")
+    async def copy_to_cache(cls):
+        await IndustryJobsCacheDBUtils.copy_base_to_cache()
 
     @classmethod
-    def get_job_with_starter(cls, character_id_list: list):
-        res = M_IndustryJobsCache.select().where(M_IndustryJobsCache.installer_id.in_(character_id_list))
-
-        return res
+    async def get_job_with_starter(cls, character_id_list: list):
+        return await IndustryJobsCacheDBUtils.select_jobs_by_installer_id_list(character_id_list)
 
     @classmethod
-    def get_using_bp_set(cls):
-        res = M_IndustryJobsCache.select(M_IndustryJobsCache.blueprint_id)
-        bp_set = set()
-        for job in res:
-            bp_set.add(job.blueprint_id)
+    async def get_using_bp_set(cls):
+        running_jobs = await IndustryJobsCacheDBUtils.select_all()
 
-        return bp_set
+        return set(job.blueprint_id for job in running_jobs)

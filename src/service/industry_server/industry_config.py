@@ -5,7 +5,8 @@ import asyncio
 
 from .blueprint import BPManager
 from ..sde_service import SdeUtils
-from ..database_server.model import Matcher as M_Matcher
+# from ..database_server.model import Matcher as M_Matcher
+from ..database_server.sqlalchemy.kahuna_database_utils import MatcherDBUtils
 from ..log_server import logger
 from .structure import Structure
 from ...utils import KahunaException
@@ -135,13 +136,14 @@ class IndustryConfigManager():
         return mater_eff
 
     @classmethod
-    def init(cls):
-        cls.init_matcher_dict()
+    async def init(cls):
+        await cls.init_matcher_dict()
 
     @classmethod
-    def init_matcher_dict(cls):
+    async def init_matcher_dict(cls):
         if not cls.init_matcher_status:
-            for matcher_data in M_Matcher.select():
+            matcher_list = await MatcherDBUtils.select_all()
+            for matcher_data in matcher_list:
                 cls.matcher_dict[matcher_data.matcher_name] = Matcher.init_from_db_data(matcher_data)
                 logger.info(f'初始化匹配器 {matcher_data.matcher_name}.')
             cls.init_matcher_status = True
@@ -149,22 +151,22 @@ class IndustryConfigManager():
 
 
     @classmethod
-    def add_matcher(cls, matcher_name: str, user_qq: int, matcher_type: str) -> Matcher:
+    async def add_matcher(cls, matcher_name: str, user_qq: int, matcher_type: str) -> Matcher:
         if matcher_name in cls.matcher_dict:
             raise KeyError(f'Matcher {matcher_name} already exists')
 
         matcher = Matcher(matcher_name, user_qq, matcher_type)
         cls.matcher_dict[matcher_name] = matcher
-        matcher.insert_to_db()
+        await matcher.insert_to_db()
         return matcher
 
     @classmethod
-    def delete_matcher(cls, matcher_name: str, user_qq: int) -> Matcher:
+    async def delete_matcher(cls, matcher_name: str, user_qq: int) -> Matcher:
         if matcher_name not in cls.matcher_dict:
             raise KeyError(f'Matcher {matcher_name} does not exist')
 
         matcher = cls.matcher_dict[matcher_name]
-        matcher.delete_from_db()
+        await matcher.delete_from_db()
         return cls.matcher_dict.pop(matcher_name)
 
     @classmethod

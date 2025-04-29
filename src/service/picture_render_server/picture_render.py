@@ -1,5 +1,5 @@
 # import logger
-from astrbot.api import logger
+import aiohttp
 import imgkit
 import os
 import sys
@@ -16,6 +16,7 @@ from ..market_server import MarketManager
 from ..config_server.config import config
 from ...utils import KahunaException, get_beijing_utctime
 from ...utils.path import TMP_PATH, RESOURCE_PATH
+from ..log_server import logger
 
 # 模板目录
 template_path = os.path.join(RESOURCE_PATH, "templates")
@@ -59,7 +60,7 @@ class PriceResRender():
         # 根据是否有模糊匹配结果选择模板
         try:
             # 下载并转换物品图片
-            item_image_path = cls.download_eve_item_image(SdeUtils.get_id_by_name(item_name))  # 这里的ID需要根据实际物品ID修改
+            item_image_path = await cls.download_eve_item_image(SdeUtils.get_id_by_name(item_name))  # 这里的ID需要根据实际物品ID修改
             item_image_base64 = cls.get_image_base64(item_image_path) if item_image_path else None
 
             template = env.get_template('price_template.j2')
@@ -126,7 +127,7 @@ class PriceResRender():
         item_id = single_cost_data['type_id']
         item_name = SdeUtils.get_name_by_id(item_id)
         iten_name_cn = SdeUtils.get_cn_name_by_id(item_id)
-        item_icon_url = cls.get_eve_item_icon_base64(item_id)
+        item_icon_url = await cls.get_eve_item_icon_base64(item_id)
 
         # 3.
         jita_buy, jita_mid, jita_sell, _ = single_cost_data["market_detail"]
@@ -209,7 +210,7 @@ class PriceResRender():
         jita_mk = MarketManager.get_market_by_type('jita')
         items = []
         for asset in sell_asset_list:
-            buy, sell = jita_mk.get_type_order_rouge(asset.type_id)
+            buy, sell = await jita_mk.get_type_order_rouge(asset.type_id)
             if price_type == 'mid':
                 price = (buy + sell) / 2
             elif price_type == 'buy':
@@ -219,7 +220,7 @@ class PriceResRender():
             if sell == 0:
                 price = '价格详谈'
             data = {
-                'icon': PriceResRender.get_eve_item_icon_base64(asset.type_id),
+                'icon': await PriceResRender.get_eve_item_icon_base64(asset.type_id),
                 'id': asset.type_id,
                 'name': SdeUtils.get_name_by_id(asset.type_id),
                 'cn_name': SdeUtils.get_cn_name_by_id(asset.type_id),
@@ -461,14 +462,14 @@ class PriceResRender():
 
 
     @classmethod
-    def get_eve_item_icon_base64(cls, type_id: int):
-        item_image_path = cls.download_eve_item_image(type_id)  # 这里的ID需要根据实际物品ID修改
+    async def get_eve_item_icon_base64(cls, type_id: int):
+        item_image_path = await cls.download_eve_item_image(type_id)  # 这里的ID需要根据实际物品ID修改
         item_image_base64 = cls.get_image_base64(item_image_path) if item_image_path else None
 
         return item_image_base64
 
     @classmethod
-    def download_eve_item_image(cls, type_id: int, size: int = 64) -> str:
+    async def download_eve_item_image(cls, type_id: int, size: int = 64) -> str:
         """
         下载EVE物品图片
         :param type_id: 物品ID
@@ -491,49 +492,56 @@ class PriceResRender():
         # 尝试从主URL下载
         try:
             # 下载图片，禁用SSL验证
-            response = requests.get(url, verify=False, timeout=10)
-            response.raise_for_status()  # 检查请求是否成功
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, ssl=False, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        content = await response.read()
+                        # 保存图片
+                        with open(local_path, 'wb') as f:
+                            f.write(content)
 
-            # 保存图片
-            with open(local_path, 'wb') as f:
-                f.write(response.content)
-
-            logger.info(f"成功下载物品图片: {type_id}")
-            return local_path
+                        logger.info(f"成功下载物品图片: {type_id}")
+                        return local_path
+                    else:
+                        raise Exception(f"请求状态码: {response.status}")
         except Exception as e:
             logger.error(f"从主URL下载EVE物品图片失败: {e}")
-            
+
             # 尝试备用URL
             try:
                 # 备用URL
                 backup_url = f"https://imageserver.eveonline.com/Type/{type_id}_{size}.png"
                 logger.info(f"尝试从备用URL下载: {backup_url}")
-                
-                response = requests.get(backup_url, verify=False, timeout=10)
-                response.raise_for_status()
-                
-                with open(local_path, 'wb') as f:
-                    f.write(response.content)
-                
-                logger.info(f"从备用URL成功下载物品图片: {type_id}")
-                return local_path
+
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(backup_url, ssl=False, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                        if response.status == 200:
+                            content = await response.read()
+                            with open(local_path, 'wb') as f:
+                                f.write(content)
+
+                            logger.info(f"从备用URL成功下载物品图片: {type_id}")
+                            return local_path
+                        else:
+                            raise Exception(f"备用URL请求状态码: {response.status}")
+
             except Exception as backup_e:
                 logger.error(f"从备用URL下载EVE物品图片也失败: {backup_e}")
-                
-                # 如果两个URL都失败，返回默认图片路径
-                default_image = os.path.join(RESOURCE_PATH, "img", "default_item.png")
-                
-                # 如果默认图片不存在，创建一个简单的默认图片
-                if not os.path.exists(default_image):
-                    try:
-                        # 创建一个简单的1x1像素透明PNG
-                        with open(default_image, 'wb') as f:
-                            f.write(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="))
-                    except Exception:
-                        logger.error("无法创建默认图片")
-                        return None
-                
-                return default_image
+
+            # 如果两个URL都失败，返回默认图片路径
+            default_image = os.path.join(RESOURCE_PATH, "img", "default_item.png")
+
+            # 如果默认图片不存在，创建一个简单的默认图片
+            if not os.path.exists(default_image):
+                try:
+                    # 创建一个简单的1x1像素透明PNG
+                    with open(default_image, 'wb') as f:
+                        f.write(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="))
+                except Exception:
+                    logger.error("无法创建默认图片")
+                    return None
+
+            return default_image
 
     @classmethod
     def get_image_base64(cls, image_path: str) -> str:

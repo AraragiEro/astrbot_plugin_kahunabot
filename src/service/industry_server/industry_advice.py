@@ -16,7 +16,11 @@ from ..market_server.marker import MarketHistory
 from ..market_server.market_manager import MarketManager
 from ..asset_server.asset_manager import AssetManager
 from ..character_server.character_manager import CharacterManager
-from ..database_server.utils import UserAssetStatisticsUtils, RefreshDateUtils
+# from ..database_server.utils import UserAssetStatisticsUtils
+from ..database_server.sqlalchemy.kahuna_database_utils import (
+    RefreshDataDBUtils,
+    UserAssetStatisticsDBUtils
+)
 from .blueprint import BPManager
 from ..log_server import logger
 
@@ -25,7 +29,7 @@ class IndustryAdvice:
     personal_asset_statistics_lock = False
 
     @classmethod
-    def advice_report(cls, user: User, plan_name: str, product_list: list):
+    async def advice_report(cls, user: User, plan_name: str, product_list: list):
         jita_mk = MarketManager.get_market_by_type('jita')
         vale_mk = MarketManager.get_market_by_type('frt')
 
@@ -39,9 +43,9 @@ class IndustryAdvice:
         t2ship_dict = {}
         for data in t2_cost_data:
             tid = SdeUtils.get_id_by_name(data[0])
-            vale_mk_his_data, forge_mk_his_data = MarketHistory.get_type_history_detale(tid)
-            frt_buy, frt_sell = vale_mk.get_type_order_rouge(tid)
-            jita_buy, jita_sell = jita_mk.get_type_order_rouge(tid)
+            vale_mk_his_data, forge_mk_his_data = await MarketHistory.get_type_history_detale(tid)
+            frt_buy, frt_sell = await vale_mk.get_type_order_rouge(tid)
+            jita_buy, jita_sell = await jita_mk.get_type_order_rouge(tid)
 
             market_data = [
                 tid,        # id
@@ -118,11 +122,11 @@ class IndustryAdvice:
         }
         target_price_index = 0 if material_flag == 'buy' else 1
         target_price = {
-            target: jita_market.get_type_order_rouge(target)[target_price_index] for target in ref_target
+            target: (await jita_market.get_type_order_rouge(target))[target_price_index] for target in ref_target
         }
         source_price_index = 0 if compress_flag == 'buy' else 1
         source_price = {
-            source: jita_market.get_type_order_rouge(source)[source_price_index] for source in ref_source_dict.keys()
+            source: (await jita_market.get_type_order_rouge(source))[source_price_index] for source in ref_source_dict.keys()
         }
 
 
@@ -261,7 +265,7 @@ class IndustryAdvice:
         return res
 
     @classmethod
-    def personal_asset_statistics(cls, user_qq: int):
+    async def personal_asset_statistics(cls, user_qq: int):
         # TODO 获取资产
         container_list = AssetManager.get_user_container(user_qq)
         target_container = set(container for container in container_list)
@@ -270,7 +274,7 @@ class IndustryAdvice:
         structure_asset_dict = {}
 
         for container in target_container:
-            result = AssetManager.get_asset_in_container_list([container.asset_location_id])
+            result = await AssetManager.get_asset_in_container_list([container.asset_location_id])
             if container.structure_id not in structure_asset_dict:
                 structure_asset_dict[container.structure_id] = {}
             for asset in result:
@@ -286,7 +290,7 @@ class IndustryAdvice:
         user = UserManager.get_user(user_qq)
         user_character = [c.character_id for c in CharacterManager.get_user_all_characters(user.user_qq)]
         alias_character = [cid for cid in user.user_data.alias.keys()]
-        result = RunningJobOwner.get_job_with_starter(user_character + alias_character)
+        result = await RunningJobOwner.get_job_with_starter(user_character + alias_character)
 
         for job in result:
             if job.output_location_id in target_container:
@@ -309,7 +313,7 @@ class IndustryAdvice:
         # 获取价格
         jita_market = MarketManager.get_market_by_type('jita')
         price_dict = {
-            tid: jita_market.get_type_order_rouge(tid)[0] for tid in asset_dict.keys()
+            tid: (await jita_market.get_type_order_rouge(tid))[0] for tid in asset_dict.keys()
         }
 
         # 整理数据
@@ -346,7 +350,7 @@ class IndustryAdvice:
         structure_asset = {}
         count = 1
         for structure_id, structure_asset_dict in structure_asset_dict.items():
-            structure = StructureManager.get_structure(structure_id)
+            structure = await StructureManager.get_structure(structure_id)
             if structure:
                 structure_name = structure.name
             else:
@@ -360,11 +364,11 @@ class IndustryAdvice:
 
         # 钱包余额
         main_character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(user.user_qq))
-        res['wallet'] = main_character.wallet_balance
+        res['wallet'] = await main_character.wallet_balance
         res['total'] += res['wallet']
 
         upadte_date = get_beijing_utctime(datetime.now()).replace(hour=0, minute=0, second=0, microsecond=0)
-        UserAssetStatisticsUtils.update(user_qq, upadte_date, json.dumps(res))
+        await UserAssetStatisticsDBUtils.update(user_qq, upadte_date, json.dumps(res))
 
         # 拉取历史信息
         history_data = {
@@ -372,7 +376,7 @@ class IndustryAdvice:
                 'date': data.date.strftime("%Y-%m-%d"),
                 'data': json.loads(data.asset_statistics)
             }
-            for data in UserAssetStatisticsUtils.get_user_asset_statistics(user_qq)
+            for data in await UserAssetStatisticsDBUtils.get_user_asset_statistics(user_qq)
         }
 
         output = {
@@ -383,17 +387,17 @@ class IndustryAdvice:
         return output
 
     @classmethod
-    def refresh_all_asset_statistics(cls):
-        if not RefreshDateUtils.out_of_day_interval('asset_statistics', 1):
+    async def refresh_all_asset_statistics(cls):
+        if not await RefreshDataDBUtils.out_of_day_interval('asset_statistics', 1):
             return
         if not cls.personal_asset_statistics_lock:
             try:
                 cls.personal_asset_statistics_lock = True
                 logger.info('开始刷新资产统计')
                 for user_qq in UserManager.user_dict.keys():
-                    logger.log(f'刷新{user_qq}的资产')
-                    cls.personal_asset_statistics(user_qq)
-                RefreshDateUtils.update_refresh_date('asset_statistics')
+                    logger.info(f'刷新{user_qq}的资产')
+                    await cls.personal_asset_statistics(user_qq)
+                await RefreshDataDBUtils.update_refresh_date('asset_statistics')
                 logger.info('刷新资产统计完成')
             finally:
                 cls.personal_asset_statistics_lock = False
