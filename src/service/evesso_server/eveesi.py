@@ -1,3 +1,5 @@
+from logging import exception
+
 import requests
 from cachetools import TTLCache, cached
 import traceback
@@ -13,18 +15,20 @@ async def get_request_async(url, headers=None, params=None, log=True):
         headers = {}
     if params is None:
         params = {}
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params, headers=headers) as response:
-            if response.status == 200:
-                data = await response.json()
-                return data
-            else:
-                response_text = await response.text()
-                if log:
-                    logger.warning(response_text)
-                return None
-
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data
+                else:
+                    response_text = await response.text()
+                    if log:
+                        logger.warning(response_text)
+                    return None
+    except Exception as e:
+        if log:
+            logger.error(traceback.format_exc())
 
 async def verify_token(access_token, log=True):
     return await get_request_async("https://esi.evetech.net/verify/", headers={"Authorization": f"Bearer {access_token}"}, log=log)
@@ -53,8 +57,13 @@ async def markets_structures(page: int, access_token: str, structure_id: int, lo
                        headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
 
 async def markets_region_orders(page: int, region_id: int, type_id: int = None, log=True):
-    return await get_request_async(f"https://esi.evetech.net/latest/markets/{region_id}/orders/", headers={},
-                       params={"page": page, "type_id": type_id}, log=log)
+    params = {"page": page}
+    if type_id is not None:
+        params["type_id"] = type_id
+    return await get_request_async(
+        f"https://esi.evetech.net/latest/markets/{region_id}/orders/", headers={},
+       params=params, log=log
+    )
 
 async def characters_character_assets(page: int, access_token: str, character_id: int, log=True):
     """
@@ -141,7 +150,7 @@ async def characters_character_id_industry_jobs(access_token: str, character_id:
     return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/industry/jobs/", headers={
         "Authorization": f"Bearer {access_token}"
     }, params={
-        "include_completed": include_completed
+        "include_completed": 1 if include_completed else 0
     }, log=log)
 
 
