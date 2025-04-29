@@ -5,7 +5,7 @@ from ...utils import KahunaException
 
 class PriceService:
     @staticmethod
-    def get_price_rouge(item_str: str, market_str: str):
+    async def get_price_rouge(item_str: str, market_str: str):
         # 可能的模糊匹配
 
         if market_str == "jita" or market_str == "frt":
@@ -22,7 +22,7 @@ class PriceService:
             fuzz_list = SdeUtils.fuzz_type(item_str)
             return None, None, None, fuzz_list
         else:
-            max_buy, min_sell = market.get_type_order_rouge(type_id)
+            max_buy, min_sell = await market.get_type_order_rouge(type_id)
 
             # 整理信息
             mid_price = round((max_buy + min_sell) / 2, 2)

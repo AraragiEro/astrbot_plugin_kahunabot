@@ -36,7 +36,7 @@ class TypesPriceEvent():
             quantity = 1
 
         # 准备实时价格数据
-        max_buy, mid_price, min_sell, fuzz_list = PriceService.get_price_rouge(item_name, market)
+        max_buy, mid_price, min_sell, fuzz_list = await PriceService.get_price_rouge(item_name, market)
 
         # TODO 特别的物品组合map映射
         # 找不到物品时输出模糊匹配结果
