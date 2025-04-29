@@ -532,7 +532,7 @@ class IndsEvent:
 
         # 化矿分析
         minedata = report['material']['矿石']
-        minedata += report['meterial']['冰矿产物']
+        minedata += report['material']['冰矿产物']
         material_list = [[data[0], data[3]] for data in minedata]
 
         ref_res = await IndustryAdvice.material_ref_advice(material_list, material_flag, compress_flag)
