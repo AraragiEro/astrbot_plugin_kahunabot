@@ -15,7 +15,7 @@ from ..log_server import logger
 class IndustryManager:
     @classmethod
     async def refresh_running_status(cls, force=False):
-        if not False and not await RefreshDataDBUtils.out_of_min_interval('running_job', 10):
+        if not force and not await RefreshDataDBUtils.out_of_min_interval('running_job', 10):
             return
 
         logger.info("刷新运行中job.")
