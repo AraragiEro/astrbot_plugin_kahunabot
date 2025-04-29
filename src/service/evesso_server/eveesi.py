@@ -105,10 +105,12 @@ async def corporations_corporation_id_roles(access_token: str, corporation_id: i
                        headers={"Authorization": f"Bearer {access_token}"}, log=log)
 
 async def corporations_corporation_id_industry_jobs(page: int, access_token: str, corporation_id: int, include_completed: bool = False, log=True):
-    return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/industry/jobs/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={
+    return await get_request_async(
+    f"https://esi.evetech.net/latest/corporations/{corporation_id}/industry/jobs/",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={
             "page": page,
-            "include_completed": include_completed
+            "include_completed": 1 if include_completed else 0
         }, log=log)
 
 async def corporations_corporation_id_blueprints(page: int, access_token: str, corporation_id: int, log=True):
