@@ -105,9 +105,24 @@ class IndustryAdvice:
         # 产出效率系数
         efficiency_rate = 0.906  # 90.6%
 
-        ref_target = {34, 35, 36, 37, 38, 39, 40, 11399}
+        one_ref_target = {
+            34, 35, 36, 37, 38, 39, 40, 11399,
+            16272, 16273, 16274, 16275, 17887, 17888, 17889,
+            28433, 28434, 28435, 28436, 28437, 28438, 28439, 28440, 28441, 28442, 28443, 28444,
+        }
         # ref_source_dict 中的值表示每100单位材料的产出
         ref_source_dict = {
+            28433: {16272: 69, 16273: 35, 16275: 1, 17887: 414},
+            28434: {16272: 69, 16273: 35, 16275: 1, 16274: 414},
+            28435: {16272: 691, 16273: 1381, 16275: 69},
+            28436: {16272: 104, 16273: 55, 16275: 1, 16274: 483},
+            28437: {16272: 345, 16273: 691, 16275: 104},
+            28438: {16272: 69, 16273: 35, 16275: 1, 17889: 414},
+            28439: {16272: 1381, 16273: 691, 16275: 35},
+            28440: {16272: 173, 16273: 691, 16275: 173},
+            28441: {16272: 104, 16273: 55, 16275: 1, 17888: 483},
+            28442: {16272: 104, 16273: 55, 16275: 1, 17889: 483},
+            28443: {16272: 69, 16273: 35, 16275: 1, 17888: 414},
             62520: {34: 150, 35: 90},
             62528: {34: 175, 36: 70},
             62536: {36: 60, 37: 120},
@@ -118,11 +133,12 @@ class IndustryAdvice:
             62560: {35: 800, 36: 2000, 38: 800},
             62564: {35: 3200, 36: 1200, 39: 160},
             62568: {35: 3200, 36: 1200, 40: 120},
-            34: {34: 1}, 35: {35: 1}, 36: {36: 1}, 37: {37: 1}, 38: {38: 1}, 39: {39: 1}, 40: {40: 1}, 11399: {11399: 1}
+            34: {34: 1}, 35: {35: 1}, 36: {36: 1}, 37: {37: 1}, 38: {38: 1}, 39: {39: 1}, 40: {40: 1}, 11399: {11399: 1},
+            16272: {16272: 1}, 16273: {16273: 1}, 16274: {16274: 1}, 16275: {16275: 1}, 17887: {17887: 1}, 17888: {17888: 1}, 17889: {17889: 1}
         }
         target_price_index = 0 if material_flag == 'buy' else 1
         target_price = {
-            target: (await jita_market.get_type_order_rouge(target))[target_price_index] for target in ref_target
+            target: (await jita_market.get_type_order_rouge(target))[target_price_index] for target in one_ref_target
         }
         source_price_index = 0 if compress_flag == 'buy' else 1
         source_price = {
@@ -136,9 +152,9 @@ class IndustryAdvice:
             effective_ref_source_dict[m] = {}
             for p, amount in products.items():
                 # 预先计算单位产出 * 效率系数
-                effective_ref_source_dict[m][p] = amount * (efficiency_rate if m not in ref_target else 1)
+                effective_ref_source_dict[m][p] = amount * (efficiency_rate if m not in one_ref_target else 1)
 
-        need = {data[0]: data[1] for data in material_list if data[0] in ref_target}
+        need = {data[0]: data[1] for data in material_list if data[0] in one_ref_target}
 
         # 创建问题实例
         prob = pulp.LpProblem("MinimizeWaste", pulp.LpMinimize)
@@ -153,7 +169,7 @@ class IndustryAdvice:
                                            lowBound=0)
 
         # 目标1：原材料总成本
-        material_cost = pulp.lpSum([material_units[m] * (100 if m not in ref_target else 1) * source_price[m] for m in materials])
+        material_cost = pulp.lpSum([material_units[m] * (100 if m not in one_ref_target else 1) * source_price[m] for m in materials])
 
         # 目标2：总产出价值 - 原材料总成本
         product_value = pulp.lpSum([
@@ -210,7 +226,7 @@ class IndustryAdvice:
         # 构建结果列表
         result_list = []
         for m in materials:
-            m_value = int(material_units[m].value()) * (100 if m not in ref_target else 1)
+            m_value = int(material_units[m].value()) * (100 if m not in one_ref_target else 1)
             if m_value > 0:
                 result_list.append((m, m_value))
 
@@ -221,8 +237,8 @@ class IndustryAdvice:
             if material_units[m].value() > 0:
                 need_d[m] = {
                     'name': SdeUtils.get_name_by_id(m),
-                    'need': int(material_units[m].value()) * (100 if m not in ref_target else 1),
-                    'price': source_price[m] * int(material_units[m].value()) * (100 if m not in ref_target else 1),
+                    'need': int(material_units[m].value()) * (100 if m not in one_ref_target else 1),
+                    'price': source_price[m] * int(material_units[m].value()) * (100 if m not in one_ref_target else 1),
                 }
                 total_resource_price += need_d[m]['price']
         res['total_resource_price'] = total_resource_price
@@ -241,7 +257,7 @@ class IndustryAdvice:
                         theoretical_production[p] += theo_output
 
                         # 实际产出（应用效率系数并向下取整）
-                        actual_output = int(theo_output * (efficiency_rate if m not in ref_target else 1))
+                        actual_output = int(theo_output * (efficiency_rate if m not in one_ref_target else 1))
                         actual_production[p] += actual_output
                         connect_d[m]['product'][p] = {'name': SdeUtils.get_name_by_id(p), 'product_value': actual_output}
 

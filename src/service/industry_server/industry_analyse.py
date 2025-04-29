@@ -781,6 +781,7 @@ class IndustryAnalyser():
         result_dict = {
             'work': dict(),
             'material': {"矿石": [],
+                         '冰矿产物': [],
                         "行星工业": [],
                         "燃料块": [],
                         "元素": [],
@@ -972,6 +973,8 @@ class IndustryAnalyser():
         # 根据 group 或 category 进行判断和分类
         if group == "Mineral":
             result_dict["矿石"].append(data)
+        elif group == 'Ice Product':
+            result_dict['冰矿产物'].append(data)
         elif group == "Fuel Block":
             result_dict["燃料块"].append(data)
         elif group == "Moon Materials":
@@ -1133,7 +1136,7 @@ class IndustryAnalyser():
         for node, data in material_dict.items():
             data.append(data[0] / total_cost)
 
-        res['group_detail'] = {'矿石': [0], '燃料块': [0], '元素': [0], '气云': [0], '行星工业': [0], '杂货': [0]}
+        res['group_detail'] = {'矿石': [0], '燃料块': [0], '元素': [0], '气云': [0], '行星工业': [0], '冰矿产物': 0, '杂货': [0]}
         group_dict = res['group_detail']
         for node, data in material_dict.items():
             group = SdeUtils.get_groupname_by_id(node)
@@ -1141,6 +1144,8 @@ class IndustryAnalyser():
             # 根据 group 或 category 进行判断和分类
             if group == "Mineral":
                 group_dict["矿石"][0] += data[0]
+            elif group == 'Ice Product':
+                group_dict['冰矿产物'][0] += data[0]
             elif group == "Fuel Block":
                 group_dict['燃料块'][0] += data[0]
             elif group == "Moon Materials":
