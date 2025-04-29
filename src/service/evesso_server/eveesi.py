@@ -11,10 +11,6 @@ from ..log_server import logger
 permission_set = set()
 
 async def get_request_async(url, headers=None, params=None, log=True):
-    if headers is None:
-        headers = {}
-    if params is None:
-        params = {}
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params, headers=headers) as response:
