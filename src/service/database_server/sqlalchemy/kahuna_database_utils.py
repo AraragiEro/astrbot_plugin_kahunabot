@@ -630,7 +630,8 @@ class RefreshDataDBUtils(CommonUtils):
                     stmt = select(cls.cls_model).where(cls.cls_model.id == id)
                     result = await session.execute(stmt)
                     refresh_date = result.scalars().first()
-
+                    if not refresh_date:
+                        return True
                     # logger.info(f"now - refresh_date: {get_beijing_utctime(datetime.now()) - refresh_date.date}")
                     return get_beijing_utctime(datetime.now()) - refresh_date.date > time_interval
                 except Exception as e:
@@ -646,7 +647,8 @@ class RefreshDataDBUtils(CommonUtils):
                     stmt = select(cls.cls_model).where(cls.cls_model.id == id)
                     result = await session.execute(stmt)
                     refresh_date = result.scalars().first()
-
+                    if not refresh_date:
+                        return True
                     # 获取当前北京时间
                     current_date = get_beijing_utctime(datetime.now()).date()
                     # 获取上次刷新的日期部分
@@ -670,6 +672,8 @@ class RefreshDataDBUtils(CommonUtils):
                     stmt = select(cls.cls_model).where(cls.cls_model.id == id)
                     result = await session.execute(stmt)
                     refresh_date = result.scalars().first()
+                    if not refresh_date:
+                        return True
 
                     # 获取当前北京时间
                     current_time = get_beijing_utctime(datetime.now())
