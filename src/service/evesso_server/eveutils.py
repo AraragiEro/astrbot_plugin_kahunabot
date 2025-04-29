@@ -43,7 +43,7 @@ async def find_max_page(esi_func, *args, begin_page: int = 500, interval: int = 
     # So we use binary search within this range to find the exact max page.
     return await find_max_page_binary_search(esi_func, max(0, page - interval), max(page - interval + 1, page), *args, **kwargs)
 
-async def get_multipages_result(esi_func, max_page, *args, **kwargs):
+async def get_multipages_result(esi_func, max_page, *args):
     logger.info(f'{esi_func.__name__} 开始批量任务， page: {max_page}')
     max_concurent = 30
     semaphore = asyncio.Semaphore(max_concurent)
@@ -58,7 +58,7 @@ async def get_multipages_result(esi_func, max_page, *args, **kwargs):
 
     results = []
     with tqdm(total=max_page, desc=f"请求{esi_func.__name__}数据", unit="page", ascii='=-') as pbar:
-        task = [process_with_limit(page, args, kwargs) for page in range(1, max_page + 1)]
+        task = [process_with_limit(page, *args) for page in range(1, max_page + 1)]
         for future in asyncio.as_completed(task):
             result = await future
             if result:
