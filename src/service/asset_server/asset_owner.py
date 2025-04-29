@@ -3,13 +3,6 @@ import asyncio
 from tqdm import tqdm
 
 # kahuna model
-from ..database_server.model import (
-    # Asset as M_Asset,
-    # AssetCache as M_AssetCache,
-    # AssetOwner as M_AssetOwner,
-    # BlueprintAsset as M_BlueprintAsset,
-    BlueprintAssetCache as M_BlueprintAssetCache)
-from ..database_server.connect import DatabaseConectManager
 from ..evesso_server.eveesi import (characters_character_assets,
                                     corporations_corporation_assets,
                                     characters_character_id_blueprints,

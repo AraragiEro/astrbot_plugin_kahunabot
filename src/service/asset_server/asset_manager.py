@@ -7,7 +7,6 @@ from ..database_server.sqlalchemy.kahuna_database_utils import (
     BluerprintAssetCacheDBUtils,
     RefreshDataDBUtils
 )
-from ..database_server.connect import DatabaseConectManager
 from .asset_owner import AssetOwner
 from ..character_server.character_manager import CharacterManager
 from ..industry_server.structure import StructureManager

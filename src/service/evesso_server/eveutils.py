@@ -36,7 +36,7 @@ async def find_max_page(esi_func, *args, begin_page: int = 500, interval: int = 
 
     # Check pages in the specified interval
     page += begin_page
-    while await esi_func(page, *args, **kwargs):
+    while await esi_func(page, *args, log=False):
         page += interval
 
     # Once we find a page that doesn't exist, we know that the max page must be between `page - interval` and `page`.

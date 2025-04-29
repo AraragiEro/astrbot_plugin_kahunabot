@@ -15,12 +15,6 @@ from ..database_server.sqlalchemy.kahuna_database_utils import (
     RefreshDataDBUtils,
     MarketHistoryDBUtils
 )
-from ..sde_service import SdeUtils
-
-from ...utils import KahunaException
-
-# 查价缓存
-from ..database_server.TTL_cache import ROUGE_PRICE_CACHE
 
 # kahuna logger
 from ..log_server import logger
