@@ -33,7 +33,8 @@ class RunningJobOwner:
         logger.info("请求刷新进行中job。")
         results = await get_multipages_result(corporations_corporation_id_industry_jobs, max_page, await character.ac_token, corp_id)
         await IndustryJobsDBUtils.delete_jobs_by_owner_id(corp_id)
-        await IndustryJobsDBUtils.insert_many(results)
+        for result in results:
+            await IndustryJobsDBUtils.insert_many(result)
 
     @classmethod
     async def copy_to_cache(cls):
