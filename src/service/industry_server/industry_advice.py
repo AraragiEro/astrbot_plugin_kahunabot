@@ -144,10 +144,12 @@ class IndustryAdvice:
         source_price = {
             source: (await jita_market.get_type_order_rouge(source))[source_price_index] for source in ref_source_dict.keys()
         }
+        for source, price in source_price.items():
+            if price == 0:
+                source_price[source] = 100000000000000
         source_transport_cost = {
             source: SdeUtils.get_volume_by_type_id(source) * transport_cost for source in ref_source_dict.keys()
         }
-
 
         # 预先计算考虑效率系数的产出
         effective_ref_source_dict = {}
@@ -186,8 +188,8 @@ class IndustryAdvice:
         ])
 
         # 设置权重
-        material_weight = 0.5  # 原材料成本权重
-        profit_weight = 0.5  # 利润权重 (负号表示我们要最大化这部分)
+        material_weight = 0.9  # 原材料成本权重
+        profit_weight = 0.1  # 利润权重 (负号表示我们要最大化这部分)
 
         # 多目标优化：最小化原材料成本同时最大化利润
         prob += material_weight * material_cost - profit_weight * (product_value - material_cost)
@@ -238,6 +240,7 @@ class IndustryAdvice:
         # 打印详细信息
         # print("\n需要的生产材料数量:")
         total_resource_price = 0
+        total_transport_cost = 0
         for m in materials:
             if material_units[m].value() > 0:
                 need_d[m] = {
@@ -246,8 +249,10 @@ class IndustryAdvice:
                     'price': source_price[m] * int(material_units[m].value()) * (100 if m not in one_ref_target else 1),
                 }
                 total_resource_price += need_d[m]['price']
+                total_transport_cost += int(material_units[m].value()) * source_transport_cost[m]
         res['total_resource_price'] = total_resource_price
-
+        res['total_transport_cost'] = total_transport_cost
+        res['total_cost'] = total_transport_cost + total_resource_price
         # print("\n理论产出与实际产出对比:")
         theoretical_production = {p: 0 for p in need.keys()}
         actual_production = {p: 0 for p in need.keys()}

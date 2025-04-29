@@ -34,17 +34,30 @@
             <div class="mb-8 p-4 bg-blue-50 rounded-lg">
                 <h2 class="text-xl font-semibold mb-2">总价值信息</h2>
                 <div class="grid grid-cols-3 gap-4">
-                    <div class="bg-white p-3 rounded shadow">
-                        <p class="text-gray-600">总资源价格</p>
-                        <p class="text-lg font-bold text-blue-600" id="totalResourcePrice"></p>
+
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="bg-white p-3 rounded shadow">
+                            <p class="text-gray-600 text-center">总资源价格</p>
+                            <p class="text-lg font-bold text-blue-600 text-center" id="totalResourcePrice"></p>
+                        </div>
+                        <div class="bg-white p-3 rounded shadow">
+                            <p class="text-gray-600 text-center">总运费[顺丰] 500/m3</p>
+                            <p class="text-lg font-bold text-blue-600 text-center" id="totalTransportCost"></p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="bg-white p-3 rounded shadow">
+                            <p class="text-gray-600 text-center">总成本</p>
+                            <p class="text-lg font-bold text-blue-600 text-center" id="totalCost"></p>
+                        </div>
+                        <div class="bg-white p-3 rounded shadow">
+                            <p class="text-gray-600 text-center">总产出价格</p>
+                            <p class="text-lg font-bold text-green-600 text-center" id="totalProductPrice"></p>
+                        </div>
                     </div>
                     <div class="bg-white p-3 rounded shadow">
-                        <p class="text-gray-600">总产出价格</p>
-                        <p class="text-lg font-bold text-green-600" id="totalProductPrice"></p>
-                    </div>
-                    <div class="bg-white p-3 rounded shadow">
-                        <p class="text-gray-600">总多余价格</p>
-                        <p class="text-lg font-bold text-red-600" id="totalWastePrice"></p>
+                        <p class="text-gray-600 text-center">总多余价格</p>
+                        <p class="text-lg font-bold text-red-600 text-center" id="totalWastePrice"></p>
                     </div>
                 </div>
             </div>
@@ -139,8 +152,10 @@
         // 数据
         const data = {{ data|tojson }};
 
-        // 设置总价值信息
+        // 设置总价值信息totalCost
+        document.getElementById('totalCost').textContent = formatISK(data.total_cost) + ' ISK';
         document.getElementById('totalResourcePrice').textContent = formatISK(data.total_resource_price) + ' ISK';
+        document.getElementById('totalTransportCost').textContent = formatISK(data.total_transport_cost) + ' ISK';
         document.getElementById('totalProductPrice').textContent = formatISK(data.total_product_price) + ' ISK';
         document.getElementById('totalWastePrice').textContent = formatISK(data.total_real_waste_price) + ' ISK';
 
