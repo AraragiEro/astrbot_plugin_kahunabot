@@ -145,11 +145,11 @@ class StructureManager():
         1. location_type=="station", 则该条数据的location_id是顶层location
         2. location_type=="solar_system", 则该条数据的item_id是顶层location
         """
-        if_station_data = await AssetCacheDBUtils.select_one_asset_by_location_id_and_location_type(location_id, "station")
+        if_station_data = await AssetCacheDBUtils.select_one_asset_by_item_id_and_location_type(location_id, "station")
         if if_station_data:
             return if_station_data.location_id, if_station_data.location_flag
 
-        if_structure_data = await AssetCacheDBUtils.select_one_asset_by_location_id_and_location_type(location_id, "solar_system")
+        if_structure_data = await AssetCacheDBUtils.select_one_asset_by_item_id_and_location_type(location_id, "solar_system")
         if if_structure_data:
             return if_structure_data.item_id, if_structure_data.location_flag
 

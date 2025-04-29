@@ -1,3 +1,4 @@
+from operator import itemgetter
 from typing import Dict
 from sqlalchemy import delete, select, text, func, distinct
 from sqlalchemy.dialects.sqlite import insert as insert
@@ -216,12 +217,12 @@ class AssetCacheDBUtils(AssetDBUtils, CommonCacheUtils):
                 return result.scalars().first()
 
     @classmethod
-    async def select_one_asset_by_location_id_and_location_type(cls, location_id, param):
+    async def select_one_asset_by_item_id_and_location_type(cls, item_id, param):
         async_session = dbm.async_session(cls.cls_model)
         async with async_session() as session:
             async with session.begin():
                 stmt = select(cls.cls_model).where(
-                    (cls.cls_model.location_id == location_id) &
+                    (cls.cls_model.item_id == item_id) &
                     (cls.cls_model.location_type == param)
                 )
                 result = await session.execute(stmt)
