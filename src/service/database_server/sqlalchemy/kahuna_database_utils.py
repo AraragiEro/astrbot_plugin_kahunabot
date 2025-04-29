@@ -630,10 +630,7 @@ class RefreshDataDBUtils(CommonUtils):
                     stmt = select(cls.cls_model).where(cls.cls_model.id == id)
                     result = await session.execute(stmt)
                     refresh_date = result.scalars().first()
-                    if not refresh_date:
-                        logger.info(f"refresh_date not found, create refresh_date: {id}")
-                        await cls.create_refresh_date(id)
-                        return True
+
                     # logger.info(f"now - refresh_date: {get_beijing_utctime(datetime.now()) - refresh_date.date}")
                     return get_beijing_utctime(datetime.now()) - refresh_date.date > time_interval
                 except Exception as e:
@@ -649,9 +646,6 @@ class RefreshDataDBUtils(CommonUtils):
                     stmt = select(cls.cls_model).where(cls.cls_model.id == id)
                     result = await session.execute(stmt)
                     refresh_date = result.scalars().first()
-                    if not refresh_date:
-                        await cls.create_refresh_date(id)
-                        return True
 
                     # 获取当前北京时间
                     current_date = get_beijing_utctime(datetime.now()).date()
@@ -676,9 +670,6 @@ class RefreshDataDBUtils(CommonUtils):
                     stmt = select(cls.cls_model).where(cls.cls_model.id == id)
                     result = await session.execute(stmt)
                     refresh_date = result.scalars().first()
-                    if not refresh_date:
-                        await cls.create_refresh_date(id)
-                        return True
 
                     # 获取当前北京时间
                     current_time = get_beijing_utctime(datetime.now())
@@ -711,6 +702,9 @@ class RefreshDataDBUtils(CommonUtils):
                 stmt = select(cls.cls_model).where(cls.cls_model.id == id)
                 result = await session.execute(stmt)
                 refresh_date = result.scalars().first()
+                if not refresh_date:
+                    await cls.create_refresh_date(id)
+                    return
 
                 if not refresh_date:
                     refresh_date = cls.get_obj()

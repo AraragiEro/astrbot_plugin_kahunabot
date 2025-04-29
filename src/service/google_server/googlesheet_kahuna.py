@@ -88,6 +88,8 @@ class KahunaGoogleSheetManager:
         data1 = {}
         await MarketHistory.get_type_region_history_data_batch(important_list, REGION_FORGE_ID)
         await MarketHistory.get_type_region_history_data_batch(important_list, REGION_VALE_ID)
+        important_not_have_order_set = set(important_list) - set([order.type_id for order in frt_4h_order])
+        important_not_have_order_list = list(important_not_have_order_set)
         with tqdm(total=len(order_cache), desc="处理联盟历史订单", unit="order", ascii='=-') as pbar:
             for order in order_cache:
                 pbar.update()
@@ -109,8 +111,9 @@ class KahunaGoogleSheetManager:
                 data1[order.type_id]['volume_remain'] += int(order.volume_remain)
                 data1[order.type_id]['4h_max_price'] = max(data1[order.type_id]['4h_max_price'], float(order.price))
                 data1[order.type_id]['4h_min_price'] = min(data1[order.type_id]['4h_min_price'], float(order.price))
-        with tqdm(total=len(important_list), desc="处理无订单但有流水的物品", unit="order", ascii='=-') as pbar:
-            for tid in important_list:
+
+        with tqdm(total=len(important_not_have_order_list), desc="处理无订单但有流水的物品", unit="order", ascii='=-') as pbar:
+            for tid in important_not_have_order_list:
                 pbar.update()
                 if tid in data1:
                     continue
