@@ -104,7 +104,7 @@ class IndustryAdvice:
         jita_market = MarketManager.get_market_by_type('jita')
         # 产出效率系数
         efficiency_rate = 0.906  # 90.6%
-
+        transport_cost = 500
         one_ref_target = {
             34, 35, 36, 37, 38, 39, 40, 11399,
             16272, 16273, 16274, 16275, 17887, 17888, 17889,
@@ -144,6 +144,9 @@ class IndustryAdvice:
         source_price = {
             source: (await jita_market.get_type_order_rouge(source))[source_price_index] for source in ref_source_dict.keys()
         }
+        source_transport_cost = {
+            source: SdeUtils.get_volume_by_type_id(source) * transport_cost for source in ref_source_dict.keys()
+        }
 
 
         # 预先计算考虑效率系数的产出
@@ -169,7 +172,9 @@ class IndustryAdvice:
                                            lowBound=0)
 
         # 目标1：原材料总成本
-        material_cost = pulp.lpSum([material_units[m] * (100 if m not in one_ref_target else 1) * source_price[m] for m in materials])
+        material_cost = pulp.lpSum(
+            [material_units[m] * (100 if m not in one_ref_target else 1) * (source_price[m] + source_transport_cost[m]) for m in materials]
+        )
 
         # 目标2：总产出价值 - 原材料总成本
         product_value = pulp.lpSum([
