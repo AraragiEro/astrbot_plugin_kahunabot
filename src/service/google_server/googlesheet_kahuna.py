@@ -251,7 +251,7 @@ class KahunaGoogleSheetManager:
             raise e
 
 
-    async def refresh_market_monitor_process(self):
+    async def refresh_market_monitor_process(self, force=False):
         if self.refresh_running:
             return
         if not self.sheet_api_test:
@@ -261,7 +261,7 @@ class KahunaGoogleSheetManager:
                 return
         try:
             self.refresh_running = True
-            if not await RefreshDataDBUtils.out_of_hour_interval('market_monitor', 2):
+            if not force and not await RefreshDataDBUtils.out_of_hour_interval('market_monitor', 2):
                 return
             if not config.has_option('GOOGLE', 'MARKET_MONITOR_SPREADSHEET_ID'):
                 logger.info(f'未设置市场监视器googleid.')

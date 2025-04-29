@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 import traceback
+import time
 from peewee import fn
 import asyncio
 from cachetools import TTLCache, cached
@@ -23,6 +24,38 @@ REGION_FORGE_ID = 10000002
 REGION_VALE_ID = 10000003
 JITA_TRADE_HUB_STRUCTURE_ID = 60003760
 FRT_4H_STRUCTURE_ID = 1035466617946
+
+
+class RateLimiter:
+    """令牌桶算法实现的频率限制器"""
+
+    def __init__(self, rate_per_minute):
+        self.rate_per_second = rate_per_minute / 60.0
+        self.max_tokens = rate_per_minute  # 最大令牌数量
+        self.tokens = self.max_tokens  # 当前令牌数量
+        self.updated_at = time.time()
+        self.lock = asyncio.Lock()
+
+    async def acquire(self):
+        """获取一个令牌，如果没有令牌则等待"""
+        async with self.lock:
+            # 先更新当前令牌数量
+            current = time.time()
+            time_passed = current - self.updated_at
+            self.updated_at = current
+
+            # 根据时间流逝增加令牌
+            self.tokens = min(self.max_tokens, self.tokens + time_passed * self.rate_per_second)
+
+            # 如果没有足够的令牌，需要等待
+            if self.tokens < 1:
+                # 计算需要等待的时间
+                wait_time = (1 - self.tokens) / self.rate_per_second
+                await asyncio.sleep(wait_time)
+                self.tokens = 0
+            else:
+                self.tokens -= 1
+
 
 class Market:
     market_type = "jita"
@@ -162,6 +195,8 @@ class MarketHistory:
     @classmethod
     async def refresh_market_history(cls, type_id_list: list, region_id: int):
         logger.info(f'刷新历史订单信息。id长度{len(type_id_list)}, region_id:{region_id}')
+        # 创建频率限制器
+        rate_limiter = RateLimiter(250)
 
         # 控制总体并发数
         max_concurrent = 100
@@ -169,6 +204,7 @@ class MarketHistory:
 
         async def process_with_limit(type_id):
             async with semaphore:
+                await rate_limiter.acquire()
                 try:
                     return await cls.refresh_type_history_in_region(type_id, region_id)
                 except Exception as e:
