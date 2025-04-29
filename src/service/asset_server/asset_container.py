@@ -78,7 +78,7 @@ class AssetContainer:
         container_data = []
         for data in verified_container:
             # 找到secret物品所在建筑
-            structure_id, structure_flag = SdeUtils.get_structure_id_from_location_id(data[0], data[1])
+            structure_id, structure_flag = await StructureManager.get_structure_id_from_location_id(data[0], data[1])
 
             if structure_id and structure_flag:
                 container_data.append((data[0], data[1], structure_id, data[3]))

@@ -299,7 +299,7 @@ class IndustryAdvice:
                     asset_dict[job.type_id] = 0
                 asset_dict[job.type_id] += job.runs * product_count
 
-                structure_id = SdeUtils.get_structure_id_from_location_id(job.output_location_id)
+                structure_id = await StructureManager.get_structure_id_from_location_id(job.output_location_id)
                 if structure_id not in structure_asset_dict:
                     structure_asset_dict[structure_id] = {}
                 if job.type_id not in structure_asset_dict[structure_id]:
