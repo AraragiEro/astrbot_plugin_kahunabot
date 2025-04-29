@@ -345,3 +345,10 @@ class SdeUtils:
 
         return[r.typeID for r in res]
 
+    @lru_cache(maxsize=200)
+    @staticmethod
+    def get_volume_by_type_id(type_id: int) -> float:
+        try:
+            return InvTypes.get(InvTypes.typeID == type_id).volume
+        except InvTypes.DoesNotExist:
+            return 0
