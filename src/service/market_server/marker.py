@@ -196,7 +196,7 @@ class MarketHistory:
     async def refresh_market_history(cls, type_id_list: list, region_id: int):
         logger.info(f'刷新历史订单信息。id长度{len(type_id_list)}, region_id:{region_id}')
         # 创建频率限制器
-        rate_limiter = RateLimiter(250)
+        rate_limiter = RateLimiter(400)
 
         # 控制总体并发数
         max_concurrent = 100
