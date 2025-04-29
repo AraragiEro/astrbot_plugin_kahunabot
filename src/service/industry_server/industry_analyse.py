@@ -1136,7 +1136,7 @@ class IndustryAnalyser():
         for node, data in material_dict.items():
             data.append(data[0] / total_cost)
 
-        res['group_detail'] = {'矿石': [0], '燃料块': [0], '元素': [0], '气云': [0], '行星工业': [0], '冰矿产物': 0, '杂货': [0]}
+        res['group_detail'] = {'矿石': [0], '燃料块': [0], '元素': [0], '气云': [0], '行星工业': [0], '冰矿产物': [0], '杂货': [0]}
         group_dict = res['group_detail']
         for node, data in material_dict.items():
             group = SdeUtils.get_groupname_by_id(node)
