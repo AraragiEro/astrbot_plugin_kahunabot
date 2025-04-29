@@ -798,7 +798,7 @@ class IndsEvent:
 class MarketEvent:
     @staticmethod
     async def market_reforder(event: AstrMessageEvent):
-        res_log = await MarketManager.refresh_market()
+        res_log = await MarketManager.refresh_market(force=True)
 
         return event.plain_result(res_log)
 

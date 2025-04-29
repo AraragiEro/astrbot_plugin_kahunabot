@@ -63,8 +63,8 @@ class MarketManager():
 
     # 监视器，定时刷新
     @classmethod
-    async def refresh_market(cls):
-        if not await RefreshDataDBUtils.out_of_min_interval('market_order', 20):
+    async def refresh_market(cls, force=False):
+        if not force and not await RefreshDataDBUtils.out_of_min_interval('market_order', 20):
             return await cls.get_markets_detal()
 
         logger.info("开始刷新市场数据。")
