@@ -56,7 +56,7 @@ class UserData():
         obj.user_qq = self.user_qq
         obj.user_data = self.dums_self_data()
 
-        UserDataDBUtils.save_obj(obj)
+        await UserDataDBUtils.save_obj(obj)
 
     def dums_self_data(self) -> str:
         data = {
