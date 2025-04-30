@@ -148,7 +148,7 @@ class AssetManager():
         return asset_container
 
     @classmethod
-    def set_container_tag(cls, require_list: list[int, int], tag: str):
+    async def set_container_tag(cls, require_list: list[int, int], tag: str):
         if tag not in ContainerTag.__members__:
             raise KahunaException(f"tag must be {ContainerTag.__members__}")
         success_list = []
@@ -158,7 +158,7 @@ class AssetManager():
 
             container = cls.container_dict[owner_qq, container_id]
             container.tag = tag
-            container.insert_to_db()
+            await container.insert_to_db()
             success_list.append(container)
         return success_list
 

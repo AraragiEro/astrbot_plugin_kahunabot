@@ -148,11 +148,11 @@ class AssetEvent():
         return event.plain_result(print_info)
 
     @staticmethod
-    def container_settag(event: AstrMessageEvent, location_id_list: str, tag: str):
+    async def container_settag(event: AstrMessageEvent, location_id_list: str, tag: str):
         user_qq = get_user(event)
             
         location_id_list = [int(lid) for lid in location_id_list.split(",")]
-        success_list = AssetManager.set_container_tag([(user_qq, location_id) for location_id in location_id_list], tag)
+        success_list = await AssetManager.set_container_tag([(user_qq, location_id) for location_id in location_id_list], tag)
 
         print_str = "成功设置以下库存tag：\n"
         for container in success_list:
@@ -247,7 +247,7 @@ class IndsEvent:
                 matcher_key = SdeUtils.get_name_by_id(SdeUtils.get_id_by_name(matcher_key))
 
             matcher.matcher_data[matcher_key_type][matcher_key] = {"mater_eff": mater_eff, "time_eff": time_eff}
-            matcher.insert_to_db()
+            await matcher.insert_to_db()
             return event.plain_result("已配置，可以使用Inds matcher info 查看详情。")
 
         elif matcher.matcher_type == "structure" and len(config_data) >= 2 and config_data[-1].isdigit():
@@ -267,7 +267,7 @@ class IndsEvent:
                 return event.plain_result("获取建筑信息失败")
 
             matcher.matcher_data[matcher_key_type][matcher_key] = structure.structure_id
-            matcher.insert_to_db()
+            await matcher.insert_to_db()
 
             return event.plain_result("已配置，可以使用Inds matcher info 查看详情。")
 
@@ -283,14 +283,14 @@ class IndsEvent:
                 matcher_key = SdeUtils.get_name_by_id(SdeUtils.get_id_by_name(matcher_key))
 
             matcher.matcher_data[matcher_key_type][matcher_key] = block_level
-            matcher.insert_to_db()
+            await matcher.insert_to_db()
 
             return event.plain_result("已配置，可以使用Inds matcher info 查看详情。")
 
         return event.plain_result('matcher_type 未匹配分支。')
 
     @staticmethod
-    def matcher_unset(event: AstrMessageEvent, matcher_name:str, matcher_key_type: str):
+    async def matcher_unset(event: AstrMessageEvent, matcher_name:str, matcher_key_type: str):
         config_data = event.get_message_str().split(" ")[5:]
         user_qq = get_user(event)
 
@@ -305,7 +305,7 @@ class IndsEvent:
                 return event.plain_result(f"matcher_key_type匹配器关键字必须为: {[matcher.matcher_data.keys()]}")
             if matcher_key in matcher.matcher_data[matcher_key_type]:
                 matcher.matcher_data[matcher_key_type].pop(matcher_key)
-                matcher.insert_to_db()
+                await matcher.insert_to_db()
             return event.plain_result("已配置，可以使用Inds matcher info 查看详情。")
         return event.plain_result('matcher_type 未匹配分支。')
 

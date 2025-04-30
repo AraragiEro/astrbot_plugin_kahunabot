@@ -197,7 +197,7 @@ class KahunaBot(Star):
 
     @asset_container.command('设置标签', alias={"settag"})
     async def asset_container_settag(self, event: AstrMessageEvent, location_id_list: str, tag: str):
-        yield AssetEvent.container_settag(event, location_id_list, tag)
+        yield await AssetEvent.container_settag(event, location_id_list, tag)
 
     @filter.command_group("market")
     async def market(self, event: AstrMessageEvent):
@@ -256,7 +256,7 @@ class KahunaBot(Star):
     @Inds_matcher.command('取消', alias= {"unset"})
     async def Inds_matcher_unset(self, event: AstrMessageEvent, matcher_name: str, matcher_key_type: str):
         """ 配置匹配器 set {matcher_name} {matcher_key_type} {mater_eff} {time_eff}"""
-        yield IndsEvent.matcher_unset(event, matcher_name, matcher_key_type)
+        yield await IndsEvent.matcher_unset(event, matcher_name, matcher_key_type)
 
     @Inds.group('建筑', alias={"structure"})
     async def Inds_structure(self, event: AstrMessageEvent):

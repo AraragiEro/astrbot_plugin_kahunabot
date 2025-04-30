@@ -160,3 +160,19 @@ async def markets_region_history(region_id: int, type_id: int, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/markets/{region_id}/history/", headers={},
                        params={"type_id": type_id, "region_id": region_id}, log=log)
 
+# /characters/{character_id}/orders/
+async def characters_character_orders(access_token, character_id: int, log=True):
+    return await get_request_async(
+        f"https://esi.evetech.net/latest/characters/{character_id}/orders/",
+        headers={"Authorization": f"Bearer {access_token}"},
+        log=log
+    )
+
+# /characters/{character_id}/orders/history/
+async def characters_character_orders_history(page: int, access_token, character_id: int, log=True):
+    return await get_request_async(
+        f"https://esi.evetech.net/latest/characters/{character_id}/orders/history/",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={"page": page},
+        log=log
+    )
