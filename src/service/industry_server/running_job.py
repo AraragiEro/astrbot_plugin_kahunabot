@@ -34,6 +34,8 @@ class RunningJobOwner:
         results = await get_multipages_result(corporations_corporation_id_industry_jobs, max_page, await character.ac_token, corp_id)
         await IndustryJobsDBUtils.delete_jobs_by_owner_id(corp_id)
         for result in results:
+            for data in result:
+                data.update({'owner_id': corp_id})
             await IndustryJobsDBUtils.insert_many(result)
 
     @classmethod
