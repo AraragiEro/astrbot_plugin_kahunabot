@@ -324,22 +324,22 @@ class IndustryAdvice:
 
         job_dict = {}
         for job in result:
-            if job.output_location_id in target_container:
-                product_count = BPManager.get_bp_product_quantity_typeid(job.type_id)
-                if job.type_id not in job_dict:
-                    job_dict[job.type_id] = 0
-                job_dict[job.type_id] += job.runs * product_count
+            if job.output_location_id in set(container.asset_location_id for container in target_container):
+                product_count = BPManager.get_bp_product_quantity_typeid(job.product_type_id)
+                if job.product_type_id not in job_dict:
+                    job_dict[job.product_type_id] = 0
+                job_dict[job.product_type_id] += job.runs * product_count
 
-                if job.type_id not in asset_dict:
-                    asset_dict[job.type_id] = 0
-                asset_dict[job.type_id] += job.runs * product_count
+                if job.product_type_id not in asset_dict:
+                    asset_dict[job.product_type_id] = 0
+                asset_dict[job.product_type_id] += job.runs * product_count
 
-                structure_id = await StructureManager.get_structure_id_from_location_id(job.output_location_id)
+                structure_id = (await StructureManager.get_structure_id_from_location_id(job.output_location_id))[0]
                 if structure_id not in structure_asset_dict:
                     structure_asset_dict[structure_id] = {}
-                if job.type_id not in structure_asset_dict[structure_id]:
-                    structure_asset_dict[structure_id][job.type_id] = 0
-                structure_asset_dict[structure_id][job.type_id] += job.runs * product_count
+                if job.product_type_id not in structure_asset_dict[structure_id]:
+                    structure_asset_dict[structure_id][job.product_type_id] = 0
+                structure_asset_dict[structure_id][job.product_type_id] += job.runs * product_count
 
 
         # TODO 获取珍贵物品
@@ -360,27 +360,33 @@ class IndustryAdvice:
         }
 
         # 按照物品种类
-        classify_asset = {'矿石': 0, '组件': 0, '燃料块': 0, '元素': 0, '气云': 0, '行星工业': 0, '产品': 0, '杂货': 0}
+        classify_asset = {'矿石': 0, '冰矿产物': 0, '组件': 0, '燃料块': 0, '元素': 0, '气云': 0, '行星工业': 0, '产品': 0, '杂货': 0}
         for tid, quantity in asset_dict.items():
             group = SdeUtils.get_groupname_by_id(tid)
             category = SdeUtils.get_category_by_id(tid)
             market_list = SdeUtils.get_market_group_list(tid)
             # 根据 group 或 category 进行判断和分类
-            if (
-                group == "Mineral" or
-                group == "Ice Product"
-            ):
+            if group == "Mineral":
                 classify_asset["矿石"] += quantity * price_dict.get(tid, 0)
-            elif 'Components' in market_list:
+            elif group == "Ice Product":
+                classify_asset['冰矿产物'] += quantity * price_dict.get(tid, 0)
+            elif (
+                'Advanced Components' in market_list or
+                'Capital Components' in market_list
+            ):
                 classify_asset['组件'] += quantity * price_dict.get(tid, 0)
             elif group == "Fuel Block":
                 classify_asset['燃料块'] += quantity * price_dict.get(tid, 0)
             elif (
                 group == "Moon Materials" or
-                "Reaction Materials" in market_list
+                "Processed Moon Materials" in market_list or
+                "Advanced Moon Materials" in market_list
             ):
                 classify_asset['元素'] += quantity * price_dict.get(tid, 0)
-            elif group == "Harvestable Cloud":
+            elif (
+                group == "Harvestable Cloud" or
+                "Reaction Materials" in market_list
+            ):
                 classify_asset['气云'] += quantity * price_dict.get(tid, 0)
             elif category == "Planetary Commodities":
                 classify_asset['行星工业'] += quantity * price_dict.get(tid, 0)
@@ -394,8 +400,10 @@ class IndustryAdvice:
 
         structure_asset = {}
         count = 1
-        for structure_id, structure_asset_dict in structure_asset_dict.items():
-            structure = await StructureManager.get_structure(structure_id)
+        main_character_id = UserManager.get_main_character_id(user_qq)
+        main_character = CharacterManager.get_character_by_id(main_character_id)
+        for structure_id, data in structure_asset_dict.items():
+            structure = await StructureManager.get_structure(structure_id, ac_token=await main_character.ac_token)
             if structure:
                 structure_name = structure.name
             else:
@@ -403,7 +411,7 @@ class IndustryAdvice:
                 count += 1
             if structure_name not in structure_asset:
                 structure_asset[structure_name] = 0
-            for tid, quantity in structure_asset_dict.items():
+            for tid, quantity in data.items():
                 structure_asset[structure_name] += quantity * price_dict.get(tid, 0)
         res['structure_asset'] = structure_asset
 
