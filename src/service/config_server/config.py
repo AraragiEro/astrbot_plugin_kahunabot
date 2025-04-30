@@ -1,5 +1,7 @@
 import configparser
+from configparser import ConfigParser
 import os
+
 
 from ..log_server import logger
 
@@ -14,6 +16,9 @@ config = configparser.ConfigParser()
 config.optionxform = str    # 保持键名大小写
 config_path = os.path.join(script_dir, '../../../config.ini')
 config.read(config_path)
+
+def reload_config():
+    config.read(config_path)
 
 # 访问配置内容
 # print(config['DEFAULT']['AppName'])  # 输出：MyApp

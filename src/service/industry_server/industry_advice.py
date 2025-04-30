@@ -22,6 +22,7 @@ from ..database_server.sqlalchemy.kahuna_database_utils import (
     UserAssetStatisticsDBUtils
 )
 from .blueprint import BPManager
+from ..config_server.config import config, reload_config
 from ..log_server import logger
 
 
@@ -188,8 +189,9 @@ class IndustryAdvice:
         ])
 
         # 设置权重
-        material_weight = 0.9  # 原材料成本权重
-        profit_weight = 0.1  # 利润权重 (负号表示我们要最大化这部分)
+        reload_config()
+        material_weight = config['EVE']['REF_MATER_WEIGHT']  # 原材料成本权重
+        profit_weight = config['EVE']['REF_PROFIT_WEIGHT']  # 利润权重 (负号表示我们要最大化这部分)
 
         # 多目标优化：最小化原材料成本同时最大化利润
         prob += material_weight * material_cost - profit_weight * (product_value - material_cost)
