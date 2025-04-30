@@ -126,7 +126,7 @@
             <!-- 建筑资产历史趋势 -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-xl font-semibold mb-4">建筑资产历史趋势</h2>
-                <div class="chart-container trend-chart-containers">
+                <div class="chart-container trend-chart-container">
                     <canvas id="structureTrendChart"></canvas>
                 </div>
             </div>
@@ -227,15 +227,15 @@
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: [
-                            '#4B5563', // 矿石
-                            '#F59E0B', // 燃料块
-                            '#10B981', // 元素
-                            '#3B82F6', // 气云
-                            '#8B5CF6', // 行星工业
-                            '#EC4899', // 产品
-                            '#6B7280'  // 杂货
-                        ],
+                        {#backgroundColor: [#}
+                        {#    '#4B5563', // 矿石#}
+                        {#    '#F59E0B', // 燃料块#}
+                        {#    '#10B981', // 元素#}
+                        {#    '#3B82F6', // 气云#}
+                        {#    '#8B5CF6', // 行星工业#}
+                        {#    '#EC4899', // 产品#}
+                        {#    '#6B7280'  // 杂货#}
+                        {#],#}
                         borderWidth: 1
                     }]
                 },

@@ -108,6 +108,10 @@ class IndustryAdvice:
         # 产出效率系数
         efficiency_rate = 0.906  # 90.6%
         transport_cost = 500
+        ref_target = {
+            34, 35, 36, 37, 38, 39, 40, 11399,
+            16272, 16273, 16274, 16275, 17887, 17888, 17889,
+        }
         one_ref_target = {
             34, 35, 36, 37, 38, 39, 40, 11399,
             16272, 16273, 16274, 16275, 17887, 17888, 17889,
@@ -125,7 +129,8 @@ class IndustryAdvice:
             28440: {16272: 173, 16273: 691, 16275: 173},
             28441: {16272: 104, 16273: 55, 16275: 1, 17888: 483},
             28442: {16272: 104, 16273: 55, 16275: 1, 17889: 483},
-            28443: {16272: 69, 16273: 35, 16275: 1, 17888: 414},
+            28443: {16272: 104, 16273: 55, 16275: 1, 17887: 483},
+            28444: {16272: 69, 16273: 35, 16275: 1, 17888: 414},
             62520: {34: 150, 35: 90},
             62528: {34: 175, 36: 70},
             62536: {36: 60, 37: 120},
@@ -141,7 +146,7 @@ class IndustryAdvice:
         }
         target_price_index = 0 if material_flag == 'buy' else 1
         target_price = {
-            target: (await jita_market.get_type_order_rouge(target))[target_price_index] for target in one_ref_target
+            target: (await jita_market.get_type_order_rouge(target))[target_price_index] for target in ref_target
         }
         source_price_index = 0 if compress_flag == 'buy' else 1
         source_price = {
@@ -160,9 +165,9 @@ class IndustryAdvice:
             effective_ref_source_dict[m] = {}
             for p, amount in products.items():
                 # 预先计算单位产出 * 效率系数
-                effective_ref_source_dict[m][p] = amount * (efficiency_rate if m not in one_ref_target else 1)
+                effective_ref_source_dict[m][p] = amount * (efficiency_rate if m not in ref_target else 1)
 
-        need = {data[0]: data[1] for data in material_list if data[0] in one_ref_target}
+        need = {data[0]: data[1] for data in material_list if data[0] in ref_target}
 
         # 创建问题实例
         prob = pulp.LpProblem("MinimizeWaste", pulp.LpMinimize)
@@ -271,7 +276,7 @@ class IndustryAdvice:
                         theoretical_production[p] += theo_output
 
                         # 实际产出（应用效率系数并向下取整）
-                        actual_output = int(theo_output * (efficiency_rate if m not in one_ref_target else 1))
+                        actual_output = int(theo_output * (efficiency_rate if m not in ref_target else 1))
                         actual_production[p] += actual_output
                         connect_d[m]['product'][p] = {'name': SdeUtils.get_name_by_id(p), 'product_value': actual_output}
 
