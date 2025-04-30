@@ -60,12 +60,19 @@
                     <span id="totalChange" class="ml-2 text-sm font-medium"></span>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-blue-50 p-4 rounded-lg">
                     <h3 class="text-lg font-medium text-blue-800">资产估值总计</h3>
                     <div class="flex justify-between items-center mt-2">
                         <span id="classifyTotal" class="text-xl font-bold"></span>
                         <span id="classifyTotalChange" class="text-sm"></span>
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-blue-800">流水线加工中</h3>
+                    <div class="flex justify-between items-center mt-2">
+                        <span id="running" class="text-xl font-bold"></span>
+                        <span id="runingChange" class="text-sm"></span>
                     </div>
                 </div>
                 <div class="bg-purple-50 p-4 rounded-lg">
@@ -182,7 +189,7 @@
             
             document.getElementById('classifyTotal').textContent = formatNumber(classifyTotal);
             document.getElementById('classifyTotalChange').innerHTML = displayChange(classifyChange);
-            
+
             // 建筑资产总计
             const structureTotal = Object.values(today.structure_asset).reduce((a, b) => a + b, 0);
             const yesterdayStructureTotal = yesterdayData ? 
@@ -198,6 +205,13 @@
             
             document.getElementById('walletBalance').textContent = formatNumber(today.wallet);
             document.getElementById('walletChange').innerHTML = displayChange(walletChange);
+
+
+            // 加工中资产
+            const yesterdayRunningTotalChange = calculateChange(today.job_running, yesterdayData ? yesterdayData.job_running : 0);
+
+            document.getElementById('running').textContent = formatNumber(today.job_running)
+            document.getElementById('runningChange').innerHTML = displayChange(yesterdayRunningTotalChange);
         }
         
         // 创建分类资产饼图

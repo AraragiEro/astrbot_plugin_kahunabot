@@ -1,6 +1,8 @@
 import asyncio
 import json
 from pickle import BINPUT
+from pydoc import classify_class_attrs
+
 import pulp
 from datetime import datetime
 from multiprocessing import Lock
@@ -320,9 +322,14 @@ class IndustryAdvice:
         alias_character = [cid for cid in user.user_data.alias.keys()]
         result = await RunningJobOwner.get_job_with_starter(user_character + alias_character)
 
+        job_dict = {}
         for job in result:
             if job.output_location_id in target_container:
                 product_count = BPManager.get_bp_product_quantity_typeid(job.type_id)
+                if job.type_id not in job_dict:
+                    job_dict[job.type_id] = 0
+                job_dict[job.type_id] += job.runs * product_count
+
                 if job.type_id not in asset_dict:
                     asset_dict[job.type_id] = 0
                 asset_dict[job.type_id] += job.runs * product_count
@@ -353,16 +360,25 @@ class IndustryAdvice:
         }
 
         # 按照物品种类
-        classify_asset = {'矿石': 0, '燃料块': 0, '元素': 0, '气云': 0, '行星工业': 0, '产品': 0, '杂货': 0}
+        classify_asset = {'矿石': 0, '组件': 0, '燃料块': 0, '元素': 0, '气云': 0, '行星工业': 0, '产品': 0, '杂货': 0}
         for tid, quantity in asset_dict.items():
             group = SdeUtils.get_groupname_by_id(tid)
             category = SdeUtils.get_category_by_id(tid)
+            market_list = SdeUtils.get_market_group_list(tid)
             # 根据 group 或 category 进行判断和分类
-            if group == "Mineral":
+            if (
+                group == "Mineral" or
+                group == "Ice Product"
+            ):
                 classify_asset["矿石"] += quantity * price_dict.get(tid, 0)
+            elif 'Components' in market_list:
+                classify_asset['组件'] += quantity * price_dict.get(tid, 0)
             elif group == "Fuel Block":
                 classify_asset['燃料块'] += quantity * price_dict.get(tid, 0)
-            elif group == "Moon Materials":
+            elif (
+                group == "Moon Materials" or
+                "Reaction Materials" in market_list
+            ):
                 classify_asset['元素'] += quantity * price_dict.get(tid, 0)
             elif group == "Harvestable Cloud":
                 classify_asset['气云'] += quantity * price_dict.get(tid, 0)
@@ -373,6 +389,7 @@ class IndustryAdvice:
             else:
                 classify_asset["杂货"] += quantity * price_dict.get(tid, 0)
         res['classify_asset'] = classify_asset
+        res['job_running'] = sum([price_dict.get(tid) * value for tid, value in job_dict.items() if tid in price_dict])
         res['total'] += sum(classify_asset.values())
 
         structure_asset = {}
@@ -406,6 +423,16 @@ class IndustryAdvice:
             }
             for data in await UserAssetStatisticsDBUtils.get_user_asset_statistics(user_qq)
         }
+        # 补充新加的元素
+        for data in history_data.values():
+            if 'classify_asset' not in data['data']:
+                data['data']['classify_asset'] = {}
+            if 'structure_asset' not in data['data']:
+                data['data']['structure_asset'] = {}
+            if 'job_running' not in data['data']:
+                data['data']['job_running'] = 0
+            if 'total' not in data['data']:
+                data['data']['total'] = 0
 
         output = {
             'today': res,
