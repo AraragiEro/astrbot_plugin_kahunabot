@@ -190,8 +190,8 @@ class IndustryAdvice:
 
         # 设置权重
         reload_config()
-        material_weight = config['EVE']['REF_MATER_WEIGHT']  # 原材料成本权重
-        profit_weight = config['EVE']['REF_PROFIT_WEIGHT']  # 利润权重 (负号表示我们要最大化这部分)
+        material_weight = float(config['EVE']['REF_MATER_WEIGHT'])  # 原材料成本权重
+        profit_weight = float(config['EVE']['REF_PROFIT_WEIGHT'])  # 利润权重 (负号表示我们要最大化这部分)
 
         # 多目标优化：最小化原材料成本同时最大化利润
         prob += material_weight * material_cost - profit_weight * (product_value - material_cost)
