@@ -403,6 +403,34 @@ class PictureRender():
         return pic_path
 
     @classmethod
+    async def render_month_order_statistic(cls, data):
+        for type_data in data['sell_type_data'].values():
+            type_data.update({'icon': await PictureRender.get_eve_item_icon_base64(type_data['type_id'])})
+
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('month_order_statistic.j2')
+        current = get_beijing_utctime(datetime.now())
+        html_content = template.render(
+            header_title='月KPI统计',
+            header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
+            data=data
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "month_kpi.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=1500, height=720, wait_time=120)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
     async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 5):
         # 将HTML内容保存到临时文件
         html_file_path = os.path.join(TMP_PATH, "temp_render.html")
@@ -513,15 +541,18 @@ class PictureRender():
             os.makedirs(image_path)
 
         # 构建图片URL和本地保存路径
-        url = f"https://images.evetech.net/types/{type_id}/icon?size={size}"
         local_path = os.path.join(image_path, f"item_{type_id}_{size}.png")
 
         # 如果图片已存在，直接返回路径
         if os.path.exists(local_path):
             return local_path
 
-        # 尝试从主URL下载
+        # 尝试从主URL下载（现在使用原来的备用URL作为主URL）
         try:
+            # 主URL（原备用URL）
+            url = f"https://imageserver.eveonline.com/Type/{type_id}_{size}.png"
+            logger.info(f"尝试从主URL下载: {url}")
+
             # 下载图片，禁用SSL验证
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, ssl=False, timeout=aiohttp.ClientTimeout(total=10)) as response:
@@ -538,10 +569,10 @@ class PictureRender():
         except Exception as e:
             logger.error(f"从主URL下载EVE物品图片失败: {e}")
 
-            # 尝试备用URL
+            # 尝试备用URL（原主URL）
             try:
                 # 备用URL
-                backup_url = f"https://imageserver.eveonline.com/Type/{type_id}_{size}.png"
+                backup_url = f"https://images.evetech.net/types/{type_id}/icon?size={size}"
                 logger.info(f"尝试从备用URL下载: {backup_url}")
 
                 async with aiohttp.ClientSession() as session:
@@ -567,7 +598,8 @@ class PictureRender():
                 try:
                     # 创建一个简单的1x1像素透明PNG
                     with open(default_image, 'wb') as f:
-                        f.write(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="))
+                        f.write(base64.b64decode(
+                            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="))
                 except Exception:
                     logger.error("无法创建默认图片")
                     return None

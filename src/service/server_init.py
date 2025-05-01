@@ -7,6 +7,7 @@ from .industry_server.industry_advice import IndustryAdvice
 from .industry_server.industry_config import IndustryConfigManager
 from .industry_server.industry_manager import IndustryManager
 from .industry_server.structure import StructureManager
+from .industry_server.order import order_manager
 from .market_server.market_manager import MarketManager
 from .user_server.user_manager import UserManager
 from .log_server import logger
@@ -45,8 +46,7 @@ async def init_server_cycle_mission():
     asyncio.create_task(async_refresh_per_min(0, 5, IndustryManager.refresh_market_price))
     asyncio.create_task(async_refresh_per_min(0, 5, kahuna_google_market_monitor.refresh_market_monitor_process))
     asyncio.create_task(async_refresh_per_min(0, 5, IndustryAdvice.refresh_all_asset_statistics))
-
-
+    asyncio.create_task(async_refresh_per_min(0, 60, order_manager.refresh_all_order))
 
 async def init_server(log=True):
     await init_server_service()

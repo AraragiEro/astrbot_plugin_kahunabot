@@ -368,6 +368,10 @@ class KahunaBot(Star):
     async def Inds_rp_sell_order(self, event: AstrMessageEvent, location: str):
         yield await IndsEvent.rp_sell_order(event, location)
 
+    @Inds_rp.command('月度业绩', alias={"month_kpi"})
+    async def Inds_rp_month_order_statistic(self, event: AstrMessageEvent):
+        yield await IndsEvent.rp_month_order_statistic(event)
+
     @Inds.command("refjobs")
     async def Inds_refjobs(self, event: AstrMessageEvent):
         """ 刷新进行中的工作 """

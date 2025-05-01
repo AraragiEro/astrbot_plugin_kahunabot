@@ -816,6 +816,22 @@ class IndsEvent:
         return event.chain_result(chain)
 
     @staticmethod
+    async def rp_month_order_statistic(event: AstrMessageEvent):
+        user_qq = get_user(event)
+        user = UserManager.get_user(user_qq)
+
+        order_data = await order_manager.get_order_of_user(user)
+        month_order_history = await order_manager.get_month_order_history_of_user(user)
+
+        output_data = await order_manager.analyse_month_order_statistic(order_data, month_order_history)
+        pic_output = await PictureRender.render_month_order_statistic(output_data)
+
+        chain = [
+            Image.fromFileSystem(pic_output)
+        ]
+        return event.chain_result(chain)
+
+    @staticmethod
     async def refjobs(event: AstrMessageEvent):
         await IndustryManager.refresh_running_status(force=True)
 
