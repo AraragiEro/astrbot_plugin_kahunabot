@@ -264,7 +264,6 @@ class MarketHistory:
 
     type_history_detale_cache = TTLCache(maxsize=3000, ttl=24 * 60 * 60)
     @classmethod
-    @cached(type_history_detale_cache)
     async def get_type_history_detale(cls, type_id: int):
         if type_id in cls.type_history_detale_cache:
             return cls.type_history_detale_cache[type_id]
