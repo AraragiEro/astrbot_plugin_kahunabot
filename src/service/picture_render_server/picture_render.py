@@ -424,7 +424,7 @@ class PictureRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "month_kpi.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=1400, height=720, wait_time=120)
+        pic_path = await cls.render_pic(output_path, html_content, width=1600, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
