@@ -793,7 +793,7 @@ class IndsEvent:
     @staticmethod
     async def rp_sell_order(event: AstrMessageEvent, location: str):
         user_qq = get_user(event)
-        user = UserManager.get_user(461630479)
+        user = UserManager.get_user(user_qq)
 
         if location not in {'jita', 'frt'}:
             return event.plain_result("位置参数[1] 必须为 {jita, frt}")
