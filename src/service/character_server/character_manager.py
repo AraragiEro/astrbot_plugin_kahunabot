@@ -100,7 +100,7 @@ class CharacterManager():
         return False
 
     @classmethod
-    async def create_new_character(cls, token_data, user_qq):
+    async def create_new_character(cls, token_data, user_qq: int) -> Character:
         character_verify_data = await verify_token(token_data[0])
         if not character_verify_data:
             logger.error('No character info found')
@@ -142,7 +142,7 @@ class CharacterManager():
         await character.insert_to_db()
         cls.character_dict[character_id] = character
 
-        return model_to_dict(await character.get_from_db())
+        return await character.get_from_db()
 
     @classmethod
     def get_user_all_characters(cls, user_id):

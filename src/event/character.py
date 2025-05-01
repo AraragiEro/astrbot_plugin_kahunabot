@@ -39,10 +39,10 @@ class CharacterEvent():
     async def add(event: AstrMessageEvent, back_url):
         user_qq = get_user(event)
         at, rt, et = get_token(back_url)
-        character_info = await CharacterManager.create_new_character([at, rt, et], user_qq)
+        character = await CharacterManager.create_new_character([at, rt, et], user_qq)
         print_info = (f"绑定成功，信息已写入。\n"
-                      f"角色名：{character_info['character_name']}\n"
-                      f"QQ: {character_info['QQ']}\n"
-                      f"创建时间：{character_info['create_date']}\n")
+                      f"角色名：{character.character_name}\n"
+                      f"QQ: {character.QQ}\n"
+                      f"创建时间：{character.create_date}\n")
         logger.info(4)
         return event.plain_result(print_info)
