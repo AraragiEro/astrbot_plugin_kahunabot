@@ -139,10 +139,10 @@ class CharacterManager():
             character.corp_id = corp_id
         character.director = await cls.is_character_corp_directer(character)
 
-        character.insert_to_db()
+        await character.insert_to_db()
         cls.character_dict[character_id] = character
 
-        return model_to_dict(character.get_from_db())
+        return model_to_dict(await character.get_from_db())
 
     @classmethod
     def get_user_all_characters(cls, user_id):
