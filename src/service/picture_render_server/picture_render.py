@@ -37,7 +37,8 @@ def format_number(value):
         # 如果无法转换为数字，返回原值
         return value
 
-class PriceResRender():
+
+class PictureRender():
     @classmethod
     def check_tmp_dir(cls):
         # 确保临时目录存在
@@ -220,7 +221,7 @@ class PriceResRender():
             if sell == 0:
                 price = '价格详谈'
             data = {
-                'icon': await PriceResRender.get_eve_item_icon_base64(asset.type_id),
+                'icon': await PictureRender.get_eve_item_icon_base64(asset.type_id),
                 'id': asset.type_id,
                 'name': SdeUtils.get_name_by_id(asset.type_id),
                 'cn_name': SdeUtils.get_cn_name_by_id(asset.type_id),
@@ -244,7 +245,7 @@ class PriceResRender():
             current = current + timedelta(hours=8)
         html_content = template.render(
             items=items,
-            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
+            header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
             current_time=current.strftime('%Y-%m-%d %H:%M:%S') + ' UTC+8',
         )
 
@@ -272,7 +273,7 @@ class PriceResRender():
             current = current + timedelta(hours=8)
         html_content = template.render(
             data=ref_res,
-            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
+            header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
         )
 
         # 生成输出路径
@@ -306,7 +307,7 @@ class PriceResRender():
             all_data=data_list,
             feature_list=feature_list,
             header_title='T2常规舰船市场推荐',
-            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
+            header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
         )
 
         # 生成输出路径
@@ -333,7 +334,7 @@ class PriceResRender():
             buy_list_data=lack_dict,
             provider_data=provider_data,
             header_title='采购清单',
-            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
+            header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png'))
         )
 
         # 生成输出路径
@@ -357,7 +358,7 @@ class PriceResRender():
         current = get_beijing_utctime(datetime.now())
         html_content = template.render(
             header_title='资产分析',
-            header_image=PriceResRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
+            header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
             data=data
         )
 
@@ -366,6 +367,36 @@ class PriceResRender():
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
         pic_path = await cls.render_pic(output_path, html_content, width=1500, height=720, wait_time=120)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
+    async def render_order_state(cls, data):
+        sell_data = data['sell_data']
+        for order in sell_data:
+            order.update({
+                'icon': await PictureRender.get_eve_item_icon_base64(order['type_id']),
+                'date_remain': order['duration'] - (get_beijing_utctime(datetime.now()) - order['issued']).days,
+            })
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('order_state.j2')
+        html_content = template.render(
+            header_title='出售订单状态',
+            header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
+            sell_data=sell_data
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "order_state.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=900, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")

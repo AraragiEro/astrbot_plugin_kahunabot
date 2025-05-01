@@ -6,7 +6,7 @@ from astrbot.core.message.components import Plain
 # kahuna model
 from ..service.market_server import PriceService
 from ..service.market_server.marker import MarketHistory, REGION_FORGE_ID
-from ..service.picture_render_server.picture_render import PriceResRender
+from ..service.picture_render_server.picture_render import PictureRender
 from ..service.sde_service import SdeUtils
 
 # global value
@@ -54,7 +54,7 @@ class TypesPriceEvent():
 
         quantity_str = ''
 
-        res_path = await PriceResRender.render_price_res_pic(
+        res_path = await PictureRender.render_price_res_pic(
             item_name,
             [max_buy, mid_price, min_sell, fuzz_list],
             chart_history_data

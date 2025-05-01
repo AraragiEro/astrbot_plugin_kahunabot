@@ -16,7 +16,8 @@ from .config_model import (
     User,
     UserData,
     UserAssetStatistics,
-    InvTypeMap
+    InvTypeMap,
+    OrderHistory
 )
 from .cache_model import (
     Asset, AssetCache,
@@ -96,6 +97,17 @@ class CommonUtils:
 
                 result = await session.execute(stmt)
                 return result
+
+    @classmethod
+    async def insert_many_ignore_conflict(cls, rows_list, index_elements):
+        async_session = dbm.async_session(cls.cls_model)
+        async with async_session() as session:
+            async with session.begin():
+                stmt = insert(cls.cls_model).values(rows_list)
+                stmt = stmt.on_conflict_do_nothing(
+                    index_elements=index_elements
+                )
+                await session.execute(stmt)
 
     @classmethod
     async def select_all(cls):
@@ -519,14 +531,7 @@ class MarketHistoryDBUtils(CommonUtils):
 
     @classmethod
     async def insert_many_ignore_conflict(cls, rows_list):
-        async_session = dbm.async_session(cls.cls_model)
-        async with async_session() as session:
-            async with session.begin():
-                stmt = insert(cls.cls_model).values(rows_list)
-                stmt = stmt.on_conflict_do_nothing(
-                    index_elements=['region_id', 'type_id', 'date']
-                )
-                await session.execute(stmt)
+        await super().insert_many_ignore_conflict(rows_list, ['region_id', 'type_id', 'date'])
 
     @classmethod
     async def select_order_history_by_type_id_and_region_id(cls, type_id, region_id):
@@ -778,5 +783,21 @@ class UserAssetStatisticsDBUtils(CommonUtils):
         async with async_session() as session:
             async with session.begin():
                 stmt = select(cls.cls_model).where(cls.cls_model.user_qq == user_qq)
+                result = await session.execute(stmt)
+                return result.scalars().all()
+
+class OrderHistoryDBUtils(CommonUtils):
+    cls_model = OrderHistory
+
+    @classmethod
+    async def insert_many_ignore_conflict(cls, rows_list):
+        await super().insert_many_ignore_conflict(rows_list, ['order_id', 'owner_id'])
+
+    @classmethod
+    async def select_order_history_by_owner_id_list(cls, param):
+        async_session = dbm.async_session(cls.cls_model)
+        async with async_session() as session:
+            async with session.begin():
+                stmt = select(cls.cls_model).where(cls.cls_model.owner_id.in_(param))
                 result = await session.execute(stmt)
                 return result.scalars().all()

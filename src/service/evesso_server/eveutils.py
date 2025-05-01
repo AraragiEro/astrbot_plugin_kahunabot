@@ -4,6 +4,7 @@ from datetime import datetime
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
+import re
 
 from ..log_server import logger
 
@@ -66,3 +67,11 @@ async def get_multipages_result(esi_func, max_page, *args):
         pbar.update(1)
 
     return results
+
+def parse_iso_datetime(dt_string):
+    try:
+        # 移除所有时区相关信息
+        dt_string = re.sub(r'[+-]\d{2}:?\d{2}$|Z$', '', dt_string)
+        return datetime.fromisoformat(dt_string)
+    except ValueError as e:
+        raise ValueError(f"无法解析时间字符串 '{dt_string}': {str(e)}")

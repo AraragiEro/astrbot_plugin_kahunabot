@@ -86,3 +86,28 @@ class UserAssetStatistics(ConfigModel):
     __table_args__ = (
         UniqueConstraint('user_qq', 'date', name='UserAssetStatistics_user_qq_date_unique'),
     )
+
+class OrderHistory(ConfigModel):
+    __tablename__ = "order_history"
+    id = Column(Integer, primary_key=True)
+    # 基本订单信息
+    duration = Column(Integer, nullable=False)
+    escrow = Column(Float, nullable=False)
+    is_buy_order = Column(Boolean, nullable=False)
+    is_corporation = Column(Boolean, nullable=False)
+    issued = Column(DateTime, nullable=False)
+    location_id = Column(Integer, nullable=False)
+    min_volume = Column(Integer, nullable=False)
+    order_id = Column(Integer)
+    price = Column(Float, nullable=False)
+    range = Column(String, nullable=False)
+    region_id = Column(Integer, nullable=False, index=True)
+    state = Column(String, nullable=False)
+    type_id = Column(Integer, nullable=False, index=True)
+    volume_remain = Column(Integer, nullable=False)
+    volume_total = Column(Integer, nullable=False)
+    owner_id = Column(Integer, nullable=False, index=True)
+
+    __table_args__ = (
+        UniqueConstraint('order_id', 'owner_id', name='order_history_order_id_owner_id_unique'),
+    )

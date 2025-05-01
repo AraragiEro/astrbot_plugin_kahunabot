@@ -15,16 +15,17 @@ from ..service.industry_server.industry_analyse import IndustryAnalyser
 from ..service.user_server.user_manager import UserManager
 from ..service.evesso_server.eveesi import characters_character
 from ..service.market_server import MarketManager, PriceService
-from ..service.market_server.marker import MarketHistory
+from ..service.market_server.marker import MarketHistory, FRT_4H_STRUCTURE_ID, JITA_TRADE_HUB_STRUCTURE_ID
 from ..service.asset_server.asset_container import AssetContainer
 from ..service.industry_server.industry_config import IndustryConfigManager, BPManager
 from ..service.industry_server.structure import StructureManager
 from ..service.industry_server.industry_manager import IndustryManager
 from ..service.industry_server.industry_advice import IndustryAdvice
+from ..service.industry_server.order import order_manager
 from ..service.sde_service.utils import SdeUtils
 from ..service.feishu_server.feishu_kahuna import FeiShuKahuna
 from ..service.log_server import logger
-from ..service.picture_render_server.picture_render import PriceResRender
+from ..service.picture_render_server.picture_render import PictureRender
 from ..service.industry_server.third_provider import provider_manager as pm
 from ..service.config_server.config import config
 
@@ -541,7 +542,7 @@ class IndsEvent:
         for tid, data in need_d.items():
             output_str += f"{data['name']}\t{data['need']}\n"
 
-        pic_path = await PriceResRender.render_refine_result(ref_res)
+        pic_path = await PictureRender.render_refine_result(ref_res)
         chain = [
             Image.fromFileSystem(pic_path),
             Plain(output_str)
@@ -584,7 +585,7 @@ class IndsEvent:
                 continue
             new_data = [
                 {'id': d[0],
-                 'icon': await PriceResRender.get_eve_item_icon_base64(d[0]),
+                 'icon': await PictureRender.get_eve_item_icon_base64(d[0]),
                  'name': d[1],
                  'cn_name': d[2],
                  'lack': d[3]} for d in data if d[3] > 0
@@ -592,7 +593,7 @@ class IndsEvent:
 
             buy_data[k] = new_data
 
-        output_path = await PriceResRender.render_buy_list(buy_data, new_asset)
+        output_path = await PictureRender.render_buy_list(buy_data, new_asset)
         chain = [
             Image.fromFileSystem(output_path)
         ]
@@ -640,7 +641,7 @@ class IndsEvent:
                 t2_cost_sheet = FeiShuKahuna.get_t2_ship_market_sheet(spreadsheet)
                 FeiShuKahuna.output_mk_sheet(t2_cost_sheet, t2mk_data)
 
-                output_path = await PriceResRender.rebder_mk_feature(t2mk_dict)
+                output_path = await PictureRender.rebder_mk_feature(t2mk_dict)
                 res_str = f'报表详情 {t2_cost_sheet.url}'
 
                 chain = [
@@ -740,7 +741,7 @@ class IndsEvent:
                 detail_dict["type_id"] = type_id
                 detail_dict["market_detail"] = await PriceService.get_price_rouge(product, 'jita')
 
-                pic_path = await PriceResRender.render_single_cost_pic(detail_dict)
+                pic_path = await PictureRender.render_single_cost_pic(detail_dict)
 
                 chain = [
                     Image.fromFileSystem(pic_path),
@@ -770,7 +771,7 @@ class IndsEvent:
             asset.location_flag == 'CorpSAG4' and SdeUtils.get_category_by_id(asset.type_id) == 'Ship'
         ]
 
-        pic_path = await PriceResRender.render_sell_list(sell_asset_list2, price_type)
+        pic_path = await PictureRender.render_sell_list(sell_asset_list2, price_type)
 
         chain = [
             Image.fromFileSystem(pic_path)
@@ -782,8 +783,33 @@ class IndsEvent:
         user_qq = get_user(event)
 
         data = await IndustryAdvice.personal_asset_statistics(user_qq)
-        pic_output = await PriceResRender.render_asset_statistic_report(data)
+        pic_output = await PictureRender.render_asset_statistic_report(data)
 
+        chain = [
+            Image.fromFileSystem(pic_output)
+        ]
+        return event.chain_result(chain)
+
+    @staticmethod
+    async def rp_sell_order(event: AstrMessageEvent, location: str):
+        user_qq = get_user(event)
+        user = UserManager.get_user(461630479)
+
+        if location not in {'jita', 'frt'}:
+            return event.plain_result("位置参数[1] 必须为 {jita, frt}")
+
+        location_id = None
+        if location == 'jita':
+            location_id = JITA_TRADE_HUB_STRUCTURE_ID
+        elif location == 'frt':
+            location_id = FRT_4H_STRUCTURE_ID
+        else:
+            event.plain_result("位置参数[1] 必须为 {jita, frt}")
+
+        order_data = await order_manager.get_order_of_user(user)
+        sell_data = await order_manager.filt_sell_order_of_location_id(order_data, location_id)
+
+        pic_output = await PictureRender.render_order_state({'sell_data': sell_data})
         chain = [
             Image.fromFileSystem(pic_output)
         ]

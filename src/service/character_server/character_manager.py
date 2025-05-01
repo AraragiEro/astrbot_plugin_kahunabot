@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import re
+from symtable import Class
+
 from peewee import DoesNotExist
 from concurrent.futures import ThreadPoolExecutor
 from playhouse.shortcuts import model_to_dict
@@ -8,6 +10,7 @@ import asyncio
 from .character import Character
 from ..evesso_server.eveesi import verify_token, characters_character
 from ..evesso_server.eveesi import corporations_corporation_id_roles
+from ..evesso_server.eveutils import parse_iso_datetime
 
 # import logger
 from ..log_server import logger
@@ -79,6 +82,10 @@ class CharacterManager():
         raise KahunaException(f'无法使用qq{qq}和角色名{character_name}匹配角色对象。请先进行授权。')
 
     @classmethod
+    def get_all_characters_of_user(cls, qq: int) -> list[Character]:
+        return [character for character in cls.character_dict.values() if character.QQ == qq]
+
+    @classmethod
     async def is_character_corp_directer(cls, character):
         role_info = await corporations_corporation_id_roles(await character.ac_token, character.corp_id)
         if not role_info:
@@ -93,15 +100,6 @@ class CharacterManager():
         return False
 
     @classmethod
-    def parse_iso_datetime(cls, dt_string):
-        try:
-            # 移除所有时区相关信息
-            dt_string = re.sub(r'[+-]\d{2}:?\d{2}$|Z$', '', dt_string)
-            return datetime.fromisoformat(dt_string)
-        except ValueError as e:
-            raise ValueError(f"无法解析时间字符串 '{dt_string}': {str(e)}")
-
-    @classmethod
     async def create_new_character(cls, token_data, user_qq):
         character_verify_data = await verify_token(token_data[0])
         if not character_verify_data:
@@ -111,7 +109,7 @@ class CharacterManager():
         character_data = await characters_character(character_id)
         corp_id = character_data['corporation_id']
         character_name = character_verify_data['CharacterName']
-        expires_time = cls.parse_iso_datetime(character_verify_data["ExpiresOn"])
+        expires_time = parse_iso_datetime(character_verify_data["ExpiresOn"])
         expires_time = expires_time.astimezone(timezone(timedelta(hours=+8), 'Shanghai'))
         # try:
         #     character = M_Character.get(M_Character.character_id == character_id)

@@ -20,7 +20,7 @@ from ..service.industry_server.industry_advice import IndustryAdvice
 from ..service.sde_service.utils import SdeUtils
 from ..service.feishu_server.feishu_kahuna import FeiShuKahuna
 from ..service.log_server import logger
-from ..service.picture_render_server.picture_render import PriceResRender
+from ..service.picture_render_server.picture_render import PictureRender
 from ..service.config_server.config import config, update_config
 
 from ..utils import KahunaException

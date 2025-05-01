@@ -98,3 +98,7 @@ class UserManager():
         await user.clean_member_time()
 
         return user
+
+    @classmethod
+    def get_users_list(cls):
+        return [user for user in cls.user_dict.values()]
