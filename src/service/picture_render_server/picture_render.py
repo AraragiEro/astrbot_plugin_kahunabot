@@ -424,7 +424,7 @@ class PictureRender():
         output_path = os.path.abspath(os.path.join((TMP_PATH), "month_kpi.jpg"))
 
         # 增加等待时间到5秒，确保图表有足够时间渲染
-        pic_path = await cls.render_pic(output_path, html_content, width=1500, height=720, wait_time=120)
+        pic_path = await cls.render_pic(output_path, html_content, width=1400, height=720, wait_time=120)
 
         if not pic_path:
             raise KahunaException("pic_path not exist.")
@@ -466,14 +466,14 @@ class PictureRender():
 
         page = await browser.newPage()
         await page.setViewport({'width': width, 'height': height})
-        
+
         try:
             # 设置页面内容
             await page.setContent(html_content)
 
             # 等待字体加载完成
             await page.waitForFunction('document.fonts.ready', {'timeout': wait_time * 1000})
-            
+
             # 检查是否有Chart.js图表，如果有则等待图表渲染完成
             has_chart = await page.evaluate('typeof Chart !== "undefined" && document.getElementById("costChart") !== null')
             if has_chart:
@@ -490,7 +490,7 @@ class PictureRender():
                         };
                     }
                 ''')
-                
+
                 # 等待图表渲染完成或超时
                 try:
                     await page.waitForFunction('window.chartRendered === true', {'timeout': wait_time * 1000})
@@ -502,7 +502,7 @@ class PictureRender():
                 await page.waitForFunction('document.readyState === "complete"')
                 # 额外等待一小段时间确保CSS渲染完成
                 await asyncio.sleep(1)
-            
+
             # 截图
             await page.screenshot({'path': output_path, 'fullPage': True})
         except Exception as e:
