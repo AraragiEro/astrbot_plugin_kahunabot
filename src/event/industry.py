@@ -739,7 +739,7 @@ class IndsEvent:
                 FeiShuKahuna.output_cost_detail_sheet(cost_sheet, detail_dict)
 
                 detail_dict["type_id"] = type_id
-                detail_dict["market_detail"] = await PriceService.get_price_rouge(product, 'jita')
+                detail_dict["market_detail"] = (await PriceService.get_price_rouge(product, 'jita'))[1:]
 
                 pic_path = await PictureRender.render_single_cost_pic(detail_dict)
 
