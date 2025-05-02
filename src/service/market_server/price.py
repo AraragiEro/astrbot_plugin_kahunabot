@@ -23,7 +23,7 @@ class PriceService:
             # 进行忽略大小写的匹配
             for item in fuzz_list:
                 if SdeUtils.maybe_chinese(item_str):
-                    if len(item_str) == len(item):
+                    if len(item_str) == len(item) or item_str in item:
                         type_id = SdeUtils.get_id_by_name(item)
                         break
                 else:
