@@ -37,7 +37,10 @@ _一座新的**X**山拔地而起！_
     - [成本查询](#成本查询)
     - [工业规划与报表输出](#工业规划与报表输出)
     - [化矿分析](#化矿分析)
+    - [可自定义数据来源的采购清单](#可自定义数据来源的采购清单)
     - [利润分析](#利润分析)
+    - [挂单分析](#挂单分析)
+    - [资产统计](#资产统计)
   - [😇 如何部署？](#-如何部署)
     - [部署AstrBot](#部署astrbot)
     - [下载插件](#下载插件)
@@ -67,10 +70,20 @@ _一座新的**X**山拔地而起！_
 ![报表输出2](https://github.com/user-attachments/assets/235c724e-f465-4966-98b8-0dc4cf7acc50)
 
 ### 化矿分析
-![化矿分析](https://github.com/user-attachments/assets/8a1f865f-ec7a-416d-9640-fd87f3e46b55)
+<img src="https://github.com/user-attachments/assets/8a1f865f-ec7a-416d-9640-fd87f3e46b55" height=1200>
+
+### 可自定义数据来源的采购清单
+<img src="https://github.com/user-attachments/assets/25b891e5-8bb8-4d77-b55a-f6e1c6e2d389" height=800>
 
 ### 利润分析
-![利润分析](https://github.com/user-attachments/assets/8b835d57-e093-42c0-896d-bb93579c9935)
+<img src="https://github.com/user-attachments/assets/514b9bbc-20b6-4e13-a7a5-dfb8e5db43ef" height=1200>
+
+### 挂单分析
+<img src="https://github.com/user-attachments/assets/1e05f586-66b5-4495-a431-e6b8770131c5" height=800>
+
+### 资产统计
+<img src="https://github.com/user-attachments/assets/aa6a15b5-6902-4e38-9ec7-bfb09566de89" height=800>
+
 
 👉 报表内容丰富，包括任务分解，材料采购，物流清单，工作任务等，一站式解放工业制造的脑力消耗，🫡公司级别提供智能计算服务。
 
@@ -121,6 +134,7 @@ kahunabot/
 │   │   ├── database_server/  # 数据库服务
 │   │   ├── eveeso_server/  # eve api管理服务
 │   │   ├── feishu_server/  # 飞书api管理服务
+│   │   ├── google_server/  # 谷歌表格api管理服务
 │   │   ├── industry_server/  # 工业计算服务
 │   │   ├── log_server/  # 日志服务
 │   │   ├── market_server/ # 市场服务
@@ -152,6 +166,8 @@ pyppeteer-install
 
 apt-get install -y libglib2.0-0 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libatspi2.0-0
 apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra fonts-arphic-ukai fonts-arphic-uming
+
+# 如果生成的图片中文都是方框，需要补充安装中文字体
 
 ```
 

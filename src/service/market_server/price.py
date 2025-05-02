@@ -20,8 +20,19 @@ class PriceService:
         # 找不到id时获取模糊匹配结果并返回给用户
         if (type_id := SdeUtils.get_id_by_name(item_str)) is None:
             fuzz_list = SdeUtils.fuzz_type(item_str)
-            return None, None, None, fuzz_list
-        else:
+            # 进行忽略大小写的匹配
+            for item in fuzz_list:
+                if SdeUtils.maybe_chinese(item_str):
+                    if len(item_str) == len(item):
+                        type_id = SdeUtils.get_id_by_name(item)
+                        break
+                else:
+                    if item_str.lower() == item.lower():
+                        type_id = SdeUtils.get_id_by_name(item)
+                        break
+            if type_id is None:
+                return None, None, None, fuzz_list
+        if type_id:
             max_buy, min_sell = await market.get_type_order_rouge(type_id)
 
             # 整理信息
@@ -29,6 +40,8 @@ class PriceService:
 
             return max_buy, mid_price, min_sell, None
 
-
+    @staticmethod
+    async def get_item_special_scheme(item_str):
+        pass
 
 
