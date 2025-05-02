@@ -54,7 +54,7 @@ class TypesPriceEvent():
         quantity_str = ''
 
         res_path = await PictureRender.render_price_res_pic(
-            item_name,
+            item_id,
             [max_buy, mid_price, min_sell, fuzz_list],
             chart_history_data
         )

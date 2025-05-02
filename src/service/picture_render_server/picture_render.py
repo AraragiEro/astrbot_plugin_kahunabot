@@ -46,9 +46,10 @@ class PictureRender():
             os.makedirs(TMP_PATH)
 
     @classmethod
-    async def render_price_res_pic(cls, item_name: str, price_data: list, history_data: list):
+    async def render_price_res_pic(cls, item_id: int, price_data: list, history_data: list):
         # 准备实时价格数据
         max_buy, mid_price, min_sell, fuzz_list = price_data
+        item_name = SdeUtils.get_name_by_id(item_id)
 
         cls.check_tmp_dir()
 
