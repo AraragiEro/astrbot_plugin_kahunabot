@@ -158,13 +158,14 @@ class StructureManager():
             return await StructureManager.get_structure_id_from_location_id(father_data.location_id, father_data.location_type)
         return location_id, location_flag
 
-    type_stucture_cache = TTLCache(maxsize=1000, ttl=60 * 60 * 24)
+    type_stucture_cache = TTLCache(maxsize=100, ttl=1*60)
     @staticmethod
     async def get_structure_id_from_location_id(location_id, location_flag = None):
         if location_id in StructureManager.type_stucture_cache:
             return StructureManager.type_stucture_cache[location_id]
         else:
             structure_id, structure_flag = await StructureManager.find_type_structure(location_id, location_flag)
-            StructureManager.type_stucture_cache[location_id] = (structure_id, structure_flag)
+            if location_flag:
+                StructureManager.type_stucture_cache[location_id] = (structure_id, structure_flag)
             return structure_id, structure_flag
 
