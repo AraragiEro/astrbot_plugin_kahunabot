@@ -31,14 +31,14 @@ class PriceService:
                         type_id = SdeUtils.get_id_by_name(item)
                         break
             if type_id is None:
-                return None, None, None, fuzz_list
+                return None, None, None, None, fuzz_list
         if type_id:
             max_buy, min_sell = await market.get_type_order_rouge(type_id)
 
             # 整理信息
             mid_price = round((max_buy + min_sell) / 2, 2)
 
-            return max_buy, mid_price, min_sell, None
+            return type_id, max_buy, mid_price, min_sell, None
 
     @staticmethod
     async def get_item_special_scheme(item_str):
