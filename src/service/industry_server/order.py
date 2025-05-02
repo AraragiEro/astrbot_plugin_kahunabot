@@ -36,7 +36,7 @@ class OrderManager:
             })
         return results
 
-    async def get_order_of_user(self, user: User):
+    async def get_order_of_user(self, user: User) -> list:
         character_list = CharacterManager.get_all_characters_of_user(user.user_qq)
         orders = []
         for character in character_list:

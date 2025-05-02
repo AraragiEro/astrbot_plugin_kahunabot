@@ -8,6 +8,7 @@ from datetime import datetime
 from multiprocessing import Lock
 
 from .industry_analyse import IndustryAnalyser
+from .order import order_manager
 from .structure import StructureManager
 from .running_job import RunningJobOwner
 from ..sde_service.utils import SdeUtils
@@ -346,9 +347,26 @@ class IndustryAdvice:
                     structure_asset_dict[structure_id][job.product_type_id] = 0
                 structure_asset_dict[structure_id][job.product_type_id] += job.runs * product_count
 
+        # 整理数据
+        res = {
+            'classify_asset': {},
+            'structure_asset': {},
+            'wallet': 0,
+            'total': 0,
+            'order': 0
+        }
 
         # TODO 获取珍贵物品
         # 暂时pass
+
+        # 获取订单数据
+        user = UserManager.get_user(user_qq)
+        order_data = await order_manager.get_order_of_user(user)
+        order_total = 0
+        for order in order_data:
+            order_total += order['price'] * order['volume_remain']
+        res['order'] += order_total
+        res['total'] += order_total
 
         # 获取价格
         jita_market = MarketManager.get_market_by_type('jita')
@@ -356,13 +374,7 @@ class IndustryAdvice:
             tid: (await jita_market.get_type_order_rouge(tid))[0] for tid in asset_dict.keys()
         }
 
-        # 整理数据
-        res = {
-            'classify_asset': {},
-            'structure_asset': {},
-            'wallet': 0,
-            'total': 0
-        }
+
 
         # 按照物品种类
         classify_asset = {'矿石': 0, '冰矿产物': 0, '组件': 0, '燃料块': 0, '元素': 0, '气云': 0, '行星工业': 0, '产品': 0, '杂货': 0}
@@ -446,6 +458,8 @@ class IndustryAdvice:
                 data['data']['job_running'] = 0
             if 'total' not in data['data']:
                 data['data']['total'] = 0
+            if 'order' not in data['data']:
+                data['data']['order'] = 0
 
         output = {
             'today': res,

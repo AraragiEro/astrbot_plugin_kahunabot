@@ -60,7 +60,7 @@
                     <span id="totalChange" class="ml-2 text-sm font-medium"></span>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-blue-50 p-4 rounded-lg">
                     <h3 class="text-lg font-medium text-blue-800">资产估值总计</h3>
                     <div class="flex justify-between items-center mt-2">
@@ -69,10 +69,17 @@
                     </div>
                 </div>
                 <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-blue-800">挂单价值</h3>
+                    <div class="flex justify-between items-center mt-2">
+                        <span id="orderTotal" class="text-xl font-bold"></span>
+                        <span id="orderTotalChange" class="text-sm"></span>
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg">
                     <h3 class="text-lg font-medium text-blue-800">流水线加工中</h3>
                     <div class="flex justify-between items-center mt-2">
                         <span id="running" class="text-xl font-bold"></span>
-                        <span id="runingChange" class="text-sm"></span>
+                        <span id="runningChange" class="text-sm"></span>
                     </div>
                 </div>
                 <div class="bg-purple-50 p-4 rounded-lg">
@@ -205,17 +212,31 @@
             console.log('建筑资产变化:', displayChange(structureChange));
             
             // 钱包余额
-            const walletChange = calculateChange(today.wallet, yesterdayData ? yesterdayData.wallet : 0);
-            
+            const yesterdayWallet = yesterdayData ? yesterdayData.wallet : 0;
+            const walletChange = calculateChange(today.wallet, yesterdayWallet);
+            console.log('yesterdayWallet:', yesterdayWallet);
+            console.log('walletChange:', walletChange);
+
             document.getElementById('walletBalance').textContent = formatNumber(today.wallet);
             document.getElementById('walletChange').innerHTML = displayChange(walletChange);
 
 
             // 加工中资产
-            const yesterdayRunningTotalChange = calculateChange(today.job_running, yesterdayData ? yesterdayData.job_running : 0);
+            const yesterdayRunning = yesterdayData ? yesterdayData.job_running : 0;
+            const yesterdayRunningChange = calculateChange(today.job_running, yesterdayRunning);
+            console.log('yesterdayRunning:', yesterdayRunning);
+            console.log('yesterdayRunningChange:', yesterdayRunningChange);
 
-            document.getElementById('running').textContent = formatNumber(today.job_running)
-            document.getElementById('runningChange').innerHTML = displayChange(yesterdayRunningTotalChange);
+            document.getElementById('running').textContent = formatNumber(today.job_running);
+            document.getElementById('runningChange').innerHTML = displayChange(yesterdayRunningChange);
+
+            // 挂单资产
+            const yesterdayOrder = yesterdayData ? yesterdayData.order : 0;
+            const orderChange = calculateChange(today.order, yesterdayOrder);
+            console.log('yesterdayOrder:', yesterdayOrder);
+            console.log('orderChange:', orderChange);
+            document.getElementById('orderTotal').textContent = formatNumber(today.order);
+            document.getElementById('orderTotalChange').innerHTML = displayChange(orderChange);
         }
         
         // 创建分类资产饼图
