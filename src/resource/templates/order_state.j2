@@ -140,11 +140,6 @@
                                 <span>上架数量: {{ item.volume_total }}</span>
                             </div>
                             <div class="price-indicator bg-gray-200 relative">
-                                {% set max_display = item.min_price * 1.2 %}
-                                {% set min_display = item.min_price * 0.8 %}
-                                {% set width_percent = ((item.price - min_display) / (max_display - min_display)) * 100%}
-                                {% set width_percent = 100 if width_percent > 100 else width_percent %}
-                                {% set width_percent = 0 if width_percent < 0 else width_percent %}
                                 <div class="h-full bg-green-500" style="width: {{ (item.volume_total - item.volume_remain) / item.volume_total * 100 }}%; position: relative; z-index: 1;"></div>
                             </div>
                         </div>
