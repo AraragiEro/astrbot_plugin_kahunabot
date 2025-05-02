@@ -36,7 +36,7 @@ class TypesPriceEvent():
             quantity = 1
 
         # 准备实时价格数据
-        type_id, max_buy, mid_price, min_sell, fuzz_list = await PriceService.get_price_rouge(item_name, market)
+        item_id, max_buy, mid_price, min_sell, fuzz_list = await PriceService.get_price_rouge(item_name, market)
 
         # TODO 特别的物品组合map映射
         # 找不到物品时输出模糊匹配结果
@@ -47,7 +47,6 @@ class TypesPriceEvent():
             return event.plain_result(fuzz_rely)
 
         # 准备历史价格数据
-        item_id = SdeUtils.get_id_by_name(item_name)
         await MarketHistory.refresh_forge_market_history([item_id])
         history_data = await MarketHistory.get_type_region_histpry_data(item_id, REGION_FORGE_ID)
         chart_history_data = [[data[0], data[1]] for data in history_data[:365]]
