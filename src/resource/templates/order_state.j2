@@ -92,7 +92,7 @@
 
         <!-- 订单列表 -->
         <div class="space-y-4">
-            {% for item in sell_data %}
+            {% for item in order_data %}
             {% if item.price <= item.min_price %}
                 <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-200">
             {% else %}
@@ -146,10 +146,6 @@
                                 {% set width_percent = 100 if width_percent > 100 else width_percent %}
                                 {% set width_percent = 0 if width_percent < 0 else width_percent %}
                                 <div class="h-full bg-green-500" style="width: {{ (item.volume_total - item.volume_remain) / item.volume_total * 100 }}%; position: relative; z-index: 1;"></div>
-{#                                <!-- 最低价指示器 -->#}
-{#                                <div class="price-marker" style="background-color: #000000; left: 50%;"></div>#}
-{#                                <!-- 当前价指示器 -->#}
-{#                                <div class="price-marker" style="left: {{ width_percent }}%; background-color: #ff0000;"></div>#}
                             </div>
                         </div>
 
@@ -174,6 +170,7 @@
 
                         <!-- 价格比较 -->
                         <div>
+                        {% if not is_buy_order %}
                             <div class="flex justify-between text-xs text-gray-600 mb-1">
                                 <span>价格状态</span>
                                 {% set price_diff_percent = ((item.price - item.min_price) / item.min_price) * 100 if item.min_price > 0 else 0 %}
@@ -195,6 +192,29 @@
                                 <!-- 当前价指示器 -->
                                 <div class="price-marker" style="left: {{ width_percent }}%; background-color: #ff0000;"></div>
                             </div>
+                        {% else %}
+                            <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                <span>价格状态</span>
+                                {% set price_diff_percent = ((item.max_price - item.price) / item.price) * 100 if item.price > 0 else 0 %}
+                                {% if item.price >= item.max_price %}
+                                    <span class="text-green-600 font-medium">全场最高 {{ '{:.2f}'.format(price_diff_percent * -1) }}%</span>
+                                {% else %}
+                                    <span class="text-red-600 font-medium">被压了！ {{ '{:.2f}'.format(price_diff_percent) }}%</span>
+                                {% endif %}
+                            </div>
+                            <div class="price-indicator bg-gray-200 relative">
+                                {% set max_display = item.max_price * 1.2 %}
+                                {% set min_display = item.max_price * 0.8 %}
+                                {% set width_percent = ((max_display - item.price) / (max_display - min_display)) * 100%}
+                                {% set width_percent = 100 if width_percent > 100 else width_percent %}
+                                {% set width_percent = 0 if width_percent < 0 else width_percent %}
+                                <div class="h-full bg-green-500" style="width: {{ width_percent }}%; position: relative; z-index: 1;"></div>
+                                <!-- 最高价指示器 -->
+                                <div class="price-marker" style="background-color: #000000; left: 50%;"></div>
+                                <!-- 当前价指示器 -->
+                                <div class="price-marker" style="left: {{ width_percent }}%; background-color: #ff0000;"></div>
+                            </div>
+                        {% endif %}
                         </div>
                     </div>
                 </div>
@@ -203,7 +223,7 @@
         </div>
     </div>
     <div class="text-center text-gray-950 text-sm mt-8 mb-4">
-        <p>EVE订单管理系统 - kahunaBot</p>
+        <p>紫竹梅实验型工业核心mk.1 - EVE订单管理系统 - kahunaBot</p>
     </div>
     <script>
         // 获取当前时间用于计算进度条

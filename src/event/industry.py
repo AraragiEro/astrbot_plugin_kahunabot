@@ -15,7 +15,7 @@ from ..service.industry_server.industry_analyse import IndustryAnalyser
 from ..service.user_server.user_manager import UserManager
 from ..service.evesso_server.eveesi import characters_character
 from ..service.market_server import MarketManager, PriceService
-from ..service.market_server.marker import MarketHistory, FRT_4H_STRUCTURE_ID, JITA_TRADE_HUB_STRUCTURE_ID
+from ..service.market_server.marker import MarketHistory, FRT_4H_STRUCTURE_ID, JITA_TRADE_HUB_STRUCTURE_ID, PIMI_STRUCTURE_LIST
 from ..service.asset_server.asset_container import AssetContainer
 from ..service.industry_server.industry_config import IndustryConfigManager, BPManager
 from ..service.industry_server.structure import StructureManager
@@ -791,7 +791,7 @@ class IndsEvent:
         return event.chain_result(chain)
 
     @staticmethod
-    async def rp_sell_order(event: AstrMessageEvent, location: str):
+    async def rp_order(event: AstrMessageEvent, location: str, is_buy_order=False):
         user_qq = get_user(event)
         user = UserManager.get_user(user_qq)
 
@@ -799,17 +799,22 @@ class IndsEvent:
             return event.plain_result("位置参数[1] 必须为 {jita, frt}")
 
         location_id = None
+        alias_location = []
         if location == 'jita':
             location_id = JITA_TRADE_HUB_STRUCTURE_ID
+            alias_location = PIMI_STRUCTURE_LIST
         elif location == 'frt':
             location_id = FRT_4H_STRUCTURE_ID
+            alias_location = []
         else:
             event.plain_result("位置参数[1] 必须为 {jita, frt}")
 
         order_data = await order_manager.get_order_of_user(user)
-        sell_data = await order_manager.filt_sell_order_of_location_id(order_data, location_id)
+        order_pic_data = await order_manager.filt_order_of_location_id(order_data, location_id,
+                                                                       is_buy_order=is_buy_order,
+                                                                       alias_location_list=alias_location)
+        pic_output = await PictureRender.render_order_state({'order_data': order_pic_data}, is_buy_order=is_buy_order)
 
-        pic_output = await PictureRender.render_order_state({'sell_data': sell_data})
         chain = [
             Image.fromFileSystem(pic_output)
         ]

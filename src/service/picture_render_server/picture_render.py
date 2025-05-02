@@ -374,9 +374,9 @@ class PictureRender():
         return pic_path
 
     @classmethod
-    async def render_order_state(cls, data):
-        sell_data = data['sell_data']
-        for order in sell_data:
+    async def render_order_state(cls, data, is_buy_order=False):
+        order_data = data['order_data']
+        for order in order_data:
             order.update({
                 'icon': await PictureRender.get_eve_item_icon_base64(order['type_id']),
                 'date_remain': order['duration'] - (get_beijing_utctime(datetime.now()) - order['issued']).days,
@@ -388,9 +388,10 @@ class PictureRender():
         env.filters['format_number'] = format_number
         template = env.get_template('order_state.j2')
         html_content = template.render(
-            header_title='出售订单状态',
+            header_title= '收购订单状态' if is_buy_order else '出售订单状态',
             header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
-            sell_data=sell_data
+            order_data=order_data,
+            is_buy_order=is_buy_order
         )
 
         # 生成输出路径

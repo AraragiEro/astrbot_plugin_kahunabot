@@ -366,7 +366,11 @@ class KahunaBot(Star):
 
     @Inds_rp.command('出单', alias={"sell_order"})
     async def Inds_rp_sell_order(self, event: AstrMessageEvent, location: str):
-        yield await IndsEvent.rp_sell_order(event, location)
+        yield await IndsEvent.rp_order(event, location, is_buy_order=False)
+
+    @Inds_rp.command('收单', alias={"buy_order"})
+    async def Inds_rp_buy_order(self, event: AstrMessageEvent, location: str):
+        yield await IndsEvent.rp_order(event, location, is_buy_order=True)
 
     @Inds_rp.command('月度业绩', alias={"month_kpi"})
     async def Inds_rp_month_order_statistic(self, event: AstrMessageEvent):

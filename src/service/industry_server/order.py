@@ -101,7 +101,7 @@ class OrderManager:
         res = [order for order in res if order.issued >= month_ago]
         return res
 
-    async def filt_sell_order_of_location_id(self, order_data: list[dict], location_id: int) -> list[Any] | None:
+    async def filt_order_of_location_id(self, order_data: list[dict], location_id: int, is_buy_order=False, alias_location_list: list = []) -> list[Any] | None:
         if location_id not in {FRT_4H_STRUCTURE_ID, JITA_TRADE_HUB_STRUCTURE_ID}:
             logger.error("暂不支持除联盟市场和jita市场的订单统计")
             return []
@@ -116,7 +116,7 @@ class OrderManager:
         else:
             structure_name = 'unknown structure'
 
-        sell_order = [{
+        filt_order = [{
             'type_id': order['type_id'],
             'name': SdeUtils.get_name_by_id(order['type_id']),
             'icon': '',
@@ -125,20 +125,24 @@ class OrderManager:
             'volume_remain': order['volume_remain'],
             'price': order['price'],
             'min_price': (await market.get_type_order_rouge(order['type_id']))[1],
+            'max_price': (await market.get_type_order_rouge(order['type_id']))[0],
             'issued': order['issued'],
             'duration': order['duration']
-        } for order in order_data if not order['is_buy_order'] and order['location_id'] == location_id]
-        sell_order.sort(key=lambda x: x['type_id'], reverse=False)
+        } for order in order_data if order['is_buy_order'] is is_buy_order and (order['location_id'] == location_id or order['location_id'] in alias_location_list)]
+        filt_order.sort(key=lambda x: x['type_id'], reverse=False)
 
-        res = {}
-        for order in sell_order:
-            if order['type_id'] not in res:
-                res[order['type_id']] = order
-                continue
-            if order['price'] < res[order['type_id']]['price']:
-                res[order['type_id']] = order
-        res = [order for order in res.values()]
-        res.sort(key=lambda x: x['type_id'], reverse=False)
+        if is_buy_order:
+            res = filt_order
+        else:
+            res = {}
+            for order in filt_order:
+                if order['type_id'] not in res:
+                    res[order['type_id']] = order
+                    continue
+                if order['price'] < res[order['type_id']]['price']:
+                    res[order['type_id']] = order
+            res = [order for order in res.values()]
+            res.sort(key=lambda x: x['type_id'], reverse=False)
         return res
 
     async def analyse_month_order_statistic(self, order_data: list, month_prder_history: list[OrderHistory]):
