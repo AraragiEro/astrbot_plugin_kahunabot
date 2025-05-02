@@ -77,7 +77,7 @@ class AssetEvent():
 
     @classmethod
     async def refall(cls, event: AstrMessageEvent):
-        await AssetManager.refresh_all_asset()
+        await AssetManager.refresh_all_asset(force=True)
 
         return event.plain_result("执行完成")
 

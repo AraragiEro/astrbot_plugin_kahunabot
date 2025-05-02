@@ -94,8 +94,8 @@ class AssetManager():
         return asset
 
     @classmethod
-    async def refresh_all_asset(cls):
-        if not await RefreshDataDBUtils.out_of_min_interval('asset', 15):
+    async def refresh_all_asset(cls, force=False):
+        if not force and not await RefreshDataDBUtils.out_of_min_interval('asset', 15):
             return
 
         logger.info('开始刷新所有资产')
