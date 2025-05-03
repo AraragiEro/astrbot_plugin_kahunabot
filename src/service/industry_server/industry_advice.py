@@ -470,7 +470,7 @@ class IndustryAdvice:
 
     @classmethod
     async def refresh_all_asset_statistics(cls):
-        if not await RefreshDataDBUtils.out_of_day_interval('asset_statistics', 1):
+        if not await RefreshDataDBUtils.out_of_hour_interval('asset_statistics', 4):
             return
         if not cls.personal_asset_statistics_lock:
             try:
