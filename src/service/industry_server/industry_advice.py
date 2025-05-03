@@ -435,7 +435,7 @@ class IndustryAdvice:
         character_list = CharacterManager.get_user_all_characters(user.user_qq)
         for character in character_list:
             res['wallet'] += await character.wallet_balance
-            res['total'] += res['wallet']
+            res['total'] += await character.wallet_balance
 
         upadte_date = get_beijing_utctime(datetime.now()).replace(hour=0, minute=0, second=0, microsecond=0)
         await UserAssetStatisticsDBUtils.update(user_qq, upadte_date, json.dumps(res))

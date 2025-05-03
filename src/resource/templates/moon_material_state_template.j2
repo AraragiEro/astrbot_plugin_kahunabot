@@ -55,34 +55,34 @@
                             <div class="text-sm text-gray-500">{{ rarity }} </div>
                         </div>
                         <div class="flex space-x-8">
-                            <div class="w-32">
+                            <div>
                                 <div class="text-gray-500 text-xs">当前最低出售</div>
-                                <div class="flex flex-col">
+                                <div class="flex items-center">
                                     <span class="text-lg font-semibold text-blue-600 truncate">{{ material.sell_price }} ISK</span>
                                     {% set diff = ((material.sell_price - material.month_highset_aver) / material.month_highset_aver * 100) %}
-                                    <span class="text-xs font-normal {% if diff > 0 %}text-green-500{% elif diff < 0 %}text-red-500{% endif %}">
+                                    <span class="ml-2 text-xl font-bold {% if diff > 0 %}text-green-500{% elif diff < 0 %}text-red-500{% endif %}">
                                         {% if diff > 0 %}
-                                            (↑{{ diff|round(2) }}%)
+                                            ↑{{ diff|round(2) }}%
                                         {% elif diff < 0 %}
-                                            (↓{{ diff|round(2)|abs }}%)
+                                            ↓{{ diff|round(2)|abs }}%
                                         {% else %}
-                                            (0%)
+                                            0%
                                         {% endif %}
                                     </span>
                                 </div>
                             </div>
-                            <div class="w-32">
+                            <div>
                                 <div class="text-gray-500 text-xs">当前最高收购</div>
-                                <div class="flex flex-col">
+                                <div class="flex items-center">
                                     <span class="text-lg font-semibold text-green-600 truncate">{{ material.buy_price }} ISK</span>
                                     {% set diff = ((material.buy_price - material.month_lowest_aver) / material.month_lowest_aver * 100) %}
-                                    <span class="text-xs font-normal {% if diff > 0 %}text-green-500{% elif diff < 0 %}text-red-500{% endif %}">
+                                    <span class="ml-2 text-xl font-bold {% if diff > 0 %}text-green-500{% elif diff < 0 %}text-red-500{% endif %}">
                                         {% if diff > 0 %}
-                                            (↑{{ diff|round(2) }}%)
+                                            ↑{{ diff|round(2) }}%
                                         {% elif diff < 0 %}
-                                            (↓{{ diff|round(2)|abs }}%)
+                                            ↓{{ diff|round(2)|abs }}%
                                         {% else %}
-                                            (0%)
+                                            0%
                                         {% endif %}
                                     </span>
                                 </div>
