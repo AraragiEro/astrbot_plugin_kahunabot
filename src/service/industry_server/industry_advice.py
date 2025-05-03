@@ -2,9 +2,8 @@ import asyncio
 import json
 from pickle import BINPUT
 from pydoc import classify_class_attrs
-
 import pulp
-from datetime import datetime
+from datetime import datetime, timedelta
 from multiprocessing import Lock
 
 from .industry_analyse import IndustryAnalyser
@@ -15,7 +14,7 @@ from ..sde_service.utils import SdeUtils
 from ..user_server.user_manager import UserManager
 from ..user_server.user import User
 from ...utils import KahunaException, get_beijing_utctime
-from ..market_server.marker import MarketHistory
+from ..market_server.marker import MarketHistory, REGION_FORGE_ID
 from ..market_server.market_manager import MarketManager
 from ..asset_server.asset_manager import AssetManager
 from ..character_server.character_manager import CharacterManager
@@ -484,3 +483,69 @@ class IndustryAdvice:
                 logger.info('刷新资产统计完成')
             finally:
                 cls.personal_asset_statistics_lock = False
+
+    @classmethod
+    async def moon_material_state(cls):
+        R4 = list(range(16633, 16637))
+        R8 = list(range(16637, 16641))
+        R16 = list(range(16641, 16645))
+        R32 = list(range(16646, 16650))
+        R64 = list(range(16650, 16654))
+        moon_dict = {
+            'R4': R4,
+            'R8': R8,
+            'R16': R16,
+            'R32': R32,
+            'R64': R64,
+        }
+        moon_list = R4 + R8 + R16 + R32 + R64
+        await MarketHistory.get_type_region_history_data_batch(moon_list, REGION_FORGE_ID)
+
+        # 生成从60天前到昨天的日期列表
+        today = get_beijing_utctime(datetime.now())
+        date_list = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(2, 60)]
+        date_list.reverse()  # 将列表按照日期从早到晚排序
+
+        res_data = {}
+        type_dict = {}
+        market = MarketManager.get_market_by_type('jita')
+        for moon, tid_list in moon_dict.items():
+            if moon not in res_data:
+                res_data[moon] = {tid: {} for tid in tid_list}
+            for tid in tid_list:
+                history_data = await MarketHistory.get_type_region_histpry_data(tid, REGION_FORGE_ID)
+                two_month_ago = get_beijing_utctime(datetime.now()) - timedelta(days=60)
+                two_month_history = [data for data in history_data if datetime.fromisoformat(data[0]) >= two_month_ago]
+                two_month_history = {
+                    data[0]: {
+                        'date': data[0],
+                        'lowest_price': data[3],
+                        'highest_price': data[2],
+                        'average_price': data[1],
+                        'volume': data[4]
+                    } for data in two_month_history
+                }
+                history_detal = (await MarketHistory.get_type_history_detale(tid))[1]
+                res_data[moon][tid].update({
+                    'type_id': tid,
+                    'name': SdeUtils.get_name_by_id(tid),
+                    'cn_name': SdeUtils.get_cn_name_by_id(tid),
+                    'sell_price': (await market.get_type_order_rouge(tid))[1],
+                    'buy_price': (await market.get_type_order_rouge(tid))[0],
+                    'two_month_history': two_month_history,
+                    'month_highset_aver': history_detal['month_highset_aver'],
+                    'month_lowest_aver': history_detal['month_lowest_aver'],
+                })
+                type_dict[tid] = res_data[moon][tid]
+
+        market_index_history = {}
+        for date in date_list:
+            flow = 0
+            volumes = 0
+            for tid, data in type_dict.items():
+                if date in data['two_month_history']:
+                    flow += data['two_month_history'][date]['average_price'] * data['two_month_history'][date]['volume']
+                    volumes += data['two_month_history'][date]['volume']
+            market_index_history[date] = flow / volumes if volumes !=0 else 0
+
+        return res_data, market_index_history

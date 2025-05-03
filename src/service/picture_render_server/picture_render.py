@@ -433,6 +433,36 @@ class PictureRender():
         return pic_path
 
     @classmethod
+    async def render_moon_material_state(cls, data: dict, market_index_history: list):
+        for _, R_data in data.items():
+            for tid, t_data in R_data.items():
+                t_data.update({'icon': await PictureRender.get_eve_item_icon_base64(tid)})
+
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_number'] = format_number
+        template = env.get_template('moon_material_state_template.j2')
+        current = get_beijing_utctime(datetime.now())
+        html_content = template.render(
+            header_title='元素市场',
+            header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
+            data=data,
+            market_index_history=market_index_history
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "moon_material_state.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=1600, height=720, wait_time=120)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
     async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 5):
         # 将HTML内容保存到临时文件
         html_file_path = os.path.join(TMP_PATH, "temp_render.html")

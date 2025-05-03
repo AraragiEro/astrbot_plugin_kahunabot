@@ -241,7 +241,7 @@ class MarketHistory:
         if (type_id, region_id) in cls.type_region_histpry_data_cache:
             return cls.type_region_histpry_data_cache[(type_id, region_id)]
         region_year_data = await MarketHistoryDBUtils.select_order_history_by_type_id_and_region_id(type_id, region_id)
-        region_year_data_list = [[res.date, res.average] for res in region_year_data]
+        region_year_data_list = [[res.date, res.average, res.highest, res.lowest, res.volume] for res in region_year_data]
 
         cls.type_region_histpry_data_cache[(type_id, region_id)] = region_year_data_list
         return region_year_data_list

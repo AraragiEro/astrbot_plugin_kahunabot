@@ -842,6 +842,17 @@ class IndsEvent:
 
         return event.plain_result("执行完成")
 
+    @classmethod
+    async def rp_moon_material_market(cls, event: AstrMessageEvent):
+        res_data, market_index_history = await IndustryAdvice.moon_material_state()
+
+        pic_output = await PictureRender.render_moon_material_state(res_data, market_index_history)
+
+        chain = [
+            Image.fromFileSystem(pic_output)
+        ]
+        return event.chain_result(chain)
+
 
 class MarketEvent:
     @staticmethod

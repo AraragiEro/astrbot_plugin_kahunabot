@@ -372,6 +372,10 @@ class KahunaBot(Star):
     async def Inds_rp_buy_order(self, event: AstrMessageEvent, location: str):
         yield await IndsEvent.rp_order(event, location, is_buy_order=True)
 
+    @Inds_rp.command('元素市场', alias={'moon_material_market'})
+    async def Inds_rp_moon_material_market(self, event: AstrMessageEvent):
+        yield await IndsEvent.rp_moon_material_market(event)
+
     @Inds_rp.command('月度业绩', alias={"month_kpi"})
     async def Inds_rp_month_order_statistic(self, event: AstrMessageEvent):
         yield await IndsEvent.rp_month_order_statistic(event)
