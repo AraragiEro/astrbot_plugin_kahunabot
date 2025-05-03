@@ -39,7 +39,7 @@
             </div>
         </div>
         
-        {% for rarity in ['R64', 'R32', 'R16', 'R8', 'R4'] %}
+        {% for rarity in rarity_list %}
         <div class="mb-12">
             <h2 class="text-2xl font-semibold text-gray-700 mb-6">{{ rarity }} </h2>
             <div class="flex flex-col space-y-8">
@@ -185,7 +185,7 @@
         }
 
         // 初始化所有混合图表
-        {% for rarity in ['R64', 'R32', 'R16', 'R8', 'R4'] %}
+        {% for rarity in rarity_list %}
             {% for type_id, material in data[rarity].items() %}
                 createMixChart('mixChart_{{ type_id }}', {{ material|tojson }});
             {% endfor %}

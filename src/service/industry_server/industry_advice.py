@@ -485,20 +485,36 @@ class IndustryAdvice:
                 cls.personal_asset_statistics_lock = False
 
     @classmethod
-    async def moon_material_state(cls):
+    async def moon_material_state(cls, moon_class: int):
         R4 = list(range(16633, 16637))
         R8 = list(range(16637, 16641))
         R16 = list(range(16641, 16645))
         R32 = list(range(16646, 16650))
         R64 = list(range(16650, 16654))
-        moon_dict = {
-            'R4': R4,
-            'R8': R8,
-            'R16': R16,
-            'R32': R32,
-            'R64': R64,
-        }
-        moon_list = R4 + R8 + R16 + R32 + R64
+        if moon_class == 4:
+            moon_dict = {'R4': R4}
+            moon_list = R4
+        elif moon_class == 8:
+            moon_dict = {'R8': R8}
+            moon_list = R8
+        elif moon_class == 16:
+            moon_dict = {'R16': R16}
+            moon_list = R16
+        elif moon_class == 32:
+            moon_dict = {'R32': R32}
+            moon_list = R32
+        elif moon_class == 64:
+            moon_dict = {'R64': R64}
+            moon_list = R64
+        else:
+            moon_dict = {
+                'R4': R4,
+                'R8': R8,
+                'R16': R16,
+                'R32': R32,
+                'R64': R64,
+            }
+            moon_list = R4 + R8 + R16 + R32 + R64
         await MarketHistory.get_type_region_history_data_batch(moon_list, REGION_FORGE_ID)
 
         # 生成从60天前到昨天的日期列表

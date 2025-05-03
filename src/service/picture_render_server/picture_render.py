@@ -449,6 +449,7 @@ class PictureRender():
             header_title='元素市场',
             header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
             data=data,
+            rarity_list=list(data.keys()),
             market_index_history=market_index_history
         )
 

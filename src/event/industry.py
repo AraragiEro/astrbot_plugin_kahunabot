@@ -844,7 +844,15 @@ class IndsEvent:
 
     @classmethod
     async def rp_moon_material_market(cls, event: AstrMessageEvent):
-        res_data, market_index_history = await IndustryAdvice.moon_material_state()
+        args = event.get_message_str().split(" ")
+        if args[-1].isdigit():
+            moon_class = int(args[-1])
+        else:
+            moon_class = 0
+        if moon_class not in {0, 4, 8, 16, 32, 64}:
+            return event.plain_result(f"moon_class 必须为 [0, 4, 8, 16, 32, 64]")
+
+        res_data, market_index_history = await IndustryAdvice.moon_material_state(moon_class)
 
         pic_output = await PictureRender.render_moon_material_state(res_data, market_index_history)
 
