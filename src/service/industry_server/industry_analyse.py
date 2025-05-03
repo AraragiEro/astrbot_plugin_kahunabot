@@ -1070,7 +1070,7 @@ class IndustryAnalyser():
     def progress_work_type(cls, user, plan_name, plan_list):
         return asyncio.run(cls.async_progress_work_type(user, plan_name, plan_list))
 
-    cost_data_cache = TTLCache(maxsize=1000, ttl=60 * 60)
+    cost_data_cache = TTLCache(maxsize=100, ttl=60 * 60)
     @classmethod
     def get_cost_data(cls, user, plan_name: str, plan_list, batch_size=None):
         """ 如何在緩存内，直接提取 """

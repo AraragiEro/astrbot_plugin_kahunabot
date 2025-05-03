@@ -664,8 +664,29 @@ class IndsEvent:
         battleship_list = SdeUtils.get_battleship()
         battalship_ship_id_list = [SdeUtils.get_id_by_name(name) for name in battleship_list]
         await MarketHistory.refresh_vale_market_history(battalship_ship_id_list)
+
         battalship_mk_dict = await IndustryAdvice.advice_report(user, plan_name, battleship_list)
         battalship_mk_data = [list(data.values()) for data in battalship_mk_dict.values()]
+
+        asset_dict = {}
+        sell_container_list = await AssetContainer.get_contain_id_by_qq_tag(user_qq, 'sell')
+        sell_asset_result = await AssetManager.get_asset_in_container_list(
+            [container.asset_location_id for container in sell_container_list]
+        )
+        for asset in sell_asset_result:
+            if asset.type_id not in asset_dict:
+                asset_dict[asset.type_id] = asset.quantity
+            else:
+                asset_dict[asset.type_id] += asset.quantity
+        for index, data in enumerate(battalship_mk_data):
+            battalship_mk_data[index].insert(3, asset_dict.get(data[0], 0))
+        for tid in battalship_mk_dict.keys():
+            battalship_mk_dict[tid].update({'asset_exist': asset_dict.get(tid, 0)})
+
+        plan_list = user.user_data.plan[plan_name]['plan']
+        plan_dict = {SdeUtils.get_id_by_name(data[0]): data[1] for data in plan_list}
+        for tid in battalship_mk_dict.keys():
+            battalship_mk_dict[tid].update({'plan_exist': plan_dict.get(int(tid), 0)})
 
         for data in battalship_mk_data:
             if data[-1] == 'Faction':

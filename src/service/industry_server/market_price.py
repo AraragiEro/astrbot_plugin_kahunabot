@@ -43,7 +43,7 @@ class MarketPrice:
         await MarketPriceCacheDBUtils.copy_base_to_cache()
         logger.info("market_price 复制数据到缓存")
 
-    adjusted_price_cache = TTLCache(maxsize=1000, ttl=20 * 60)
+    adjusted_price_cache = TTLCache(maxsize=100, ttl=20 * 60)
     @staticmethod
     async def get_adjusted_price_of_typeid(type_id: int):
         if type_id in MarketPrice.adjusted_price_cache:

@@ -235,7 +235,7 @@ class MarketHistory:
         history_id =f'markey_history_{type_id}_{region_id}'
         return history_id
 
-    type_region_histpry_data_cache = TTLCache(maxsize=3000, ttl=6 * 60 * 60)
+    type_region_histpry_data_cache = TTLCache(maxsize=100, ttl=6 * 60 * 60)
     @classmethod
     async def get_type_region_histpry_data(cls, type_id: int, region_id: int) -> list:
         if (type_id, region_id) in cls.type_region_histpry_data_cache:
@@ -262,7 +262,7 @@ class MarketHistory:
 
         return type_region_history_data
 
-    type_history_detale_cache = TTLCache(maxsize=3000, ttl=24 * 60 * 60)
+    type_history_detale_cache = TTLCache(maxsize=100, ttl=24 * 60 * 60)
     @classmethod
     async def get_type_history_detale(cls, type_id: int):
         if type_id in cls.type_history_detale_cache:

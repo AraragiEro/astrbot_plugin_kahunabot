@@ -28,7 +28,7 @@ class SystemCost:
     async def copy_to_cache(cls):
         await SystemCostCacheDBUtils.copy_base_to_cache()
 
-    system_cos_cache = TTLCache(maxsize=1000, ttl=20 * 60)
+    system_cos_cache = TTLCache(maxsize=100, ttl=20 * 60)
     @staticmethod
     async def get_system_cost(solar_system_id: int):
         if solar_system_id in SystemCost.system_cos_cache:

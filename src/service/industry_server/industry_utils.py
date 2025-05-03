@@ -17,7 +17,7 @@ from .blueprint import BPManager
 from .industry_config import IndustryConfigManager
 
 class IdsUtils:
-    eiv_cache = TTLCache(maxsize=1024, ttl=3600)
+    eiv_cache = TTLCache(maxsize=100, ttl=3600)
     @staticmethod
     async def get_eiv(type_id) -> int:
         if type_id in IdsUtils.eiv_cache:
