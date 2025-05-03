@@ -45,7 +45,7 @@ async def init_server_cycle_mission():
     asyncio.create_task(async_refresh_per_min(0, 5, IndustryManager.refresh_system_cost))
     asyncio.create_task(async_refresh_per_min(0, 5, IndustryManager.refresh_market_price))
     asyncio.create_task(async_refresh_per_min(0, 5, kahuna_google_market_monitor.refresh_market_monitor_process))
-    asyncio.create_task(async_refresh_per_min(0, 5, IndustryAdvice.refresh_all_asset_statistics))
+    asyncio.create_task(async_refresh_per_min(0, 60, IndustryAdvice.refresh_all_asset_statistics))
     asyncio.create_task(async_refresh_per_min(0, 60, order_manager.refresh_all_order))
 
 async def init_server(log=True):

@@ -433,9 +433,10 @@ class IndustryAdvice:
         res['structure_asset'] = structure_asset
 
         # 钱包余额
-        main_character = CharacterManager.get_character_by_id(UserManager.get_main_character_id(user.user_qq))
-        res['wallet'] = await main_character.wallet_balance
-        res['total'] += res['wallet']
+        character_list = CharacterManager.get_user_all_characters(user.user_qq)
+        for character in character_list:
+            res['wallet'] += await character.wallet_balance
+            res['total'] += res['wallet']
 
         upadte_date = get_beijing_utctime(datetime.now()).replace(hour=0, minute=0, second=0, microsecond=0)
         await UserAssetStatisticsDBUtils.update(user_qq, upadte_date, json.dumps(res))

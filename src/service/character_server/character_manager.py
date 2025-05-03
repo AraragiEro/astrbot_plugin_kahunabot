@@ -145,5 +145,5 @@ class CharacterManager():
         return await character.get_from_db()
 
     @classmethod
-    def get_user_all_characters(cls, user_id):
-        return [character for character in cls.character_dict.values() if character.QQ == user_id]
+    def get_user_all_characters(cls, user_qq: int):
+        return [character for character in cls.character_dict.values() if character.QQ == user_qq]
