@@ -41,6 +41,15 @@ class PriceService:
             return type_id, max_buy, mid_price, min_sell, None
 
     @staticmethod
+    async def get_latest_order(item_id: int, market_str: str):
+        if market_str == "jita" or market_str == "frt":
+            market = MarketManager.market_dict[market_str]
+        else:
+            raise KahunaException("market_server not define.")
+
+        return await market.get_latest_order_by_type_id(item_id)
+
+    @staticmethod
     async def get_item_special_scheme(item_str):
         pass
 

@@ -48,8 +48,10 @@ class TypesPriceEvent():
 
         # 准备历史价格数据
         await MarketHistory.refresh_forge_market_history([item_id])
-        history_data = await MarketHistory.get_type_region_histpry_data(item_id, REGION_FORGE_ID)
+        history_data = await MarketHistory.get_type_region_history_data(item_id, REGION_FORGE_ID)
         chart_history_data = [[data[0], data[1]] for data in history_data[:365]]
+
+        order_data = await PriceService.get_latest_order(item_id, market)
 
         quantity_str = ''
 

@@ -159,7 +159,7 @@ class Market:
 
         return total_count, buy_count, sell_count, distinct_type_count
 
-    order_rouge_cache = TTLCache(maxsize=3000, ttl=20*60)
+    order_rouge_cache = TTLCache(maxsize=500, ttl=10 * 60)
     async def get_type_order_rouge(self, type_id: int) -> tuple[float, float]:
         if type_id in Market.order_rouge_cache:
             return Market.order_rouge_cache[type_id]
@@ -182,6 +182,31 @@ class Market:
             min_price_sell = 0
         res = [float(max_price_buy), float(min_price_sell)]
         Market.order_rouge_cache[type_id] = res
+        return res
+
+    async def get_latest_order_by_type_id(self, type_id: int) -> tuple[list, list]:
+        if self.market_type == "jita":
+            target_location = JITA_TRADE_HUB_STRUCTURE_ID
+        else:
+            target_location = FRT_4H_STRUCTURE_ID
+
+        buy_order = await MarketOrderCacheDBUtils.select_5_buy_order_by_type_id_and_location_id(type_id, target_location)
+        sell_order = await MarketOrderCacheDBUtils.select_5_sell_order_by_type_id_and_location_id(type_id, target_location)
+
+        res = {
+            'sell_order': {
+                order.id: {
+                    'price': order.price,
+                    'volume_remain': order.volume_remain
+                } for order in sell_order
+            },
+            'buy_order': {
+                order.id: {
+                    'price': order.price,
+                    'volume_remain': order.volume_remain
+                } for order in buy_order
+            }
+        }
         return res
 
 class MarketHistory:
@@ -235,9 +260,9 @@ class MarketHistory:
         history_id =f'markey_history_{type_id}_{region_id}'
         return history_id
 
-    type_region_histpry_data_cache = TTLCache(maxsize=100, ttl=6 * 60 * 60)
+    type_region_histpry_data_cache = TTLCache(maxsize=500, ttl=10 * 60 * 60)
     @classmethod
-    async def get_type_region_histpry_data(cls, type_id: int, region_id: int) -> list:
+    async def get_type_region_history_data(cls, type_id: int, region_id: int) -> list:
         if (type_id, region_id) in cls.type_region_histpry_data_cache:
             return cls.type_region_histpry_data_cache[(type_id, region_id)]
         region_year_data = await MarketHistoryDBUtils.select_order_history_by_type_id_and_region_id(type_id, region_id)
@@ -257,12 +282,12 @@ class MarketHistory:
             await cls.refresh_market_history(need_refresh_list, region_id)
 
         type_region_history_data = {
-            tid: await cls.get_type_region_histpry_data(tid, region_id) for tid in type_id_list
+            tid: await cls.get_type_region_history_data(tid, region_id) for tid in type_id_list
         }
 
         return type_region_history_data
 
-    type_history_detale_cache = TTLCache(maxsize=100, ttl=24 * 60 * 60)
+    type_history_detale_cache = TTLCache(maxsize=500, ttl=10 * 60 * 60)
     @classmethod
     async def get_type_history_detale(cls, type_id: int):
         if type_id in cls.type_history_detale_cache:

@@ -46,7 +46,7 @@ class PictureRender():
             os.makedirs(TMP_PATH)
 
     @classmethod
-    async def render_price_res_pic(cls, item_id: int, price_data: list, history_data: list):
+    async def render_price_res_pic(cls, item_id: int, price_data: list, history_data: list, order_data):
         # 准备实时价格数据
         max_buy, mid_price, min_sell, fuzz_list = price_data
         item_name = SdeUtils.get_name_by_id(item_id)
@@ -64,7 +64,12 @@ class PictureRender():
             # 下载并转换物品图片
             item_image_path = await cls.download_eve_item_image(SdeUtils.get_id_by_name(item_name))  # 这里的ID需要根据实际物品ID修改
             item_image_base64 = cls.get_image_base64(item_image_path) if item_image_path else None
-
+            env.filters['format_number'] = format_number
+            # 假设 order_data 是你原有的订单数据字典
+            buy_orders = [[k, v] for k, v in order_data['buy_order'].items()]
+            buy_orders.sort(key=lambda x: x[1]['price'], reverse=True)
+            sell_orders = [[k, v] for k, v in order_data['sell_order'].items()]
+            sell_orders.sort(key=lambda x: x[1]['price'])
             template = env.get_template('price_template.j2')
             html_content = template.render(
                 item_name=item_name,
@@ -72,7 +77,9 @@ class PictureRender():
                 mid_price=f"{mid_price:,.2f}",
                 min_sell=f"{min_sell:,.2f}",
                 item_image_base64=item_image_base64,
-                price_history=history_data  # 添加这一行，格式为 [[date, price], ...]
+                sell_orders=sell_orders,
+                buy_orders=buy_orders,
+                price_history = history_data
             )
         except jinja2.exceptions.TemplateNotFound as e:
             logger.error(f"模板文件不存在: {e}")

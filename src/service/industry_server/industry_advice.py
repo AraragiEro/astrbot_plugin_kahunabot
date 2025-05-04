@@ -529,7 +529,7 @@ class IndustryAdvice:
             if moon not in res_data:
                 res_data[moon] = {tid: {} for tid in tid_list}
             for tid in tid_list:
-                history_data = await MarketHistory.get_type_region_histpry_data(tid, REGION_FORGE_ID)
+                history_data = await MarketHistory.get_type_region_history_data(tid, REGION_FORGE_ID)
                 two_month_ago = get_beijing_utctime(datetime.now()) - timedelta(days=60)
                 two_month_history = [data for data in history_data if datetime.fromisoformat(data[0]) >= two_month_ago]
                 two_month_history = {
