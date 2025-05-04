@@ -58,7 +58,8 @@ class TypesPriceEvent():
         res_path = await PictureRender.render_price_res_pic(
             item_id,
             [max_buy, mid_price, min_sell, fuzz_list],
-            chart_history_data
+            chart_history_data,
+            order_data,
         )
         chain = [
             Image.fromFileSystem(res_path)
