@@ -472,6 +472,11 @@ class IndsEvent:
     async def rp_plan(event: AstrMessageEvent, plan_name: str):
         if await try_acquire_lock(calculate_lock, 1):
             try:
+                if AssetManager.refresh_flag:
+                    yield event.plain_result('资产表正在刷新。刷新完成后会自动开始计算。请稍等。')
+                    while AssetManager.refresh_flag:
+                        await asyncio.sleep(1)
+                    AssetManager.refresh_flag = False
                 user_qq = get_user(event)
 
                 user = UserManager.get_user(user_qq)
@@ -503,11 +508,11 @@ class IndsEvent:
                     }
                     json.dump(cache_dict, file, indent=4)
 
-                return event.plain_result(f"执行完成, 当前计划蓝图分解:{work_tree_sheet.url}")
+                yield event.plain_result(f"执行完成, 当前计划蓝图分解:{work_tree_sheet.url}")
             finally:
                 calculate_lock.release()
         else:
-            return event.plain_result("已有计算进行中，请稍候再试。")
+            yield event.plain_result("已有计算进行中，请稍候再试。")
 
 
     @staticmethod

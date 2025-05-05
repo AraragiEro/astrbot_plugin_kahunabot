@@ -26,6 +26,7 @@ class AssetManager():
     container_dict: dict[(int, str): AssetContainer] = dict() # {(owner_qq, location_id): AssetContainer}
     monitor_process = None
     last_refresh = None
+    refresh_flag = False
 
     @classmethod
     async def init(cls):
@@ -97,6 +98,7 @@ class AssetManager():
     async def refresh_all_asset(cls, force=False):
         if not force and not await RefreshDataDBUtils.out_of_min_interval('asset', 15):
             return
+        cls.refresh_flag = True
 
         logger.info('开始刷新所有资产')
         for asset in cls.asset_dict.values():
@@ -104,6 +106,7 @@ class AssetManager():
         await cls.copy_to_cache()
 
         await RefreshDataDBUtils.update_refresh_date('asset')
+        cls.refresh_flag = False
         logger.info('刷新资产完成。')
 
     @classmethod
