@@ -121,6 +121,7 @@ def format_material_tree(datadict: dict):
     output_list = ['矿石', '冰矿产物', '燃料块', '元素', '气云', '行星工业', '杂货', '反应物']
 
     for key in output_list:
+        datadict[key].sort(key=lambda x: (x[3], x[0]))
         output += [[key] + ['' for i in range(len(header) - 1)]] + [header] + datadict[key] + [["" for _ in range(len(header))]]
 
 
