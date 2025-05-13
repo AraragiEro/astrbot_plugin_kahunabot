@@ -20,7 +20,7 @@ async def get_request_async(url, headers=None, params=None, log=True):
                 else:
                     response_text = await response.text()
                     if log:
-                        logger.warning(response_text)
+                        logger.warning(f'{response.status}{response_text}')
                     return None
     except Exception as e:
         if log:
@@ -174,5 +174,12 @@ async def characters_character_orders_history(page: int, access_token, character
         f"https://esi.evetech.net/latest/characters/{character_id}/orders/history/",
         headers={"Authorization": f"Bearer {access_token}"},
         params={"page": page},
+        log=log
+    )
+
+# /characters/{character_id}/portrait/
+async def characters_character_portrait(character_id: int, log=True):
+    return await get_request_async(
+        f"https://esi.evetech.net/latest/characters/{character_id}/portrait/",
         log=log
     )
