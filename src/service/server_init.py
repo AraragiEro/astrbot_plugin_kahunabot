@@ -39,14 +39,14 @@ async def init_server_service(log: bool = True):
 async def init_server_cycle_mission():
     # 延时初始化
     asyncio.create_task(run_func_delay_min(0, CharacterManager.refresh_all_characters_at_init))
-    # asyncio.create_task(async_refresh_per_min(0, 5, MarketManager.refresh_market))
-    # asyncio.create_task(async_refresh_per_min(0, 5, AssetManager.refresh_all_asset))
-    # asyncio.create_task(async_refresh_per_min(0, 5, IndustryManager.refresh_running_status))
-    # asyncio.create_task(async_refresh_per_min(0, 20, IndustryManager.refresh_system_cost))
-    # asyncio.create_task(async_refresh_per_min(0, 20, IndustryManager.refresh_market_price))
-    # asyncio.create_task(async_refresh_per_min(0, 28, IndustryAdvice.refresh_all_asset_statistics))
-    # asyncio.create_task(async_refresh_per_min(0, 60, order_manager.refresh_all_order))
-    # asyncio.create_task(async_refresh_per_min(0, 34, kahuna_google_market_monitor.refresh_market_monitor_process))
+    asyncio.create_task(async_refresh_per_min(0, 5, MarketManager.refresh_market))
+    asyncio.create_task(async_refresh_per_min(0, 5, AssetManager.refresh_all_asset))
+    asyncio.create_task(async_refresh_per_min(0, 5, IndustryManager.refresh_running_status))
+    asyncio.create_task(async_refresh_per_min(0, 20, IndustryManager.refresh_system_cost))
+    asyncio.create_task(async_refresh_per_min(0, 20, IndustryManager.refresh_market_price))
+    asyncio.create_task(async_refresh_per_min(0, 28, IndustryAdvice.refresh_all_asset_statistics))
+    asyncio.create_task(async_refresh_per_min(0, 60, order_manager.refresh_all_order))
+    asyncio.create_task(async_refresh_per_min(0, 34, kahuna_google_market_monitor.refresh_market_monitor_process))
 
 async def init_server(log=True):
     await init_server_service()
