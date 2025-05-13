@@ -23,6 +23,8 @@ class OrderManager:
 
     async def get_character_orders(self, character: Character):
         results = await eveesi.characters_character_orders(await character.ac_token, character.character_id)
+        if not results:
+            return []
         for res in results:
             if 'is_buy_order' not in res:
                 res.update({
