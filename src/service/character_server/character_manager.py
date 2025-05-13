@@ -102,7 +102,7 @@ class CharacterManager():
     @classmethod
     async def create_new_character(cls, token_data, user_qq: int) -> Character:
         character_verify_data = await verify_token(token_data[0])
-        if 'CharacterID' not in character_verify_data:
+        if not character_verify_data or 'CharacterID' not in character_verify_data:
             logger.error('No character info found')
             logger.error(character_verify_data)
             raise KahunaException('No character info found')
