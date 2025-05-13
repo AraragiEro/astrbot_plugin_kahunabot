@@ -6,6 +6,8 @@ from ..log_server import logger
 
 LOCAL_HTTP_ADD = "http://localhost:4567"
 
+OAUTH_URL = "https://login.eveonline.com/v2/oauth/token"
+
 PROXY = {
     "http": "http://127.0.0.1:7890",
     "https": "http://127.0.0.1:7890"
@@ -26,7 +28,7 @@ def get_auth_url():
 def get_token(AUTH_RES):
     secret_key = config['EVE']['SECRET_KEY']
     oauth.fetch_token(
-        'https://login.eveonline.com/oauth/token',
+        OAUTH_URL,
         authorization_response=AUTH_RES,
         client_secret=secret_key #, proxies=PROXY
     )
@@ -41,7 +43,7 @@ def refresh_token(refresh_token):
     client_id = config['EVE']['CLIENT_ID']
     secret_key = config['EVE']['SECRET_KEY']
     newtocker_dict = oauth.refresh_token(
-        'https://login.eveonline.com/oauth/token',
+        OAUTH_URL,
         refresh_token=refresh_token,
         client_id=client_id,
         client_secret=secret_key #, proxies=PROXY
