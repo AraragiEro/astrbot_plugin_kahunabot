@@ -247,7 +247,7 @@ class MarketHistory:
 
     @classmethod
     async def refresh_type_history_in_region(cls, type_id: int, region_id: int):
-        result = await eveesi.markets_region_history(region_id, type_id, log=True)
+        result = await eveesi.markets_region_history(region_id, type_id, log=False)
         if not result:
             return
         [res.update({"type_id": type_id, 'region_id': region_id}) for res in result]
