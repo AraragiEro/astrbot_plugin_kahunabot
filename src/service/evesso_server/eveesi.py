@@ -20,7 +20,7 @@ async def get_request_async(url, headers=None, params=None, log=True):
                 else:
                     response_text = await response.text()
                     if log:
-                        logger.warning(f'{response.status}{response_text}')
+                        logger.warning(f'{response.status}:{response_text}')
                     return None
     except Exception as e:
         if log:
