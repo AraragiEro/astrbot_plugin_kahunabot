@@ -4,28 +4,62 @@ import requests
 from cachetools import TTLCache, cached
 import traceback
 import aiohttp
+import asyncio
+from typing import Optional, Any
 
 # kahuna logger
 from ..log_server import logger
 
 permission_set = set()
 
-async def get_request_async(url, headers=None, params=None, log=True):
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params, headers=headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data
-                else:
-                    response_text = await response.text()
-                    if log:
-                        logger.warning(f"error when request: {url}")
-                        logger.warning(f'{response.status}:{response_text}')
-                    return None
-    except Exception as e:
-        if log:
-            logger.error(traceback.format_exc())
+
+async def get_request_async(url, headers=None, params=None, log=True, max_retries=3, timeout=60) -> Optional[Any]:
+    """
+    异步发送GET请求，带有重试机制
+
+    Args:
+        url: 请求URL
+        headers: 请求头
+        params: 查询参数
+        log: 是否记录日志
+        max_retries: 最大重试次数
+        timeout: 超时时间（秒）
+    """
+    for attempt in range(max_retries):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, headers=headers,
+                                       timeout=aiohttp.ClientTimeout(total=timeout)) as response:
+                    if response.status == 200:
+                        try:
+                            data = await asyncio.wait_for(response.json(), timeout=timeout)
+                            return data
+                        except asyncio.TimeoutError:
+                            if log:
+                                logger.warning(f"JSON解析超时 (尝试 {attempt + 1}/{max_retries}): {url}")
+                            if attempt == max_retries - 1:
+                                raise
+                            continue
+                    else:
+                        response_text = await response.text()
+                        if log:
+                            logger.warning(f"请求失败 (尝试 {attempt + 1}/{max_retries}): {url}")
+                            logger.warning(f'{response.status}:{response_text}')
+                        if attempt == max_retries - 1:
+                            return None
+                        await asyncio.sleep(1 * (attempt + 1))  # 指数退避
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            if log:
+                logger.error(f"请求异常 (尝试 {attempt + 1}/{max_retries}): {str(e)}")
+            if attempt == max_retries - 1:
+                if log:
+                    logger.error(traceback.format_exc())
+                return None
+            await asyncio.sleep(1 * (attempt + 1))  # 指数退避
+        except Exception as e:
+            if log:
+                logger.error(traceback.format_exc())
+            return None
 
 async def verify_token(access_token, log=True):
     return await get_request_async("https://esi.evetech.net/verify/", headers={"Authorization": f"Bearer {access_token}"}, log=log)
