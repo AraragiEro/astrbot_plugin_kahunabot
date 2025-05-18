@@ -78,7 +78,7 @@ async def character_character_id_portrait(access_token, character_id, log=True):
 
 async def characters_character_id_blueprints(page:int, access_token: str, character_id: int, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/blueprints/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=1)
 
 async def industry_systems(log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/industry/systems/", log=log)
