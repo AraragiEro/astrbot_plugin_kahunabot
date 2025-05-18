@@ -395,6 +395,19 @@ class IndustryJobsCacheDBUtils(IndustryJobsDBUtils, CommonCacheUtils):
                 result = await session.execute(stmt)
                 return result.scalars().all()
 
+    @classmethod
+    async def select_jobs_by_installer_id_and_type(cls, character_id: int, activity_id: int):
+        async_session = dbm.async_session(cls.cls_model)
+        async with async_session() as session:
+            async with session.begin():
+                stmt = select(cls.cls_model).where(
+                    (cls.cls_model.installer_id == character_id) &
+                    (cls.cls_model.activity_id == activity_id)
+                )
+                result = await session.execute(stmt)
+                return result.scalars().all()
+
+
 class InvTypeMapDBUtils(CommonUtils):
     cls_model = InvTypeMap
 
