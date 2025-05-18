@@ -13,7 +13,7 @@ from ..log_server import logger
 permission_set = set()
 
 
-async def get_request_async(url, headers=None, params=None, log=True, max_retries=3, timeout=60) -> Optional[Any]:
+async def get_request_async(url, headers=None, params=None, log=True, max_retries=1, timeout=60) -> Optional[Any]:
     """
     异步发送GET请求，带有重试机制
 
@@ -85,7 +85,7 @@ async def industry_systems(log=True):
 
 async def markets_structures(page: int, access_token: str, structure_id: int, log=True) -> dict:
     return await get_request_async(f"https://esi.evetech.net/latest/markets/structures/{structure_id}/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=0)
 
 async def markets_region_orders(page: int, region_id: int, type_id: int = None, log=True):
     params = {"page": page}
@@ -93,7 +93,7 @@ async def markets_region_orders(page: int, region_id: int, type_id: int = None, 
         params["type_id"] = type_id
     return await get_request_async(
         f"https://esi.evetech.net/latest/markets/{region_id}/orders/", headers={},
-       params=params, log=log
+       params=params, log=log, max_retries=0
     )
 
 async def characters_character_assets(page: int, access_token: str, character_id: int, log=True):
