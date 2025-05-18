@@ -101,7 +101,7 @@ async def characters_character_assets(page: int, access_token: str, character_id
 
     """
     return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/assets/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=1)
 
 CHARACRER_INFO_CACHE = TTLCache(maxsize=10, ttl=1200)
 @cached(CHARACRER_INFO_CACHE)
