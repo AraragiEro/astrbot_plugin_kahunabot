@@ -133,7 +133,7 @@ async def corporations_corporation_assets(page: int, access_token: str, corporat
     # type_id - Integer
     """
     return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/assets/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=0)
 
 async def corporations_corporation_id_roles(access_token: str, corporation_id: int, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/roles/",
@@ -193,7 +193,7 @@ async def markets_prices(log=True):
 # /markets/{region_id}/history/
 async def markets_region_history(region_id: int, type_id: int, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/markets/{region_id}/history/", headers={},
-                       params={"type_id": type_id, "region_id": region_id}, log=log)
+                       params={"type_id": type_id, "region_id": region_id}, log=log, max_retries=0)
 
 # /characters/{character_id}/orders/
 async def characters_character_orders(access_token, character_id: int, log=True):
@@ -209,7 +209,8 @@ async def characters_character_orders_history(page: int, access_token, character
         f"https://esi.evetech.net/latest/characters/{character_id}/orders/history/",
         headers={"Authorization": f"Bearer {access_token}"},
         params={"page": page},
-        log=log
+        log=log,
+        max_retries=0
     )
 
 # /characters/{character_id}/portrait/
