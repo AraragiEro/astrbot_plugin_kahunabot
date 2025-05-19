@@ -179,10 +179,11 @@ class IndustryAnalyser():
         target_character += [c.character_id for c in CharacterManager.get_user_all_characters(user.user_qq)]
         target_character += [cid for cid in user.user_data.alias.keys()]
 
-        for coop_user in list(user.user_data.plan[self.plan_name]["coop_user"]):
-            coop_uobj = UserManager.get_user(coop_user)
-            target_character += [c.character_id for c in CharacterManager.get_user_all_characters(coop_user)]
-            target_character += [cid for cid in coop_uobj.user_data.alias.keys()]
+        if self.plan_name:
+            for coop_user in list(user.user_data.plan[self.plan_name]["coop_user"]):
+                coop_uobj = UserManager.get_user(coop_user)
+                target_character += [c.character_id for c in CharacterManager.get_user_all_characters(coop_user)]
+                target_character += [cid for cid in coop_uobj.user_data.alias.keys()]
 
         result = await RunningJobOwner.get_job_with_starter(target_character)
 
@@ -766,6 +767,7 @@ class IndustryAnalyser():
         prod_block_matcher = IndustryConfigManager.get_matcher_of_user_by_name(plan_dict["prod_block_matcher"], user.user_qq)
 
         analyser = IndustryAnalyser(user.user_qq, "work")
+        analyser.plan_name = plan_name
         analyser.set_matchers(bp_matcher, st_matcher, prod_block_matcher)
         analyser.set_plan_list(plan_dict["plan"])
         analyser.manu_cycle_time = plan_dict['manucycletime']
