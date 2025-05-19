@@ -174,10 +174,17 @@ class IndustryAnalyser():
         self.running_job = dict()
         self.using_bp = await RunningJobOwner.get_using_bp_set()
 
+        target_character = []
         user = UserManager.get_user(self.owner_qq)
-        user_character = [c.character_id for c in CharacterManager.get_user_all_characters(user.user_qq)]
-        alias_character = [cid for cid in user.user_data.alias.keys()]
-        result = await RunningJobOwner.get_job_with_starter(user_character + alias_character)
+        target_character += [c.character_id for c in CharacterManager.get_user_all_characters(user.user_qq)]
+        target_character += [cid for cid in user.user_data.alias.keys()]
+
+        for coop_user in list(user.user_data.plan[self.plan_name]["coop_user"]):
+            coop_uobj = UserManager.get_user(coop_user)
+            target_character += [c.character_id for c in CharacterManager.get_user_all_characters(coop_user)]
+            target_character += [cid for cid in coop_uobj.user_data.alias.keys()]
+
+        result = await RunningJobOwner.get_job_with_starter(target_character)
 
         for job in result:
             if job.output_location_id in self.target_container:

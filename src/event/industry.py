@@ -469,6 +469,34 @@ class IndsEvent:
         return event.plain_result("执行完成")
 
     @staticmethod
+    async def plan_add_coop_user(event: AstrMessageEvent, plan_name: str, coop_qq: int):
+        user_qq = get_user(event)
+        user = UserManager.get_user(user_qq)
+        if plan_name not in user.user_data.plan:
+            raise KahunaException(f"plan {plan_name} not exist")
+        if not UserManager.user_exists(coop_qq):
+            raise KahunaException(f"coop_qq {coop_qq} not exist")
+        await user.add_plan_coop_user(plan_name, coop_qq)
+
+        coop_user = UserManager.get_user(coop_qq)
+        character_count = len(list(coop_user.user_data.alias.keys())) + 1 if user.main_character_id else 0
+
+        return event.plain_result(f"已向计划{plan_name} 添加合作者 {coop_qq}的{character_count}个角色。")
+
+    @staticmethod
+    async def plan_del_coop_user(event: AstrMessageEvent, plan_name: str, coop_qq: int):
+        user_qq = get_user(event)
+        user = UserManager.get_user(user_qq)
+        if plan_name not in user.user_data.plan:
+            raise KahunaException(f"plan {plan_name} not exist")
+        if not UserManager.user_exists(coop_qq):
+            raise KahunaException(f"coop_qq {coop_qq} not exist")
+
+        await user.del_plan_coop_user(plan_name, coop_qq)
+
+        return event.plain_result(f"已向计划{plan_name} 移除合作者 {coop_qq}")
+
+    @staticmethod
     async def rp_plan(event: AstrMessageEvent, plan_name: str):
         if await try_acquire_lock(calculate_lock, 1):
             try:

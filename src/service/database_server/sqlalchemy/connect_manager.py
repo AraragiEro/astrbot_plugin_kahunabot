@@ -30,7 +30,7 @@ class DatabaseManager():
         database_url = f'sqlite+aiosqlite:///{database_path}'
         connect_args = {
             "check_same_thread": False,
-            "timeout": 30,
+            "timeout": 3600,
             "uri": True,
             "isolation_level": None
         }
@@ -38,8 +38,9 @@ class DatabaseManager():
         engine = create_async_engine(
             database_url,
             connect_args=connect_args,
-            pool_size=10,
-            max_overflow=20,
+            pool_size=20,
+            max_overflow=30,
+            pool_timeout=300,
             pool_pre_ping=True,  # 添加连接健康检查
             pool_recycle=3600,  # 连接回收时间
             echo=False,  # 生产环境关闭 SQL 日志

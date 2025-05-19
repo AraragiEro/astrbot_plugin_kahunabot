@@ -24,16 +24,14 @@ class UserData():
         character_id: character_name, ...
     }
     """
-    plan: list = []
-    alias: dict = dict()
 
     def __init__(self, user_qq: int):
         self.user_qq = user_qq
-        plan: list = []
-        alias: dict = {}
+        self.plan: dict = {}
+        self.alias: dict = {}
 
         """ sell setting """
-        sell_data: dict = {
+        self.sell_data: dict = {
             "name": "",
             "sell_container_id": 0,
             "sell_location_flag": None,
@@ -73,6 +71,17 @@ class UserData():
             data_dict = json.loads(data.user_data)
         for key in self.user_data_colunms:
             setattr(self, key, data_dict.get(key, dict()))
+
+        # 新增的属性需要添加默认值
+        for plan, data in self.plan.items():
+            if "container_block" not in data:
+                data["container_block"] = []
+            if "coop_user" not in data:
+                data["coop_user"] = set()
+            if "manucycletime" not in data:
+                data["manucycletime"] = 24
+            if "reaccycletime" not in data:
+                data["reaccycletime"] = 24
 
     def get_plan_detail(self, plan_name: str) -> str:
         if plan_name not in self.plan:
@@ -185,6 +194,7 @@ class User():
         self.user_data.plan[plan_name]['reaccycletime'] = 24
         self.user_data.plan[plan_name]['container_block'] = []
         self.user_data.plan[plan_name]["plan"] = []
+        self.user_data.plan[plan_name]["coop_user"] = set()
         await self.user_data.insert_to_db()
 
     async def delete_plan_prod(self, plan_name: str, index: int):
@@ -236,4 +246,14 @@ class User():
             self.user_data.plan[plan_name]["container_block"].remove(container_id)
         await self.user_data.insert_to_db()
 
+    async def add_plan_coop_user(self, plan_name: str, user_qq: int):
+        if plan_name not in self.user_data.plan:
+            raise KahunaException("plan not found.")
+        if user_qq not in self.user_data.plan[plan_name]["coop_user"]:
+            self.user_data.plan[plan_name]["coop_user"].add(user_qq)
 
+    async def del_plan_coop_user(self, plan_name: str, user_qq: int):
+        if plan_name not in self.user_data.plan:
+            raise KahunaException("plan not found.")
+        if user_qq in self.user_data.plan[plan_name]["coop_user"]:
+            self.user_data.plan[plan_name]["coop_user"].remove(user_qq)
