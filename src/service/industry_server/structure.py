@@ -165,9 +165,7 @@ class StructureManager():
             return StructureManager.type_stucture_cache[location_id]
         else:
             structure_id, structure_flag = await StructureManager.find_type_structure(location_id, location_flag)
-            if location_flag and structure_flag in ['Hanger', 'CorpDeliveries', 'AssetSafety', 'Impounded', 'AutoFit']:
+            if location_flag:
                 StructureManager.type_stucture_cache[location_id] = (structure_id, structure_flag)
-            else:
-                raise KahunaException(f"location_id {location_id} 未找到建筑。")
             return structure_id, structure_flag
 
