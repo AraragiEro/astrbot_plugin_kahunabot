@@ -318,7 +318,7 @@ class KahunaBot(Star):
     async def Inds_plan_unhidecontainer(self, event: AstrMessageEvent, plan_name: str, container_id: int):
         yield await IndsEvent.plan_unhidecontainer(event, plan_name, container_id)
 
-    @Inds_plan.comman('添加合作', alias={'addcoop'})
+    @Inds_plan.command('添加合作', alias={'addcoop'})
     async def Inds_plan_addcoop(self, event: AstrMessageEvent, plan_name: str, coop_qq: int):
         yield await IndsEvent.plan_add_coop_user(event, plan_name, coop_qq)
 
