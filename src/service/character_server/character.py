@@ -96,7 +96,11 @@ class Character(BaseModel):
         return expire_time > now
 
     async def refresh_wallet_balance(self):
-        self.wallet_balance = await eveesi.character_character_id_wallet(await self.ac_token, self.character_id)
+        wallet_balance = await eveesi.character_character_id_wallet(await self.ac_token, self.character_id)
+        if wallet_balance:
+            self.wallet_balance = wallet_balance
+        else:
+            logger.error("刷新钱包余额失败")
 
     @property
     async def info(self):
