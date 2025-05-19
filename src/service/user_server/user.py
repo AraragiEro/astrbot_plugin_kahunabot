@@ -77,7 +77,7 @@ class UserData():
             if "container_block" not in data:
                 data["container_block"] = []
             if "coop_user" not in data:
-                data["coop_user"] = set()
+                data["coop_user"] = []
             if "manucycletime" not in data:
                 data["manucycletime"] = 24
             if "reaccycletime" not in data:
@@ -194,7 +194,7 @@ class User():
         self.user_data.plan[plan_name]['reaccycletime'] = 24
         self.user_data.plan[plan_name]['container_block'] = []
         self.user_data.plan[plan_name]["plan"] = []
-        self.user_data.plan[plan_name]["coop_user"] = set()
+        self.user_data.plan[plan_name]["coop_user"] = []
         await self.user_data.insert_to_db()
 
     async def delete_plan_prod(self, plan_name: str, index: int):
@@ -249,11 +249,13 @@ class User():
     async def add_plan_coop_user(self, plan_name: str, user_qq: int):
         if plan_name not in self.user_data.plan:
             raise KahunaException("plan not found.")
-        if user_qq not in self.user_data.plan[plan_name]["coop_user"]:
-            self.user_data.plan[plan_name]["coop_user"].add(user_qq)
+        if user_qq not in set(self.user_data.plan[plan_name]["coop_user"]):
+            self.user_data.plan[plan_name]["coop_user"].append(user_qq)
+        await self.user_data.insert_to_db()
 
     async def del_plan_coop_user(self, plan_name: str, user_qq: int):
         if plan_name not in self.user_data.plan:
             raise KahunaException("plan not found.")
-        if user_qq in self.user_data.plan[plan_name]["coop_user"]:
+        if user_qq in set(self.user_data.plan[plan_name]["coop_user"]):
             self.user_data.plan[plan_name]["coop_user"].remove(user_qq)
+        await self.user_data.insert_to_db()
