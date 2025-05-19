@@ -10,7 +10,7 @@ from ..database_server.sqlalchemy.kahuna_database_utils import (
 from ..log_server import logger
 from ...service.sde_service.database import MapSolarSystems
 from ..evesso_server.eveesi import universe_stations_station, universe_structures_structure
-
+from ...utils import KahunaException
 
 STRUCTURE_MEMBER = {"structure_id", "name", "owner_id", "solar_system_id", "type_id", "system"}
 
@@ -165,7 +165,9 @@ class StructureManager():
             return StructureManager.type_stucture_cache[location_id]
         else:
             structure_id, structure_flag = await StructureManager.find_type_structure(location_id, location_flag)
-            if location_flag:
+            if location_flag and structure_flag in ['Hanger', 'CorpDeliveries', 'AssetSafety', 'Impounded', 'AutoFit']:
                 StructureManager.type_stucture_cache[location_id] = (structure_id, structure_flag)
+            else:
+                raise KahunaException(f"location_id {location_id} 未找到建筑。")
             return structure_id, structure_flag
 
