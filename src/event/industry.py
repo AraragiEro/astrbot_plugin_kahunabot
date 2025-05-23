@@ -648,6 +648,8 @@ class IndsEvent:
         coop_pay_data = report['coop_pay']
         pay_res = {}
         for cid, data in coop_pay_data.items():
+            if data['total_duration'] == 0:
+                continue
             cid = int(cid)
             character = CharacterManager.get_character_by_id(cid)
             work_time = data['total_duration'] / (24 * 60 * 60)
