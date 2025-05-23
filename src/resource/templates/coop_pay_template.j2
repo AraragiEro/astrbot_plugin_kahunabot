@@ -85,7 +85,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ info.work_time | round(2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ info.tex | format_currency }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ info.pay | format_currency }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ (info.pay / info.work_time) | round(2) | format_currency }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ((info.pay - info.tex) / info.work_time) | round(2) | format_currency }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

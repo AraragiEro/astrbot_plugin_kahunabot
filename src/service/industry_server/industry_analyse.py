@@ -979,12 +979,12 @@ class IndustryAnalyser():
                 }
 
             for job in job_data:
-                coop_pay_dict['total_duration'] += job.duration
+                coop_pay_dict[cid]['total_duration'] += job.duration
                 if job.activity_id == 11:
-                    coop_pay_dict['total_reac_duration'] += job.duration
-                elif coop_pay_dict['total_manu_duration'] == 1:
-                    coop_pay_dict['total_manu_duration'] += job.duration
-                coop_pay_dict['total_tex'] += job.cost
+                    coop_pay_dict[cid]['total_reac_duration'] += job.duration
+                elif coop_pay_dict[cid]['total_manu_duration'] == 1:
+                    coop_pay_dict[cid]['total_manu_duration'] += job.duration
+                coop_pay_dict[cid]['total_tex'] += job.cost
 
     async def add_material_data(self, type_id, result_dict):
         # 获取 Group 和 Category 信息

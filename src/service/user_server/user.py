@@ -72,6 +72,9 @@ class UserData():
         for key in self.user_data_colunms:
             setattr(self, key, data_dict.get(key, dict()))
 
+        # alias的key需要转换为整数
+        self.alias = {int(cid): data for cid, data in self.alias.items()}
+
         # 新增的属性需要添加默认值
         for plan, data in self.plan.items():
             if "container_block" not in data:
