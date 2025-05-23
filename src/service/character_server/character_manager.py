@@ -68,7 +68,7 @@ class CharacterManager():
             character.director = await cls.is_character_corp_directer(character)
 
     @classmethod
-    def get_character_by_id(cls, character_id):
+    def get_character_by_id(cls, character_id) -> Character:
         res = cls.character_dict.get(character_id, None)
         if not res:
             raise KahunaException('Character not found')

@@ -1,4 +1,6 @@
 # import logger
+import json
+
 import aiohttp
 import imgkit
 import os
@@ -14,6 +16,7 @@ import math
 from ..sde_service import SdeUtils
 from ..market_server import MarketManager
 from ..config_server.config import config
+from ..evesso_server import eveesi
 from ...utils import KahunaException, get_beijing_utctime
 from ...utils.path import TMP_PATH, RESOURCE_PATH
 from ..log_server import logger
@@ -37,6 +40,12 @@ def format_number(value):
         # 如果无法转换为数字，返回原值
         return value
 
+# 方法2：直接添加到环境
+def round_filter(value, precision=2):
+    try:
+        return round(float(value), precision)
+    except (ValueError, TypeError):
+        return value
 
 class PictureRender():
     @classmethod
@@ -471,6 +480,32 @@ class PictureRender():
         return pic_path
 
     @classmethod
+    async def render_coop_pay_report(cls, data: dict):
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_path),
+            autoescape=jinja2.select_autoescape(['html', 'xml'])
+        )
+        env.filters['format_currency'] = format_number
+        env.filters['round'] = round_filter
+        template = env.get_template('coop_pay_template.j2')
+        current = get_beijing_utctime(datetime.now())
+        html_content = template.render(
+            header_title='合作报酬',
+            header_image=PictureRender.get_image_base64(os.path.join(RESOURCE_PATH, 'img', 'sell_list_header.png')),
+            data=data
+        )
+
+        # 生成输出路径
+        output_path = os.path.abspath(os.path.join((TMP_PATH), "coop_pay_template.jpg"))
+
+        # 增加等待时间到5秒，确保图表有足够时间渲染
+        pic_path = await cls.render_pic(output_path, html_content, width=800, height=720, wait_time=120)
+
+        if not pic_path:
+            raise KahunaException("pic_path not exist.")
+        return pic_path
+
+    @classmethod
     async def render_pic(cls, output_path: str, html_content: str, width: int = 800, height: int = 800, wait_time: int = 5):
         # 将HTML内容保存到临时文件
         html_file_path = os.path.join(TMP_PATH, "temp_render.html")
@@ -568,6 +603,13 @@ class PictureRender():
         return item_image_base64
 
     @classmethod
+    async def get_character_portrait_base64(cls, character_id: int):
+        portrait_image_path = await cls.download_character_protrait(character_id)
+        portrait_image_base64 = cls.get_image_base64(portrait_image_path)
+
+        return portrait_image_base64
+
+    @classmethod
     async def download_eve_item_image(cls, type_id: int, size: int = 64) -> str:
         """
         下载EVE物品图片
@@ -657,3 +699,35 @@ class PictureRender():
             logger.error(f"图片转base64失败: {e}")
             return None
 
+    @classmethod
+    async def download_character_protrait(cls, character_id: int):
+        # 创建图片存储目录
+        image_path = os.path.join(RESOURCE_PATH, "img")
+        if not os.path.exists(image_path):
+            os.makedirs(image_path)
+
+        # 构建图片URL和本地保存路径
+        local_path = os.path.join(image_path, f"portrait_{character_id}.png")
+
+        # 如果图片已存在，直接返回路径
+        if os.path.exists(local_path):
+            return local_path
+
+        image_data = await eveesi.characters_character_portrait(character_id)
+        px64_url = image_data['px64x64']
+
+        # 下载图片，禁用SSL验证
+        async with aiohttp.ClientSession() as session:
+            async with session.get(px64_url, ssl=False, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                if response.status == 200:
+                    content = await response.read()
+                    # 保存图片
+                    with open(local_path, 'wb') as f:
+                        f.write(content)
+
+                    logger.info(f"成功下载角色头像: {character_id}")
+                    return local_path
+                else:
+                    raise Exception(f"请求状态码: {response.status}")
+
+        return local_path

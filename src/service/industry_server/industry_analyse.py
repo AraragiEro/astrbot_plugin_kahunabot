@@ -65,7 +65,7 @@ class Work():
 
     def get_material_need(self):
         mater_dict = BPManager.get_bp_materials(self.type_id)
-        res_dict = dict()
+        res_dict = {}
         for key in mater_dict.keys():
             mater_eff = 1 if mater_dict[key] == 1 else self.mater_eff
             res_dict[key] = math.ceil(mater_dict[key] * mater_eff * self.runs)
@@ -84,20 +84,21 @@ class IndustryAnalyser():
         # 运行中使用的设置
         self.bp_graph: nx.DiGraph = nx.MultiDiGraph()
         self.anaed_set = set()
-        self.bp_node_actually_need_quantity_dict = dict()
-        self.bp_node_total_need_quantity_dict = dict()
-        self.actually_need_work_list_dict = dict()
-        self.total_need_work_list_dict = dict()
-        self.running_job = dict()  # { type_id: runs }
+        self.bp_node_actually_need_quantity_dict = {}
+        self.bp_node_total_need_quantity_dict = {}
+        self.actually_need_work_list_dict = {}
+        self.total_need_work_list_dict = {}
+        self.running_job = {}  # { type_id: runs }
         self.target_container = set()
         self.hide_container = set()
-        self.asset_dict = dict()
+        self.asset_dict = {}
 
-        self.bp_runs_dict = dict()
-        self.bp_quantity_dict = dict()
-        self.have_bpo = dict()
+        self.bp_runs_dict = {}
+        self.user_jobs_dict = {}
+        self.bp_quantity_dict = {}
+        self.have_bpo = {}
 
-        self.job_asset_check_dict = dict()
+        self.job_asset_check_dict = {}
 
         self.global_graph = nx.MultiDiGraph()
         self.work_graph = nx.MultiDiGraph()
@@ -171,27 +172,43 @@ class IndustryAnalyser():
         if not self.target_container:
             raise KahunaException("target_structure must be set.")
 
-        self.running_job = dict()
+        self.running_job = {}
         self.using_bp = await RunningJobOwner.get_using_bp_set()
 
+        user_character_dict = {}
         target_character = []
         user = UserManager.get_user(self.owner_qq)
-        target_character += [c.character_id for c in CharacterManager.get_user_all_characters(user.user_qq)]
-        target_character += [cid for cid in user.user_data.alias.keys()]
+        main_character = user.main_character_id
+        usr_character = [c.character_id for c in CharacterManager.get_user_all_characters(user.user_qq)]
+        usr_alias = [cid for cid in user.user_data.alias.keys()]
+        target_character += usr_character
+        target_character += usr_alias
+        user_character_dict[main_character] = usr_character + usr_alias
 
+        # 合作者的角色list
         if self.plan_name:
             for coop_user in list(user.user_data.plan[self.plan_name]["coop_user"]):
                 coop_uobj = UserManager.get_user(coop_user)
-                target_character += [c.character_id for c in CharacterManager.get_user_all_characters(coop_user)]
-                target_character += [cid for cid in coop_uobj.user_data.alias.keys()]
+                main_character = coop_uobj.main_character_id
+                coop_character = [c.character_id for c in CharacterManager.get_user_all_characters(coop_user)]
+                coop_alias = [cid for cid in coop_uobj.user_data.alias.keys()]
+                target_character += coop_character
+                target_character += coop_alias
+                user_character_dict[main_character] = coop_character + coop_alias
+        self.user_jobs_dict = {cid: [] for cid in user_character_dict.keys()}
 
         result = await RunningJobOwner.get_job_with_starter(target_character)
-
+        
         for job in result:
             if job.output_location_id in self.target_container:
                 if not job.product_type_id in self.running_job:
                     self.running_job[job.product_type_id] = 0
                 self.running_job[job.product_type_id] += job.runs
+                
+                # 记录每个主角色下属的job，用具计算收益分配
+                for main_c, character_list in user_character_dict.items():
+                    if job.installer_id in character_list:
+                        self.user_jobs_dict[main_c].append(job)
 
     def get_target_container(self):
         container_list = AssetManager.get_user_container(self.owner_qq)
@@ -227,7 +244,7 @@ class IndustryAnalyser():
              for index, data in enumerate(work_list)])
 
         self.bfs_bp_tree(bfs_queue, dg)
-        memo = dict()
+        memo = {}
         root_depth = self.longest_path_dag('root', memo)
         self.update_layer_depth('root')
         return dg
@@ -334,7 +351,7 @@ class IndustryAnalyser():
         avaliable_bpc_list.sort(key=lambda x: (x[1], x[0]), reverse=True)
 
         # 可用的原图序列 [(quantity, material_efficiency, time_efficiency, structure_id, location_id)]
-        avaliable_bpo_count = dict()
+        avaliable_bpo_count = {}
         for bpo in avaliable_bpo_asset:
             if bpo.item_id in self.using_bp:
                 continue
@@ -501,8 +518,8 @@ class IndustryAnalyser():
         # 记录资产数量,用于处理每个index的节点状态
         avaliable_asset = exist_count
 
-        actually_index_need = dict()
-        total_index_need = dict()
+        actually_index_need = {}
+        total_index_need = {}
         # for edge in need_cal_edge:
         for edge in need_cal_edge_new:
             index_list = edge[1]
@@ -690,7 +707,7 @@ class IndustryAnalyser():
 
     def update_work_avaliable(self):
         asset_dict = self.job_asset_check_dict
-        work_check_dict = dict()
+        work_check_dict = {}
         for node in self.work_graph.nodes():
             if 'work_list' not in self.work_graph.nodes[node]:
                 continue
@@ -726,7 +743,7 @@ class IndustryAnalyser():
 
         nodes_without_outgoing_edges = [node for node, degree in self.bp_graph.out_degree() if degree == 0]
         res_dict = {}
-        cache_dict = dict()
+        cache_dict = {}
         for node in nodes_without_outgoing_edges:
             res_dict[node] = await self.calculate_work_bpnode_quantity(node, cache_dict)
 
@@ -788,7 +805,7 @@ class IndustryAnalyser():
             await self.analyse_progress_work_type(self.plan_list)
 
         result_dict = {
-            'work': dict(),
+            'work': {},
             'material': {"矿石": [],
                          '冰矿产物': [],
                         "行星工业": [],
@@ -797,8 +814,9 @@ class IndustryAnalyser():
                         "气云": [],
                         "杂货": [],
                         "反应物": []},
-            'work_flow': dict(),
-            'logistic': dict()
+            'work_flow': {},
+            'logistic': {},
+            'coop_pay': {}
         }
 
         res = await self.get_work_node_data(result_dict)
@@ -828,6 +846,7 @@ class IndustryAnalyser():
 
         self.get_workflow_data(result_dict['work_flow'])
         await self.get_transport_data(result_dict['logistic'])
+        await self.get_coop_pay(result_dict['coop_pay'])
 
         return result_dict
 
@@ -843,7 +862,7 @@ class IndustryAnalyser():
             layer_manu = []
             layer_nodes = list([node, data] for node, data in self.work_graph.nodes(data=True) if self.bp_graph.nodes[node]['depth'] == layer)
             for node, data in layer_nodes:
-                node_work = dict()
+                node_work = {}
                 work_list = data['work_list']
                 if len(work_list) == 0:
                     continue
@@ -875,7 +894,7 @@ class IndustryAnalyser():
         main_chara = CharacterManager.get_character_by_id(UserManager.get_main_character_id(self.owner_qq))
         ac_token = await main_chara.ac_token
         # 获取需求
-        structure_need_dict = dict()
+        structure_need_dict = {}
         for node in node_list:
             node_data = self.work_graph.nodes[node]
             work_list = node_data['work_list']
@@ -885,7 +904,7 @@ class IndustryAnalyser():
                 material_need = work.get_material_need()
                 structure = await StructureManager.get_structure(work.structure_id, ac_token)
                 if structure not in structure_need_dict:
-                    structure_need_dict[structure] = dict()
+                    structure_need_dict[structure] = {}
                 struc_need_dict = structure_need_dict[structure]
                 for child_id, quantity in material_need.items():
                     if child_id not in struc_need_dict:
@@ -894,7 +913,7 @@ class IndustryAnalyser():
         logistic_dict['need'] = structure_need_dict
 
         # 获取供给
-        structure_provide_dict = dict()
+        structure_provide_dict = {}
         asset_res = await AssetManager.get_asset_in_container_list(list(self.target_container))
         for asset in asset_res:
             if asset.type_id not in self.work_graph.nodes():
@@ -908,7 +927,7 @@ class IndustryAnalyser():
                              f'location structure[{structure_id}] access error. location_id is {asset.location_id}|strcture_id is {structure_id}')
                 continue
             if structure not in structure_provide_dict:
-                structure_provide_dict[structure] = dict()
+                structure_provide_dict[structure] = {}
             if asset.type_id not in structure_provide_dict[structure]:
                 structure_provide_dict[structure][asset.type_id] = 0
             structure_provide_dict[structure][asset.type_id] += asset.quantity
@@ -927,7 +946,7 @@ class IndustryAnalyser():
                     struct_need[type_id] -= structure_provide_dict[struct][type_id]
                     structure_provide_dict[struct].pop(type_id)
 
-        transport_dict = dict()
+        transport_dict = {}
         # 处理异地供给
         for need_struct, struct_need in structure_need_dict.items():
             for type_id, quantity in struct_need.items():
@@ -948,6 +967,24 @@ class IndustryAnalyser():
                         struct_need[type_id] -= struct_provide[type_id]
                         struct_provide[type_id] = 0
         logistic_dict['transport'] = transport_dict
+
+    async def get_coop_pay(self, coop_pay_dict: dict):
+        for cid, job_data in self.user_jobs_dict.items():
+            if cid not in coop_pay_dict:
+                coop_pay_dict[cid] = {
+                    'total_duration': 0,
+                    'total_tex': 0,
+                    'total_manu_duration': 0,
+                    'total_reac_duration': 0
+                }
+
+            for job in job_data:
+                coop_pay_dict['total_duration'] += job.duration
+                if job.activity_id == 11:
+                    coop_pay_dict['total_reac_duration'] += job.duration
+                elif coop_pay_dict['total_manu_duration'] == 1:
+                    coop_pay_dict['total_manu_duration'] += job.duration
+                coop_pay_dict['total_tex'] += job.cost
 
     async def add_material_data(self, type_id, result_dict):
         # 获取 Group 和 Category 信息
@@ -1096,7 +1133,7 @@ class IndustryAnalyser():
         if batch_size is None:
             batch_size = max(2, cpu_count - 1)
         logger.info(f'get_cost_data: batch_size = {batch_size}')
-        cost_dict = dict()
+        cost_dict = {}
         total_plans = len(plan_list)
 
         with tqdm(total=total_plans, desc="成本计算", unit="个", ascii='=-') as pbar:
@@ -1121,7 +1158,7 @@ class IndustryAnalyser():
         analyser.bp_block_level = 1
         await analyser.analyse_progress_work_type([[product, 1]])
 
-        res = {'material': dict(), 'group_detail': dict()}
+        res = {'material': {}, 'group_detail': {}}
 
         material_dict = res['material']
         total_cost = 0

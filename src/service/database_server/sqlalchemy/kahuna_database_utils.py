@@ -387,7 +387,7 @@ class IndustryJobsCacheDBUtils(IndustryJobsDBUtils, CommonCacheUtils):
     cls_base_model = IndustryJobs
 
     @classmethod
-    async def select_jobs_by_installer_id_list(cls, character_id_list):
+    async def select_jobs_by_installer_id_list(cls, character_id_list) -> list[IndustryJobsCache]:
         async_session = dbm.async_session(cls.cls_model)
         async with async_session() as session:
             async with session.begin():

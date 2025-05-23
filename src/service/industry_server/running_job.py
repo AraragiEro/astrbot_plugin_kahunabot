@@ -51,3 +51,21 @@ class RunningJobOwner:
         running_jobs = await IndustryJobsCacheDBUtils.select_all()
 
         return set(job.blueprint_id for job in running_jobs)
+
+    @classmethod
+    async def get_character_using_count(cls, character_id: int):
+        manu_jobs = await IndustryJobsCacheDBUtils.select_jobs_by_installer_id_and_type(character_id, 1)
+        reac_job = await IndustryJobsCacheDBUtils.select_jobs_by_installer_id_and_type(character_id, 11)
+
+        return {
+            'manu': len(manu_jobs),
+            'reac': len(reac_job)
+        }
+
+    @classmethod
+    async def get_using_count_of_alias_characters(cls, character_id_list: list):
+        res = {}
+        for character_id in character_id_list:
+            res[character_id] = await cls.get_character_using_count(character_id)
+
+        return res

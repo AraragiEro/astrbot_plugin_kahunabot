@@ -633,6 +633,35 @@ class IndsEvent:
         return event.chain_result(chain)
 
     @staticmethod
+    async def rp_coop_pay(event: AstrMessageEvent, plan_name: str):
+        user_qq = get_user(event)
+        user = UserManager.get_user(user_qq)
+        if plan_name not in user.user_data.plan:
+            raise KahunaException(f"plan {plan_name} not exist")
+
+        plan_cache = get_user_tmp_cache_prefix(user_qq) + f'{plan_name}_' + 'plan_report.json'
+        with open(os.path.join(TMP_PATH, plan_cache), 'r') as file:
+            plan_data = json.load(file)
+        report_time = datetime.fromisoformat(plan_data['date'])
+        report = plan_data['data']
+
+        coop_pay_data = report['coop_pay']
+        pay_res = {}
+        for cid, data in coop_pay_data.items():
+            character = CharacterManager.get_character_by_id(cid)
+            work_time = data['total_duration'] / (24 * 60 * 60)
+            pay_res[cid] = {
+                'id': cid,
+                'name': character.character_name,
+                'work_time': work_time,
+                'tex': data['total_tex'],
+                'pay': data['total_tex'] + work_time * 1000000,
+            }
+
+        print(111)
+
+
+    @staticmethod
     async def rp_t2mk(event: AstrMessageEvent, plan_name: str):
         if await try_acquire_lock(calculate_lock, 1):
             try:
