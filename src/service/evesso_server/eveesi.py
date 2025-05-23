@@ -150,7 +150,7 @@ async def corporations_corporation_id_industry_jobs(page: int, access_token: str
 
 async def corporations_corporation_id_blueprints(page: int, access_token: str, corporation_id: int, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/blueprints/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=1)
 
 async def universe_structures_structure(access_token: str, structure_id: int, log=True):
     """
