@@ -15,7 +15,7 @@
 <body class="bg-gray-100 min-h-screen">
     <div class="container w-[calc(100%-20px)] max-w-[1920px] mx-auto px-2 py-8">
         <!-- 标题区域 -->
-        <div class="relative h-[250px] mb-8 rounded-lg overflow-hidden">
+        <div class="relative h-[150px] mb-8 rounded-lg overflow-hidden">
             <!-- 背景图片 -->
             <img src="data:image/png;base64,{{ header_image }}" alt="背景" class="absolute inset-0 w-full h-full object-cover">
             <!-- 标题内容 -->
@@ -28,15 +28,15 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-gray-500 text-sm font-medium">总工时</h3>
-                <p class="text-2xl font-bold text-gray-900">{{ (data.values() | sum(attribute='work_time') | round(2)) }} 天</p>
+                <p class="text-l font-bold text-gray-900">{{ (data.values() | sum(attribute='work_time') | round(2)) }} 天</p>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-gray-500 text-sm font-medium">总支付金额</h3>
-                <p class="text-2xl font-bold text-gray-900">{{ (data.values() | sum(attribute='pay') | round(2)) | format_currency }} ISK</p>
+                <p class="text-l font-bold text-gray-900">{{ (data.values() | sum(attribute='pay') | round(2)) | format_currency }} ISK</p>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-gray-500 text-sm font-medium">总手续费</h3>
-                <p class="text-2xl font-bold text-gray-900">{{ (data.values() | sum(attribute='tex') | round(2)) | format_currency }} ISK</p>
+                <p class="text-l font-bold text-gray-900">{{ (data.values() | sum(attribute='tex') | round(2)) | format_currency }} ISK</p>
             </div>
         </div>
 
