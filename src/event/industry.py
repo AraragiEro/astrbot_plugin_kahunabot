@@ -648,18 +648,23 @@ class IndsEvent:
         coop_pay_data = report['coop_pay']
         pay_res = {}
         for cid, data in coop_pay_data.items():
+            cid = int(cid)
             character = CharacterManager.get_character_by_id(cid)
             work_time = data['total_duration'] / (24 * 60 * 60)
             pay_res[cid] = {
                 'id': cid,
                 'name': character.character_name,
+                'portrait': await PictureRender.get_character_portrait_base64(cid),
                 'work_time': work_time,
                 'tex': data['total_tex'],
                 'pay': data['total_tex'] + work_time * 1000000,
             }
 
-        print(111)
-
+        output_path = await PictureRender.render_coop_pay_report(pay_res)
+        chain = [
+            Image.fromFileSystem(output_path)
+        ]
+        return event.chain_result(chain)
 
     @staticmethod
     async def rp_t2mk(event: AstrMessageEvent, plan_name: str):

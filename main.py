@@ -389,6 +389,10 @@ class KahunaBot(Star):
     async def Inds_rp_month_order_statistic(self, event: AstrMessageEvent):
         yield await IndsEvent.rp_month_order_statistic(event)
 
+    @Inds_rp.command('工资', alias={'coop_pay'})
+    async def Inds_rp_coop_pay(self, event: AstrMessageEvent, plan_name: str):
+        yield await IndsEvent.rp_coop_pay(event, plan_name)
+
     @Inds.command("refjobs")
     async def Inds_refjobs(self, event: AstrMessageEvent):
         """ 刷新进行中的工作 """
