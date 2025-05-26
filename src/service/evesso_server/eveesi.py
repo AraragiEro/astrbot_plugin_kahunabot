@@ -96,12 +96,12 @@ async def markets_region_orders(page: int, region_id: int, type_id: int = None, 
        params=params, log=log, max_retries=1
     )
 
-async def characters_character_assets(page: int, access_token: str, character_id: int, log=True):
+async def characters_character_assets(page: int, access_token: str, character_id: int, max_retries=3, log=True):
     """
 
     """
     return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/assets/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=1)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
 
 CHARACRER_INFO_CACHE = TTLCache(maxsize=10, ttl=1200)
 @cached(CHARACRER_INFO_CACHE)
@@ -121,7 +121,7 @@ async def characters_character(character_id, log=True):
     """
     return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/", log=log)
 
-async def corporations_corporation_assets(page: int, access_token: str, corporation_id: int, log=True):
+async def corporations_corporation_assets(page: int, access_token: str, corporation_id: int, max_retries=3, log=True):
     """
     # is_blueprint_copy - Boolean
     # is_singleton - Boolean
@@ -133,7 +133,7 @@ async def corporations_corporation_assets(page: int, access_token: str, corporat
     # type_id - Integer
     """
     return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/assets/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=1)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
 
 async def corporations_corporation_id_roles(access_token: str, corporation_id: int, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/roles/",

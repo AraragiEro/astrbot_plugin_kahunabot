@@ -37,7 +37,7 @@ async def find_max_page(esi_func, *args, begin_page: int = 500, interval: int = 
 
     # Check pages in the specified interval
     page += begin_page
-    while await esi_func(page, *args, log=False):
+    while await esi_func(page, *args, max_retries=1, log=False):
         page += interval
 
     # Once we find a page that doesn't exist, we know that the max page must be between `page - interval` and `page`.
@@ -59,7 +59,7 @@ async def get_multipages_result(esi_func, max_page, *args):
 
     results = []
     with tqdm(total=max_page, desc=f"请求{esi_func.__name__}数据", unit="page", ascii='=-') as pbar:
-        task = [process_with_limit(page, *args) for page in range(1, max_page + 1)]
+        task = [process_with_limit(page, *args, max_retries=3) for page in range(1, max_page + 1)]
         for future in asyncio.as_completed(task):
             result = await future
             if result:
