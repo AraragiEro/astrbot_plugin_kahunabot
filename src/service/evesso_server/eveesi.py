@@ -164,12 +164,14 @@ async def corporations_corporation_id_industry_jobs(
         params={
             "page": page,
             "include_completed": 1 if include_completed else 0
-        }, log=log, max_retries=max_retries)
+        }, log=log, max_retries=max_retries,
+        no_retry_code=[500]
+    )
 
 async def corporations_corporation_id_blueprints(page: int, access_token: str, corporation_id: int, max_retries=3, log=True):
     return await get_request_async(
         f"https://esi.evetech.net/latest/corporations/{corporation_id}/blueprints/",
-       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
+        headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
         no_retry_code=[500]
     )
 
