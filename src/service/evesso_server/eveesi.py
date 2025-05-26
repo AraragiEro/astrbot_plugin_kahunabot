@@ -148,7 +148,7 @@ async def corporations_corporation_assets(page: int, access_token: str, corporat
     return await get_request_async(
         f"https://esi.evetech.net/latest/corporations/{corporation_id}/assets/",
         headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
-        no_retry_code=[404]
+        no_retry_code=[500]
     )
 
 async def corporations_corporation_id_roles(access_token: str, corporation_id: int, log=True):
