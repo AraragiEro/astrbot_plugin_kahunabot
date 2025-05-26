@@ -76,24 +76,24 @@ async def character_character_id_portrait(access_token, character_id, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/portrait/",
                        headers={"Authorization": f"Bearer {access_token}"}, log=log)
 
-async def characters_character_id_blueprints(page:int, access_token: str, character_id: int, log=True):
+async def characters_character_id_blueprints(page:int, access_token: str, character_id: int, max_retries=3, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/blueprints/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=1)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
 
 async def industry_systems(log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/industry/systems/", log=log)
 
-async def markets_structures(page: int, access_token: str, structure_id: int, log=True) -> dict:
+async def markets_structures(page: int, access_token: str, structure_id: int, max_retries=3, log=True) -> dict:
     return await get_request_async(f"https://esi.evetech.net/latest/markets/structures/{structure_id}/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=1)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
 
-async def markets_region_orders(page: int, region_id: int, type_id: int = None, log=True):
+async def markets_region_orders(page: int, region_id: int, type_id: int = None, max_retries=3, log=True):
     params = {"page": page}
     if type_id is not None:
         params["type_id"] = type_id
     return await get_request_async(
         f"https://esi.evetech.net/latest/markets/{region_id}/orders/", headers={},
-       params=params, log=log, max_retries=1
+       params=params, log=log, max_retries=max_retries
     )
 
 async def characters_character_assets(page: int, access_token: str, character_id: int, max_retries=3, log=True):
@@ -139,18 +139,20 @@ async def corporations_corporation_id_roles(access_token: str, corporation_id: i
     return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/roles/",
                        headers={"Authorization": f"Bearer {access_token}"}, log=log, max_retries=1)
 
-async def corporations_corporation_id_industry_jobs(page: int, access_token: str, corporation_id: int, include_completed: bool = False, log=True):
+async def corporations_corporation_id_industry_jobs(
+        page: int, access_token: str, corporation_id: int, include_completed: bool = False, max_retries=3, log=True
+):
     return await get_request_async(
     f"https://esi.evetech.net/latest/corporations/{corporation_id}/industry/jobs/",
         headers={"Authorization": f"Bearer {access_token}"},
         params={
             "page": page,
             "include_completed": 1 if include_completed else 0
-        }, log=log)
+        }, log=log, max_retries=max_retries)
 
-async def corporations_corporation_id_blueprints(page: int, access_token: str, corporation_id: int, log=True):
+async def corporations_corporation_id_blueprints(page: int, access_token: str, corporation_id: int, max_retries=3, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/blueprints/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=1)
+                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
 
 async def universe_structures_structure(access_token: str, structure_id: int, log=True):
     """
@@ -204,13 +206,13 @@ async def characters_character_orders(access_token, character_id: int, log=True)
     )
 
 # /characters/{character_id}/orders/history/
-async def characters_character_orders_history(page: int, access_token, character_id: int, log=True):
+async def characters_character_orders_history(page: int, access_token, character_id: int, max_retries=3, log=True):
     return await get_request_async(
         f"https://esi.evetech.net/latest/characters/{character_id}/orders/history/",
         headers={"Authorization": f"Bearer {access_token}"},
         params={"page": page},
         log=log,
-        max_retries=1
+        max_retries=max_retries
     )
 
 # /characters/{character_id}/portrait/
