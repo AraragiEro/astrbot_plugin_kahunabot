@@ -13,7 +13,9 @@ from ..log_server import logger
 permission_set = set()
 
 
-async def get_request_async(url, headers=None, params=None, log=True, max_retries=2, timeout=60) -> Optional[Any]:
+async def get_request_async(
+        url, headers=None, params=None, log=True, max_retries=2, timeout=60, no_retry_code = None
+) -> Optional[Any]:
     """
     异步发送GET请求，带有重试机制
 
@@ -40,6 +42,8 @@ async def get_request_async(url, headers=None, params=None, log=True, max_retrie
                             if attempt == max_retries - 1:
                                 raise
                             continue
+                    elif no_retry_code and response.status in no_retry_code:
+                        return None
                     else:
                         response_text = await response.text()
                         if log:
@@ -77,15 +81,21 @@ async def character_character_id_portrait(access_token, character_id, log=True):
                        headers={"Authorization": f"Bearer {access_token}"}, log=log)
 
 async def characters_character_id_blueprints(page:int, access_token: str, character_id: int, max_retries=3, log=True):
-    return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/blueprints/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
+    return await get_request_async(
+        f"https://esi.evetech.net/latest/characters/{character_id}/blueprints/",
+        headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
+        no_retry_code=[404]
+    )
 
 async def industry_systems(log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/industry/systems/", log=log)
 
 async def markets_structures(page: int, access_token: str, structure_id: int, max_retries=3, log=True) -> dict:
-    return await get_request_async(f"https://esi.evetech.net/latest/markets/structures/{structure_id}/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
+    return await get_request_async(
+        f"https://esi.evetech.net/latest/markets/structures/{structure_id}/",
+        headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
+        no_retry_code=[404]
+    )
 
 async def markets_region_orders(page: int, region_id: int, type_id: int = None, max_retries=3, log=True):
     params = {"page": page}
@@ -93,15 +103,18 @@ async def markets_region_orders(page: int, region_id: int, type_id: int = None, 
         params["type_id"] = type_id
     return await get_request_async(
         f"https://esi.evetech.net/latest/markets/{region_id}/orders/", headers={},
-       params=params, log=log, max_retries=max_retries
+       params=params, log=log, max_retries=max_retries, no_retry_code=[404]
     )
 
 async def characters_character_assets(page: int, access_token: str, character_id: int, max_retries=3, log=True):
     """
 
     """
-    return await get_request_async(f"https://esi.evetech.net/latest/characters/{character_id}/assets/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
+    return await get_request_async(
+        f"https://esi.evetech.net/latest/characters/{character_id}/assets/",
+        headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
+        no_retry_code=[404]
+    )
 
 CHARACRER_INFO_CACHE = TTLCache(maxsize=10, ttl=1200)
 @cached(CHARACRER_INFO_CACHE)
@@ -132,8 +145,11 @@ async def corporations_corporation_assets(page: int, access_token: str, corporat
     # quantity - Integer
     # type_id - Integer
     """
-    return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/assets/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
+    return await get_request_async(
+        f"https://esi.evetech.net/latest/corporations/{corporation_id}/assets/",
+        headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
+        no_retry_code=[404]
+    )
 
 async def corporations_corporation_id_roles(access_token: str, corporation_id: int, log=True):
     return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/roles/",
@@ -151,8 +167,11 @@ async def corporations_corporation_id_industry_jobs(
         }, log=log, max_retries=max_retries)
 
 async def corporations_corporation_id_blueprints(page: int, access_token: str, corporation_id: int, max_retries=3, log=True):
-    return await get_request_async(f"https://esi.evetech.net/latest/corporations/{corporation_id}/blueprints/",
-                       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries)
+    return await get_request_async(
+        f"https://esi.evetech.net/latest/corporations/{corporation_id}/blueprints/",
+       headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
+        no_retry_code=[404]
+    )
 
 async def universe_structures_structure(access_token: str, structure_id: int, log=True):
     """
@@ -212,7 +231,8 @@ async def characters_character_orders_history(page: int, access_token, character
         headers={"Authorization": f"Bearer {access_token}"},
         params={"page": page},
         log=log,
-        max_retries=max_retries
+        max_retries=max_retries,
+        no_retry_code=[404]
     )
 
 # /characters/{character_id}/portrait/
