@@ -84,7 +84,7 @@ async def characters_character_id_blueprints(page:int, access_token: str, charac
     return await get_request_async(
         f"https://esi.evetech.net/latest/characters/{character_id}/blueprints/",
         headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
-        no_retry_code=[404]
+        no_retry_code=[500]
     )
 
 async def industry_systems(log=True):
@@ -94,7 +94,7 @@ async def markets_structures(page: int, access_token: str, structure_id: int, ma
     return await get_request_async(
         f"https://esi.evetech.net/latest/markets/structures/{structure_id}/",
         headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
-        no_retry_code=[404]
+        no_retry_code=[500]
     )
 
 async def markets_region_orders(page: int, region_id: int, type_id: int = None, max_retries=3, log=True):
@@ -170,7 +170,7 @@ async def corporations_corporation_id_blueprints(page: int, access_token: str, c
     return await get_request_async(
         f"https://esi.evetech.net/latest/corporations/{corporation_id}/blueprints/",
        headers={"Authorization": f"Bearer {access_token}"}, params={"page": page}, log=log, max_retries=max_retries,
-        no_retry_code=[404]
+        no_retry_code=[500]
     )
 
 async def universe_structures_structure(access_token: str, structure_id: int, log=True):
