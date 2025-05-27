@@ -77,9 +77,11 @@ class AssetOwner():
         logger.info(f"开始刷新 {self.owner_type} {self.access_character.character_name} 资产")
         if self.owner_type == "character":
             await self.get_owner_asset(characters_character_assets, self.owner_id)
+            logger.info(f"请求bp资产。")
             await self.get_owner_bp_asset(characters_character_id_blueprints, self.owner_id)
         elif self.owner_type == "corp":
             await self.get_owner_asset(corporations_corporation_assets, self.owner_id)
+            logger.info(f"请求bp资产。")
             await self.get_owner_bp_asset(corporations_corporation_id_blueprints, self.owner_id)
 
     async def get_owner_asset(self, asset_esi, owner_id):
@@ -121,7 +123,6 @@ class AssetOwner():
         ac_token = await self.access_character.ac_token
         max_page = await find_max_page(asset_esi, ac_token, owner_id, begin_page=1, interval=5)
 
-        logger.info("请求bp资产。")
         results = await get_multipages_result(asset_esi, max_page, ac_token, owner_id)
 
         # 删除owner的bp资产

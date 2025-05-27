@@ -15,6 +15,7 @@ from ..log_server import logger
 class RunningJobOwner:
     @classmethod
     async def refresh_character_running_job(cls, character: Character):
+        logger.info(f"开始刷新 {character.character_name} job")
         character_running_job = await characters_character_id_industry_jobs(await character.ac_token, character.character_id)
         if not character_running_job:
             return
@@ -30,7 +31,7 @@ class RunningJobOwner:
     async def refresh_corp_running_job(cls, corp_id, character: Character):
         max_page = await find_max_page(corporations_corporation_id_industry_jobs, await character.ac_token, corp_id,
                                  begin_page=1, interval=2)
-        logger.info("请求刷新进行中job。")
+        logger.info(f"开始刷新 corp {corp_id} job。")
         results = await get_multipages_result(corporations_corporation_id_industry_jobs, max_page, await character.ac_token, corp_id)
         await IndustryJobsDBUtils.delete_jobs_by_owner_id(corp_id)
         for result in results:
