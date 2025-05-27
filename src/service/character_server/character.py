@@ -56,6 +56,7 @@ class Character(BaseModel):
     async def refresh_character_token(self):
         try:
             refresh_res_dict = refresh_token(self.refresh_token)
+            logger.info(f"{self.character_name} token refreshed.")
         except (InvalidClientIdError, InvalidScopeError) as e:
             logger.error(f"Caught an exception: {type(e).__name__}, message: {str(e)}")
             raise KahunaException(f"QQ:{self.QQ}: {self.character_name} failed to refresh token")

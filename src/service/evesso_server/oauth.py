@@ -49,7 +49,6 @@ def refresh_token(refresh_token):
         client_secret=secret_key #, proxies=PROXY
     )
 
-    logger.info(f"token refreshed. {newtocker_dict}")
     """
     {
         "access_token",
