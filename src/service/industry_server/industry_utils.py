@@ -51,7 +51,7 @@ class IdsUtils:
         type_id = work.type_id
         bp_materials = BPManager.get_bp_materials(type_id)
         for child_id, quantity in bp_materials.items():
-            child_need = math.ceil(quantity * work.runs * work.mater_eff)
+            child_need = math.ceil(quantity * work.runs * (1 if quantity == 1 else work.mater_eff))
             if child_id not in work_check_dict:
                 work_check_dict[child_id] = []
             work_check_dict[child_id].append({
