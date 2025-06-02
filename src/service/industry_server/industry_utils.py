@@ -35,23 +35,20 @@ class IdsUtils:
 
     @classmethod
     def check_job_material_avaliable(cls, type_id, work, asset_dict):
-        bp_materials = BPManager.get_bp_materials(type_id)
-        for child_id, quantity in bp_materials.items():
-            child_need = math.ceil(quantity * work.runs * work.mater_eff)
+        mater_needed = work.get_material_need()
+        for child_id, child_need in mater_needed.items():
             if child_need > asset_dict.get(child_id, 0):
                 return False
 
-        for child_id, quantity in bp_materials.items():
-            child_need = math.ceil(quantity * work.runs * work.mater_eff)
+        for child_id, child_need in mater_needed.items():
             asset_dict[child_id] -= child_need
         return True
 
     @classmethod
     def input_work_checkpoint(cls, work_check_dict, work):
         type_id = work.type_id
-        bp_materials = BPManager.get_bp_materials(type_id)
-        for child_id, quantity in bp_materials.items():
-            child_need = math.ceil(quantity * work.runs * (1 if quantity == 1 else work.mater_eff))
+        mater_needed = work.get_material_need()
+        for child_id, child_need in mater_needed.items():
             if child_id not in work_check_dict:
                 work_check_dict[child_id] = []
             work_check_dict[child_id].append({
