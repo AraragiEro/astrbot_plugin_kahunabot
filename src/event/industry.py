@@ -205,7 +205,7 @@ class IndsEvent:
             for matcher_key, matcher_data in matcher_datas.items():
                 prefix = "├── "
                 if matcher.matcher_type == "structure":
-                    matcher_data = await StructureManager.get_structure(matcher_data).name
+                    matcher_data = (await StructureManager.get_structure(matcher_data)).name
                 res += f"{prefix}├── {matcher_key}: {matcher_data}\n"
 
         return event.plain_result(res)
