@@ -42,7 +42,11 @@ async def find_max_page(esi_func, *args, begin_page: int = 500, interval: int = 
 
     # Once we find a page that doesn't exist, we know that the max page must be between `page - interval` and `page`.
     # So we use binary search within this range to find the exact max page.
-    return await find_max_page_binary_search(esi_func, max(0, page - interval), max(page - interval + 1, page), *args, **kwargs)
+    max_page = await find_max_page_binary_search(esi_func, max(0, page - interval), max(page - interval + 1, page), *args, **kwargs)
+    logger.info(f"max page: {max_page}")
+
+    return max_page
+
 
 async def get_multipages_result(esi_func, max_page, *args):
     logger.info(f'{esi_func.__name__} 开始批量任务， page: {max_page}')
