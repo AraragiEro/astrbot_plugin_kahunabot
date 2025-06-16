@@ -3,7 +3,7 @@ from typing import Any
 from oauthlib.oauth2 import InvalidClientIdError, InvalidScopeError
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
-from threading import Lock
+from asyncio import Lock
 
 import traceback
 
@@ -70,7 +70,7 @@ class Character(BaseModel):
 
     @property
     async def ac_token(self):
-        with self._refresh_token_lock:
+        async with self._refresh_token_lock:
             if not self.token_avaliable:
                 await self.refresh_character_token()
         return self.token
