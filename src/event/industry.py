@@ -4,6 +4,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
 from datetime import datetime, timedelta
+from time import sleep
 
 from astrbot.api.event import AstrMessageEvent
 from astrbot.api.message_components import Image, BaseMessageComponent, Plain
@@ -537,6 +538,16 @@ class IndsEvent:
                     json.dump(cache_dict, file, indent=4)
 
                 yield event.plain_result(f"执行完成, 当前计划蓝图分解:{work_tree_sheet.url}")
+                if report['finished_index']:
+                    await asyncio.sleep(1)
+                    chain = [
+                        Plain(f"检测到以下目标已完成："),
+                        Plain(''.join([f"{data['name']} x {data['quantity']}\n" for data in report['finished_index']])),
+                        Plain("如需删除目标请使用指令：")
+                    ]
+                    yield event.chain_result(chain)
+                    await asyncio.sleep(0.5)
+                    yield event.plain_result(f".工业 计划 删除产品 {plan_name} {','.join([data['index'] for data in report['finished_index']])}")
             finally:
                 calculate_lock.release()
         else:

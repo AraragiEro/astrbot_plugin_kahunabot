@@ -240,7 +240,7 @@ class IndustryAnalyser():
         dg.add_node("root")
         dg.add_nodes_from([type_id for type_id, _ in work_list])
         dg.add_edges_from(
-            [("root", data[0], {"index": index, "quantity": data[1]})
+            [("root", data[0], {"index": index + 1, "quantity": data[1]})
              for index, data in enumerate(work_list)])
 
         self.bfs_bp_tree(bfs_queue, dg)
@@ -816,7 +816,8 @@ class IndustryAnalyser():
                         "反应物": []},
             'work_flow': {},
             'logistic': {},
-            'coop_pay': {}
+            'coop_pay': {},
+            'finished_index': []
         }
 
         res = await self.get_work_node_data(result_dict)
@@ -836,13 +837,24 @@ class IndustryAnalyser():
 
         res = {i+1:[] for i in range(self.bp_graph.nodes['root']['depth'] - 1)}
         top_layer = self.bp_graph.nodes['root']['depth'] - 1
+        finished_index = []
         for node, data in result_dict['work'].items():
             layer = self.bp_graph.nodes[node]['depth']
             if self.bp_graph.has_edge('root', node):
                 res[top_layer].append(data)
+                if self.work_graph.nodes[node]['quantity'] == 0 and self.running_job.get(node, 0) == 0:
+                    finished_index.append({
+                        'id': node,
+                        'index': self.bp_graph['root'][node][0]['index'],
+                        'name': SdeUtils.get_cn_name_by_id(node),
+                        'quantity': self.bp_graph['root'][node][0]['quantity']
+                    })
                 continue
             res[layer].append(data)
+        finished_index.sort(key=lambda x: x['index'], reverse=True)
+        result_dict['finished_index'] = finished_index
         result_dict['work'] = res
+
 
         self.get_workflow_data(result_dict['work_flow'])
         await self.get_transport_data(result_dict['logistic'])
