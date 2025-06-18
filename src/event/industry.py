@@ -537,7 +537,7 @@ class IndsEvent:
                     }
                     json.dump(cache_dict, file, indent=4)
 
-                res_str = f"执行完成, 当前计划蓝图分解:{work_tree_sheet.url}"
+                res_str = f"执行完成, 当前计划蓝图分解:{work_tree_sheet.url}\n"
                 if report['finished_index']:
                     finished_str = ''.join([f"{data['name']} x {data['quantity']}\n" for data in report['finished_index']])
                     res_str += (
