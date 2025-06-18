@@ -541,13 +541,13 @@ class IndsEvent:
                 if report['finished_index']:
                     await asyncio.sleep(1)
                     chain = [
-                        Plain(f"检测到以下目标已完成："),
+                        Plain(f"检测到以下目标已完成：\n"),
                         Plain(''.join([f"{data['name']} x {data['quantity']}\n" for data in report['finished_index']])),
                         Plain("如需删除目标请使用指令：")
                     ]
                     yield event.chain_result(chain)
                     await asyncio.sleep(0.5)
-                    yield event.plain_result(f".工业 计划 删除产品 {plan_name} {','.join([data['index'] for data in report['finished_index']])}")
+                    yield event.plain_result(f".工业 计划 删除产品 {plan_name} {','.join([str(data['index']) for data in report['finished_index']])}")
             finally:
                 calculate_lock.release()
         else:

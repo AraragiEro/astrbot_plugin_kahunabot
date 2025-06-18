@@ -101,4 +101,3 @@ esi-characters.read_titles.v1 = true
 esi-alliances.read_contacts.v1 = true
 esi-characters.read_fw_stats.v1 = true
 esi-corporations.read_fw_stats.v1 = true
-esi-characterstats.read.v1 = true
