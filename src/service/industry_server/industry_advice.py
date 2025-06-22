@@ -301,7 +301,7 @@ class IndustryAdvice:
 
     @classmethod
     async def personal_asset_statistics(cls, user_qq: int):
-        # TODO 获取资产
+        # 获取资产
         container_list = AssetManager.get_user_container(user_qq)
         target_container = set(container for container in container_list)
 
@@ -373,10 +373,10 @@ class IndustryAdvice:
             tid: (await jita_market.get_type_order_rouge(tid))[0] for tid in asset_dict.keys()
         }
 
-
-
         # 按照物品种类
         classify_asset = {'矿石': 0, '冰矿产物': 0, '组件': 0, '燃料块': 0, '元素': 0, '气云': 0, '行星工业': 0, '产品': 0, '杂货': 0}
+        # 关键原材料数量统计
+        key_material = {'元素': {}, '矿物': {}, '燃料块': {}, 'RAM': {}, '数据核心': {}, '解码器': {}, '行星工业': {}}
         for tid, quantity in asset_dict.items():
             group = SdeUtils.get_groupname_by_id(tid)
             category = SdeUtils.get_category_by_id(tid)
@@ -384,33 +384,61 @@ class IndustryAdvice:
             # 根据 group 或 category 进行判断和分类
             if group == "Mineral":
                 classify_asset["矿石"] += quantity * price_dict.get(tid, 0)
+                if tid not in key_material['矿物']:
+                    key_material['矿物'][tid] = quantity
+
             elif group == "Ice Product":
                 classify_asset['冰矿产物'] += quantity * price_dict.get(tid, 0)
+
             elif (
                 'Advanced Components' in market_list or
                 'Capital Components' in market_list
             ):
                 classify_asset['组件'] += quantity * price_dict.get(tid, 0)
+
             elif group == "Fuel Block":
                 classify_asset['燃料块'] += quantity * price_dict.get(tid, 0)
+                if tid not in key_material['燃料块']:
+                    key_material['燃料块'][tid] = quantity
+
             elif (
                 group == "Moon Materials" or
                 "Processed Moon Materials" in market_list or
                 "Advanced Moon Materials" in market_list
             ):
                 classify_asset['元素'] += quantity * price_dict.get(tid, 0)
+                if group == "Moon Materials":
+                    if tid not in key_material['元素']:
+                        key_material['元素'][tid] = quantity
+
             elif (
                 group == "Harvestable Cloud" or
                 "Reaction Materials" in market_list
             ):
                 classify_asset['气云'] += quantity * price_dict.get(tid, 0)
+
             elif category == "Planetary Commodities":
                 classify_asset['行星工业'] += quantity * price_dict.get(tid, 0)
+                if tid not in key_material['行星工业']:
+                    key_material['行星工业'][tid] = quantity
+
             elif category in ['Ship', 'Drone', 'Fighter', 'Module', 'Charge']:
                 classify_asset['产品'] += quantity * price_dict.get(tid, 0)
+
+            elif 'R.A.M.' in market_list:
+                key_material['RAM'][tid] = quantity
+
+            elif group == 'Datacores':
+                key_material['数据核心'][tid] = quantity
+
+            elif category == 'Decryptors':
+                key_material['解码器'][tid] = quantity
+
             else:
                 classify_asset["杂货"] += quantity * price_dict.get(tid, 0)
+
         res['classify_asset'] = classify_asset
+        res['key_material'] = key_material
         res['job_running'] = sum([price_dict.get(tid) * value for tid, value in job_dict.items() if tid in price_dict])
         res['total'] += sum(classify_asset.values())
 
@@ -467,6 +495,79 @@ class IndustryAdvice:
         }
 
         return output
+
+    @classmethod
+    async def perisonal_inventory_statistics(cls, user_qq: int):
+        market = MarketManager.get_market_by_type('jita')
+
+        # TODO 获取资产
+        container_list = AssetManager.get_user_container(user_qq)
+        target_container = set(container for container in container_list)
+        asset_dict = {}
+
+        for container in target_container:
+            result = await AssetManager.get_asset_in_container_list([container.asset_location_id])
+            for asset in result:
+                if asset.type_id not in asset_dict:
+                    asset_dict[asset.type_id] = 0
+                asset_dict[asset.type_id] += asset.quantity
+
+        async def get_m_dict(tid):
+            return {
+                'id': tid,
+                'quantity': asset_dict.get(tid, 0),
+                'name': SdeUtils.get_name_by_id(tid),
+                'cn_name': SdeUtils.get_cn_name_by_id(tid),
+                "value": (await market.get_type_order_rouge(tid))[0] * asset_dict.get(tid, 0)
+            }
+
+        res = {}
+        # 元素
+        res['moon_material'] = {}
+        moon_material_list = list(range(16633, 16654))
+        moon_material_list.remove(16645)
+        for tid in moon_material_list:
+            res['moon_material'][tid] = await get_m_dict(tid)
+
+        # 矿物
+        res['material'] = {}
+        material_list = list(range(34, 41)) + [11399]
+        for tid in material_list:
+            res['material'][tid] = await get_m_dict(tid)
+
+        # 燃料块
+        res['fuel_block'] = {}
+        fuel_block_list = [4051, 4247, 4312, 4246]
+        for tid in fuel_block_list:
+            res['fuel_block'][tid] = await get_m_dict(tid)
+
+        # RAM
+        res['ram'] = {}
+        ram_list = [11475, 11476, 11478, 11481, 11482, 11483, 11484, 11485, 11486, 11859, 11870, 11872, 11873, 11887, 11889, 11890, 11891]
+        for tid in ram_list:
+            res['ram'][tid] = await get_m_dict(tid)
+
+        # 数据核心
+        res['datacores'] = {}
+        datacore_list = [11496, 20114, 20115, 20171, 20172, 20410, 20411, 20412, 20413, 20414, 20415, 20416, 20417, 20418, 20419, 20420, 20421, 20423, 20424, 20425, 25887, 52309, 81051]
+        for tid in datacore_list:
+            res['datacores'][tid] = await get_m_dict(tid)
+
+        # 解码器
+        res['decryptors'] = {}
+        decryptors_list = list(range(34201, 34209))
+        for tid in decryptors_list:
+            res['decryptors'][tid] = await get_m_dict(tid)
+
+        # 行星工业
+        res['planet_industry'] = {}
+        for tid, quantity in asset_dict.items():
+            category = SdeUtils.get_category_by_id(tid)
+            if category == "Planetary Commodities":
+                if tid not in res['planet_industry']:
+                    res['planet_industry'][tid] = await get_m_dict(tid)
+
+        return res
 
     @classmethod
     async def refresh_all_asset_statistics(cls):

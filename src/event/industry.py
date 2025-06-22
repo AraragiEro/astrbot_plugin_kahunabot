@@ -549,7 +549,7 @@ class IndsEvent:
                     await asyncio.sleep(0.5)
                     yield event.plain_result(f".工业 计划 删除产品 {plan_name} {','.join([str(data['index']) for data in report['finished_index']])}")
                 else:
-                    event.plain_result(res_str)
+                    yield event.plain_result(res_str)
             finally:
                 calculate_lock.release()
         else:
@@ -883,6 +883,18 @@ class IndsEvent:
 
     @staticmethod
     async def rp_asset_statistic(event: AstrMessageEvent):
+        user_qq = get_user(event)
+
+        data = await IndustryAdvice.personal_asset_statistics(user_qq)
+        pic_output = await PictureRender.render_asset_statistic_report(data)
+
+        chain = [
+            Image.fromFileSystem(pic_output)
+        ]
+        return event.chain_result(chain)
+
+    @staticmethod
+    async def rp_inventory_statistics(event: AstrMessageEvent):
         user_qq = get_user(event)
 
         data = await IndustryAdvice.personal_asset_statistics(user_qq)
