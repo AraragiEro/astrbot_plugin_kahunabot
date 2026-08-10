@@ -389,6 +389,11 @@ class KahunaBot(Star):
         """ 刷新进行中的工作 """
         yield IndsEvent.refjobs(event)
 
+    @Inds.command('查岗', alias={'checkin'})
+    async def Inds_checkin(self, event: AstrMessageEvent):
+        """ 查询进行中任务和角色已占用流水线数量 """
+        yield IndsEvent.check_in(event)
+
     @Inds.command('指南', alias={'help'})
     async def Inds_help(self, event: AstrMessageEvent):
         yield event.plain_result(f"KAHUNA工业核心初级指南: https://conscious-cord-0d1.notion.site/bot-1920b0a9ac1b80998d71c4349b241145?pvs=4")
